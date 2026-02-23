@@ -44,13 +44,56 @@ function tryParseCell(v) {
   return v;
 }
 
+function toSnakeKey(key) {
+  return String(key)
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/__+/g, '_')
+    .toLowerCase();
+}
+
+function toCamelKey(snake) {
+  const s = String(snake).toLowerCase();
+  return s.replace(/_([a-z0-9])/g, (_, c) => String(c).toUpperCase());
+}
+
 function normalizeRow(row) {
   const out = {};
   for (const [k, v] of Object.entries(row || {})) {
     const key = String(k || '').trim();
     if (!key) continue;
-    out[key] = tryParseCell(v);
+
+    const parsed = tryParseCell(v);
+
+    // Preserve original key (for debugging / unexpected columns)
+    out[key] = parsed;
+
+    // Add stable aliases so the UI can be case/space-insensitive.
+    // e.g. "ID" -> "id"; "Race Id" -> "race_id" and "raceId".
+    const snake = toSnakeKey(key);
+    if (!(snake in out)) out[snake] = parsed;
+
+    const camel = toCamelKey(snake);
+    if (!(camel in out)) out[camel] = parsed;
+
+    // Also add a pure-lowercase alias (some sheets use headers like "Name")
+    const lower = String(key).trim().toLowerCase();
+    if (!(lower in out)) out[lower] = parsed;
   }
+
+  // Common field harmonization across sheet tabs.
+  // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
+  if (out.name == null || String(out.name).trim() === '') {
+    out.name = out.title ?? out.trait ?? out.spell ?? out.feature ?? out.race ?? out.class ?? out.subclass ?? out.passive ?? out.feat ?? out.choice ?? out.name;
+  }
+  if (out.description == null || String(out.description).trim() === '') {
+    out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
+  }
+  if (out.id == null || String(out.id).trim() === '') {
+    out.id = out.uuid ?? out.guid ?? out.key ?? out.id;
+  }
+
   return out;
 }
 
@@ -80,20 +123,20 @@ function buildRacesJson(racesRows, subracesRows) {
   const byRace = new Map();
 
   for (const r of racesRows) {
-    const id = ensureId(pick(r, ['id', 'raceId', 'race_id']));
+    const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
     if (!id) continue;
     byRace.set(id, {
       id,
-      name: pick(r, ['name', 'Race', 'raceName', 'race_name'], id),
-      icon: pick(r, ['icon', 'Icon', 'iconPath', 'icon_path'], null),
-      description: pick(r, ['description', 'Description'], ''),
+      name: pick(r, ['name', 'race', 'raceName', 'race_name'], id),
+      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null),
+      description: pick(r, ['description', 'desc'], ''),
       subraces: []
     });
   }
 
   for (const sr of subracesRows) {
-    const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id']));
-    const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id']));
+    const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
+    const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
     if (!raceId || !id) continue;
     const race = byRace.get(raceId) || {
       id: raceId,
@@ -107,9 +150,9 @@ function buildRacesJson(racesRows, subracesRows) {
 
     race.subraces.push({
       id,
-      name: pick(sr, ['name', 'Subrace', 'subraceName', 'subrace_name'], id),
-      icon: pick(sr, ['icon', 'Icon', 'iconPath', 'icon_path'], null),
-      description: pick(sr, ['description', 'Description'], ''),
+      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], id),
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null),
+      description: pick(sr, ['description', 'desc'], ''),
       // Pass through any extra fields (keeps things flexible for mod updates)
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
@@ -125,12 +168,12 @@ function buildClassesJson(classesRows) {
   return {
     classes: (classesRows || [])
       .map(r => {
-        const id = ensureId(pick(r, ['id', 'classId', 'class_id']));
+        const id = ensureId(pick(r, ['id', 'classId', 'class_id', 'classid']));
         if (!id) return null;
         return {
           id,
-          name: pick(r, ['name', 'Class', 'className', 'class_name'], id),
-          icon: pick(r, ['icon', 'Icon', 'iconPath', 'icon_path'], null)
+          name: pick(r, ['name', 'class', 'className', 'class_name'], id),
+          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null)
         };
       })
       .filter(Boolean)
@@ -142,8 +185,8 @@ function buildClassesFullJson(classesRows, subclassesRows) {
   const byId = new Map((base.classes || []).map(c => [c.id, { ...c, sourceFile: 'sheet', subclasses: [] }]));
 
   for (const sr of (subclassesRows || [])) {
-    const classId = ensureId(pick(sr, ['classId', 'class', 'parentId', 'parent', 'class_id']));
-    const rawId = ensureId(pick(sr, ['id', 'subclassId', 'subclass_id']));
+    const classId = ensureId(pick(sr, ['classId', 'class', 'parentId', 'parent', 'class_id', 'classid', 'parentid']));
+    const rawId = ensureId(pick(sr, ['id', 'subclassId', 'subclass_id', 'subclassid']));
     if (!classId || !rawId) continue;
 
     const cls = byId.get(classId) || {
@@ -160,9 +203,9 @@ function buildClassesFullJson(classesRows, subclassesRows) {
     const fullId = rawId.includes('_') ? rawId : `${classId}_${rawId}`;
     cls.subclasses.push({
       id: fullId,
-      name: pick(sr, ['name', 'Subclass', 'subclassName', 'subclass_name'], rawId),
+      name: pick(sr, ['name', 'subclass', 'subclassName', 'subclass_name'], rawId),
       levels: {},
-      icon: pick(sr, ['icon', 'Icon', 'iconPath', 'icon_path'], null)
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null)
     });
   }
 
@@ -206,7 +249,12 @@ export async function loadRacesJson() {
         fetchSheetRows(cfg.apiBase, 'Races'),
         fetchSheetRows(cfg.apiBase, 'Subraces')
       ]);
-      return buildRacesJson(racesRows, subracesRows);
+      const built = buildRacesJson(racesRows, subracesRows);
+      // If the sheet returned rows but we couldn't parse any IDs, fall back to local.
+      if ((racesRows?.length || subracesRows?.length) && (!built?.races || built.races.length === 0)) {
+        throw new Error('Live Races/Subraces parsed empty');
+      }
+      return built;
     } catch {
       // fall back
     }
@@ -219,7 +267,11 @@ export async function loadClassesJson() {
   if (cfg?.mode === 'live' && cfg?.apiBase) {
     try {
       const rows = await fetchSheetRows(cfg.apiBase, 'Classes');
-      return buildClassesJson(rows);
+      const built = buildClassesJson(rows);
+      if (rows?.length && (!built?.classes || built.classes.length === 0)) {
+        throw new Error('Live Classes parsed empty');
+      }
+      return built;
     } catch {
       // fall back
     }
@@ -235,7 +287,11 @@ export async function loadClassesFullJson() {
         fetchSheetRows(cfg.apiBase, 'Classes'),
         fetchSheetRows(cfg.apiBase, 'Subclasses')
       ]);
-      return buildClassesFullJson(classesRows, subclassesRows);
+      const built = buildClassesFullJson(classesRows, subclassesRows);
+      if ((classesRows?.length || subclassesRows?.length) && (!built?.classes || built.classes.length === 0)) {
+        throw new Error('Live Classes/Subclasses parsed empty');
+      }
+      return built;
     } catch {
       // fall back
     }
