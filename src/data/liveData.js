@@ -219,7 +219,18 @@ function buildRacesJson(racesRows, subracesRows) {
       if (token.startsWith(p)) { token = token.slice(p.length); break; }
     }
 
-    const t = normalizeSubraceTokenForAssets(ridNorm, token);
+    
+
+// Remove race suffix for rows like: amethyst_dragonborn
+const suffixes = [
+  `_${raceId}`, `-${raceId}`,
+  `_${ridNorm}`, `-${ridNorm}`,
+  `_${raceIdHyphen}`, `-${raceIdHyphen}`
+];
+for (const sfx of suffixes) {
+  if (token.endsWith(sfx)) { token = token.slice(0, -sfx.length); break; }
+}
+const t = normalizeSubraceTokenForAssets(ridNorm, token);
     if (!t) return null;
 
     if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${t}.png`;
