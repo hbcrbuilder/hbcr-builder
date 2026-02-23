@@ -45,8 +45,16 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
-  return String(key)
-    .trim()
+  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
+  const s = String(key || '').trim();
+  if (!s) return '';
+
+  // Insert underscores between camel-case boundaries.
+  const camelSplit = s
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
+
+  return camelSplit
     .replace(/\s+/g, '_')
     .replace(/-+/g, '_')
     .replace(/__+/g, '_')
@@ -255,12 +263,6 @@ function buildRacesJson(racesRows, subracesRows) {
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
   }
-
-  return {
-    meta: { source: 'live-sheet' },
-    races: Array.from(byRace.values())
-  };
-}
 
   return {
     meta: { source: 'live-sheet' },
