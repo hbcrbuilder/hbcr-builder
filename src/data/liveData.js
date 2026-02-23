@@ -45,8 +45,17 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
-  return String(key)
-    .trim()
+  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
+  const s = String(key || '').trim();
+  if (!s) return '';
+
+  // Insert underscores between camel-case boundaries.
+  // e.g. RaceId -> Race_Id, SpellListId -> Spell_List_Id
+  const camelSplit = s
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
+
+  return camelSplit
     .replace(/\s+/g, '_')
     .replace(/-+/g, '_')
     .replace(/__+/g, '_')
@@ -82,19 +91,77 @@ function normalizeRow(row) {
     if (!(lower in out)) out[lower] = parsed;
   }
 
+    const titleCaseFromId = (raw) => {
+    const s = String(raw ?? '').trim();
+    if (!s) return '';
+    const words = s
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .filter(Boolean);
+    return words.map(w => (w ? (w[0].toUpperCase() + w.slice(1)) : '')).join(' ');
+  };
+
   // Common field harmonization across sheet tabs.
   // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
   if (out.name == null || String(out.name).trim() === '') {
-    out.name = out.title ?? out.trait ?? out.spell ?? out.feature ?? out.race ?? out.class ?? out.subclass ?? out.passive ?? out.feat ?? out.choice ?? out.name;
+    out.name = out.title
+      ?? out.trait
+      ?? out.traitName
+      ?? out.spell
+      ?? out.spellName
+      ?? out.cantrip
+      ?? out.cantripName
+      ?? out.feature
+      ?? out.featureName
+      ?? out.race
+      ?? out.raceName
+      ?? out.subrace
+      ?? out.subraceName
+      ?? out.class
+      ?? out.className
+      ?? out.subclass
+      ?? out.subclassName
+      ?? out.passive
+      ?? out.passiveName
+      ?? out.feat
+      ?? out.featName
+      ?? out.choice
+      ?? out.choiceName
+      ?? out.name;
   }
   if (out.description == null || String(out.description).trim() === '') {
     out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
   }
+  // Some tabs use "Text" for spells/cantrips and choice entries.
+  if (out.text == null || String(out.text).trim() === '') {
+    out.text = out.description ?? out.effect ?? out.details ?? out.tooltip ?? out.text;
+  }
   if (out.id == null || String(out.id).trim() === '') {
-    out.id = out.uuid ?? out.guid ?? out.key ?? out.id;
+    out.id = out.uuid
+      ?? out.guid
+      ?? out.key
+      ?? out.raceId
+      ?? out.subraceId
+      ?? out.classId
+      ?? out.subclassId
+      ?? out.spellId
+      ?? out.cantripId
+      ?? out.featId
+      ?? out.traitId
+      ?? out.featureId
+      ?? out.choiceId
+      ?? out.passiveId
+      ?? out.id;
   }
 
-  return out;
+  // Friendly fallback label if the sheet row only has an id.
+  if ((out.name == null || String(out.name).trim() === '') && out.id != null) {
+    out.name = titleCaseFromId(out.id);
+  }
+
+return out;
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
@@ -120,38 +187,70 @@ function ensureId(s) {
 }
 
 function buildRacesJson(racesRows, subracesRows) {
+  const normalizeRaceId = (rid) => {
+    const s = String(rid || '').trim();
+    if (!s) return '';
+    if (s.startsWith('half_')) return s.replace(/_/g, '-');
+    return s;
+  };
+
+  const baseRaceIcon = (raceId) => {
+    const rid = normalizeRaceId(raceId);
+    if (!rid) return null;
+    if (rid === 'half-elf') return './assets/icons/races/half-elf/halfelf.png';
+    if (rid === 'half-orc') return './assets/icons/races/half-orc/halforc.png';
+    return `./assets/icons/races/${rid}/${rid}.png`;
+  };
+
+  const subraceIcon = (raceId, subId) => {
+    const rid = normalizeRaceId(raceId);
+    const sid = String(subId || '').trim();
+    if (!rid || !sid) return null;
+    if (rid === 'drow' && sid === 'lolth-sworn') return './assets/icons/races/drow/drow-lolthsworn.png';
+    if (rid === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${sid}.png`;
+    return `./assets/icons/races/${rid}/${rid}-${sid}.png`;
+  };
+
   const byRace = new Map();
 
   for (const r of racesRows) {
-    const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
+    const idRaw = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
+    const id = normalizeRaceId(idRaw);
     if (!id) continue;
     byRace.set(id, {
       id,
       name: pick(r, ['name', 'race', 'raceName', 'race_name'], id),
-      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null),
+      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null) ?? baseRaceIcon(id),
       description: pick(r, ['description', 'desc'], ''),
       subraces: []
     });
   }
 
   for (const sr of subracesRows) {
-    const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
-    const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
-    if (!raceId || !id) continue;
+    const raceIdRaw = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
+    const raceId = normalizeRaceId(raceIdRaw);
+    const rawId = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
+    if (!raceId || !rawId) continue;
     const race = byRace.get(raceId) || {
       id: raceId,
       name: raceId,
-      icon: null,
+      icon: baseRaceIcon(raceId),
       subraces: []
     };
 
     // If the base race didn't exist, add it now.
     if (!byRace.has(raceId)) byRace.set(raceId, race);
 
+    let subId = rawId;
+
+    const prefix = `${raceId}_`;
+    if (subId.startsWith(prefix)) subId = subId.slice(prefix.length);
+    subId = subId.replace(/_/g, '-');
+
     race.subraces.push({
-      id,
-      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], id),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null),
+      id: subId,
+      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], subId),
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, subId),
       description: pick(sr, ['description', 'desc'], ''),
       // Pass through any extra fields (keeps things flexible for mod updates)
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
@@ -173,7 +272,7 @@ function buildClassesJson(classesRows) {
         return {
           id,
           name: pick(r, ['name', 'class', 'className', 'class_name'], id),
-          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null)
+          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null) ?? `./assets/icons/classes/${id}/${id}.png`
         };
       })
       .filter(Boolean)

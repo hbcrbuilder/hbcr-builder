@@ -1,3 +1,4 @@
+import { loadData } from "../data/liveData.js";
 // Resolve which spells/cantrips are available for a given pick.
 //
 // Priority:
@@ -28,8 +29,13 @@ async function loadSpellListData() {
   if (cachePromise) return await cachePromise;
 
   cachePromise = (async () => {
-    const lists = await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
-    const owners = await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
+    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
+
+    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }

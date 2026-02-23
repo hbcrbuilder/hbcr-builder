@@ -1,8 +1,9 @@
 import { ChoiceScreen } from "./choice.js";
+import { loadData } from "../data/liveData.js";
 
 async function loadTraits(){
-  const res = await fetch("./data/traits.json", { cache: "no-store" });
-  return res.json();
+  // Live sheet first (if enabled), fallback to local JSON.
+  return await loadData("./data/traits.json", "Traits", (rows) => ({ traits: rows }));
 }
 
 export async function CharacterTraitScreen({ state }) {
