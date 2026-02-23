@@ -122,13 +122,112 @@ function ensureId(s) {
 function buildRacesJson(racesRows, subracesRows) {
   const byRace = new Map();
 
+  const normalizeRaceIdForAssets = (rid) => {
+    const s = String(rid || '').trim().toLowerCase();
+    if (!s) return '';
+    return s.replace(/_/g, '-');
+  };
+
+  const baseRaceIcon = (raceId) => {
+    const rid = normalizeRaceIdForAssets(raceId);
+    if (!rid) return null;
+    if (rid === 'half-elf') return './assets/icons/races/half-elf/halfelf.png';
+    if (rid === 'half-orc') return './assets/icons/races/half-orc/halforc.png';
+    return `./assets/icons/races/${rid}/${rid}.png`;
+  };
+
+  const normalizeSubraceTokenForAssets = (ridNorm, tokenRaw) => {
+    let t = String(tokenRaw || '').trim().toLowerCase();
+    if (!t) return '';
+    t = t.replace(/[_\s]+/g, '-');
+
+    // Map to actual filenames in /assets/icons/races
+    const key = t.replace(/-/g, '');
+
+    if (ridNorm === 'dragonborn') return t;
+
+    if (ridNorm === 'elf') {
+      if (key === 'high' || key === 'highelf') return 'highelf';
+      if (key === 'wood' || key === 'woodelf') return 'woodelf';
+      return t;
+    }
+
+    if (ridNorm === 'gnome') {
+      if (key === 'rock' || key === 'rockgnome') return 'rockgnome';
+      if (key === 'forest' || key === 'forestgnome') return 'forestgnome';
+      if (key === 'deep' || key === 'deepgnome') return 'deepgnome';
+      return t;
+    }
+
+    if (ridNorm === 'dwarf') {
+      if (key === 'gold' || key === 'golddwarf') return 'golddwarf';
+      if (key === 'shield' || key === 'shielddwarf') return 'shielddwarf';
+      if (key === 'duergar') return 'duergar';
+      return t;
+    }
+
+    if (ridNorm === 'drow') {
+      if (key === 'lolthsworn') return 'lolthsworn';
+      if (key === 'seldarine') return 'seldarine';
+      return t;
+    }
+
+    if (ridNorm === 'halfling') {
+      if (key === 'lightfoot') return 'lightfoot';
+      if (key === 'strongheart') return 'strongheart';
+      return t;
+    }
+
+    if (ridNorm === 'tiefling') {
+      if (key === 'mephistopheles') return 'mephistopeles';
+      if (key === 'mephistopeles') return 'mephistopeles';
+      if (key === 'asmodeus') return 'asmodeus';
+      if (key === 'zariel') return 'zariel';
+      return t;
+    }
+
+    if (ridNorm === 'half-elf') {
+      if (key === 'high') return 'high';
+      if (key === 'wood') return 'wood';
+      if (key === 'drow') return 'drow';
+      return t;
+    }
+
+    return t;
+  };
+
+  const subraceIcon = (raceId, subIdRaw) => {
+    const ridNorm = normalizeRaceIdForAssets(raceId);
+    if (!ridNorm) return null;
+
+    let token = String(subIdRaw || '').trim();
+    const raceIdHyphen = String(raceId || '').replace(/_/g, '-');
+    const prefixes = [
+      `${raceId}_`, `${raceId}-`,
+      `${ridNorm}_`, `${ridNorm}-`,
+      `${raceIdHyphen}_`, `${raceIdHyphen}-`
+    ];
+    for (const p of prefixes) {
+      if (token.startsWith(p)) { token = token.slice(p.length); break; }
+    }
+
+    const t = normalizeSubraceTokenForAssets(ridNorm, token);
+    if (!t) return null;
+
+    if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${t}.png`;
+    if (ridNorm === 'drow' && t === 'lolthsworn') return './assets/icons/races/drow/drow-lolthsworn.png';
+    if (ridNorm === 'dwarf' && t === 'duergar') return './assets/icons/races/dwarf/dwarf-duergar.png';
+
+    return `./assets/icons/races/${ridNorm}/${ridNorm}-${t}.png`;
+  };
+
   for (const r of racesRows) {
     const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
     if (!id) continue;
     byRace.set(id, {
       id,
       name: pick(r, ['name', 'race', 'raceName', 'race_name'], id),
-      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null),
+      icon: pick(r, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || baseRaceIcon(id),
       description: pick(r, ['description', 'desc'], ''),
       subraces: []
     });
@@ -138,49 +237,29 @@ function buildRacesJson(racesRows, subracesRows) {
     const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
     const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
     if (!raceId || !id) continue;
+
     const race = byRace.get(raceId) || {
       id: raceId,
       name: raceId,
-      icon: null,
+      icon: baseRaceIcon(raceId),
       subraces: []
     };
 
-    // If the base race didn't exist, add it now.
     if (!byRace.has(raceId)) byRace.set(raceId, race);
-
-    // Compute an icon path that matches the repo's assets naming.
-    const ridNorm = String(raceId).replace(/_/g, '-');
-
-    // Sheet subrace ids are often like: dragonborn_black, elf_high, half_elf_high, etc.
-    // We need just the subrace token for the filename (black/high/etc).
-    let subToken = String(id);
-    const prefixes = [
-      `${raceId}_`, `${raceId}-`,
-      `${ridNorm}_`, `${ridNorm}-`
-    ];
-    for (const p of prefixes) {
-      if (subToken.startsWith(p)) { subToken = subToken.slice(p.length); break; }
-    }
-    subToken = subToken.replace(/_/g, '-');
-
-    const computedIcon = (() => {
-      // Half-elf files use "halfelf-<token>.png"
-      if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${subToken}.png`;
-
-      // Drow Lolth-Sworn filename uses no hyphen: drow-lolthsworn.png
-      if (ridNorm === 'drow' && subToken === 'lolth-sworn') return './assets/icons/races/drow/drow-lolthsworn.png';
-
-      return `./assets/icons/races/${ridNorm}/${ridNorm}-${subToken}.png`;
-    })();
 
     race.subraces.push({
       id,
       name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], id),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || computedIcon,
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || subraceIcon(raceId, id),
       description: pick(sr, ['description', 'desc'], ''),
-      // Pass through any extra fields (keeps things flexible for mod updates)
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
+  }
+
+  return {
+    meta: { source: 'live-sheet' },
+    races: Array.from(byRace.values())
+  };
 }
 
   return {
@@ -198,7 +277,7 @@ function buildClassesJson(classesRows) {
         return {
           id,
           name: pick(r, ['name', 'class', 'className', 'class_name'], id),
-          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null)
+          icon: pick(r, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || `./assets/icons/classes/${id}/${id}.png`
         };
       })
       .filter(Boolean)
