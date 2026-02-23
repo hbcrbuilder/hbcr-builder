@@ -1,0 +1,2602 @@
+[
+  {
+    "id": "bard_aggressive_rhythm",
+    "name": "Aggressive Rhythm",
+    "text": "While Performing in combat, affected allies gain +2 to damage rolls. While projecting Performative Verse or Performative Chorus, this increases to +3 and +4 respectively.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_discerning_insult",
+    "name": "Discerning Insult",
+    "text": "As a Reaction, reduce a target’s confidence, applying -1d4 to Attack Rolls, Ability Checks, and Saving Throws.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_distracting_dissonance",
+    "name": "Distracting Dissonance",
+    "text": "While Performing in combat, affected enemies have Armour Class reduced by 1. While projecting Performative Verse or Performative Chorus, this penalty increases to 2 and 3 respectively.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_dueling_ditties",
+    "name": "Dueling Ditties",
+    "text": "Add your Bardic Inspiration die to all attack rolls you make without consuming Bardic Inspiration charges.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_echoes_of_fortitude",
+    "name": "Echoes of Fortitude",
+    "text": "Upon granting Bardic Inspiration, both you and the target recover 1d6 Hit Points multiplied by your Proficiency Bonus.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_encouraging_momentum",
+    "name": "Encouraging Momentum",
+    "text": "Upon granting Bardic Inspiration, you and affected targets Dash and Disengage for one turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_engaging_composition",
+    "name": "Engaging Composition",
+    "text": "Targets of your Bardic Inspiration may make one additional weapon attack using their Reaction. You may also do so at the cost of one Bardic Inspiration charge. Requires equipped weapon.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_guided_inspiration",
+    "name": "Guided Inspiration",
+    "text": "Dealing damage has a 20% chance to apply Bardic Inspiration to allies within 9m/30ft.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_harmonious_aura",
+    "name": "Harmonious Aura",
+    "text": "While Performing in combat, affected allies gain +1 to Saving Throws. While projecting Performative Verse or Performative Chorus, this increases to +2 and +3 respectively.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_infuriating_amplification",
+    "name": "Infuriating Amplification",
+    "text": "While Performing in combat, affected enemies suffer -1 to Saving Throws. While projecting Performative Verse or Performative Chorus, this penalty increases to 2 and 3 respectively.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_inspirational_resonance",
+    "name": "Inspirational Resonance",
+    "text": "Targets of your Bardic Inspiration emit a shockwave that forces enemies back 9m/30ft.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_inspiring_crescendo",
+    "name": "Inspiring Crescendo",
+    "text": "Add your Bardic Inspiration die to all saving throws you make without consuming Bardic Inspiration charges.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_insufferable_curse",
+    "name": "Insufferable Curse",
+    "text": "On a Critical Hit against an enemy with nearby allies, Dominate the target for one turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_melodic_precision",
+    "name": "Melodic Precision",
+    "text": "Once per turn, upon landing a Critical Hit, restore one Bardic Inspiration charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_mobile_maestro",
+    "name": "Mobile Maestro",
+    "text": "Swap places with targets when they gain Bardic Inspiration. This can be toggled.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_mocksmith",
+    "name": "Mocksmith",
+    "text": "When damaging another creature, potentially afflict them with Vicious Mockery.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_silver_tongued_savant",
+    "name": "Silver Tongued Savant",
+    "text": "Gain Advantage on all Charisma-based Ability Checks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_soothing_words",
+    "name": "Soothing Words",
+    "text": "Targets under Bardic Inspiration regain maximum possible healing when below half Hit Points.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_unprecedented_encore",
+    "name": "Unprecedented Encore",
+    "text": "Targets of your Bardic Inspiration may trigger a positive Wild Magic surge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bard_vigorously_tuned",
+    "name": "Vigorously Tuned",
+    "text": "On your first turn of combat, gain Temporary Hit Points equal to your character level × 4.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_adaptive_plating",
+    "name": "Adaptive Plating",
+    "text": "At the beginning of each turn in combat, gain Temporary HP equal to your Proficiency Bonus.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_arcane_calibration_matrix",
+    "name": "Arcane Calibration Matrix",
+    "text": "Your firearms are incapable of misfiring.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_automated_arcane_suppression",
+    "name": "Automated Arcane Suppression",
+    "text": "When an enemy casts a spell, you may expend one round of Ammunition to make a Ranged Weapon Attack against them with your firearm.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_castle_defense",
+    "name": "Castle Defense",
+    "text": "Deploy Turrets in battle (Bonus Action, at will, 3 turns duration). Turrets cannot move and deal 1d8 damage at level 1, 2d8 at level 5, and 3d8 at level 9.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_dead_zone_calibration",
+    "name": "Dead-Zone Calibration",
+    "text": "The number required to roll a Critical Hit with your firearms is reduced by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_elemental_payload",
+    "name": "Elemental Payload",
+    "text": "When you deal weapon damage, deal an additional 1d4 elemental damage of your choice. You may change the element as a Bonus Action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_emergency_power_cell",
+    "name": "Emergency Power Cell",
+    "text": "Once per turn, missing an Attack Roll refunds your Action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_failsafe_injection",
+    "name": "Failsafe Injection",
+    "text": "Once per combat, when starting your turn below 25% HP, consume a synthetic potion that acts as a healing potion.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_incendiary_rounds",
+    "name": "Incendiary Rounds",
+    "text": "Dealing damage with your firearm causes the target to burn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_kinetic_feedback_loop",
+    "name": "Kinetic Feedback Loop",
+    "text": "When an ally is damaged, expend 1 Ammunition and your Reaction to make a Ranged Weapon Attack against their attacker.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_like_clockwork",
+    "name": "Like Clockwork",
+    "text": "Gain +4 to Initiative.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_modular_augmentation",
+    "name": "Modular Augmentation",
+    "text": "Grant an ally +2 to AC, Attack Rolls, Damage Rolls, or DC (Bonus Action, permanent). Each effect may only apply to one ally at a time.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_nanite_dispersion_field",
+    "name": "Nanite Dispersion Field",
+    "text": "Dealing damage with your firearm throws the target backward 9m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_overclocked",
+    "name": "Overclocked",
+    "text": "When dealing damage, the minimum value you can roll is 4.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_precision_rifling",
+    "name": "Precision Rifling",
+    "text": "Once per turn, landing a Killing Blow or Critical Hit with a Ranged Weapon Attack restores one round of Ammunition.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_recoil_compensation",
+    "name": "Recoil Compensation",
+    "text": "Once per turn, landing a Critical Hit with a firearm allows you to expend 1 Ammunition to fire again at the same target.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_safeguard",
+    "name": "Safeguard",
+    "text": "Ending your turn grants Blade Ward until the start of your next turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_speed_loader",
+    "name": "Speed Loader",
+    "text": "After landing a Killing Blow, you may Reload as a free action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_synthetic_action_economy",
+    "name": "Synthetic Action Economy",
+    "text": "Expend your Bonus Action to regain your Action. You cannot use your Bonus Action again until you Short Rest.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "artificer_vital_aim",
+    "name": "Vital Aim",
+    "text": "Landing a Critical Hit with a Ranged Weapon Attack permanently inflicts Gaping Wounds (targets take +1d4 piercing damage whenever damaged).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_barbarous_assault",
+    "name": "Barbarous Assault",
+    "text": "While enraged, gain Advantage on all damage rolls.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_brutal_critical",
+    "name": "Brutal Critical",
+    "text": "When you land a Critical Hit, roll an additional damage die.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_danger_sense",
+    "name": "Danger Sense",
+    "text": "Forcibly succeed any Saving Throw at the cost of one Rage Charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_death_glare",
+    "name": "Death Glare",
+    "text": "Use your Bonus Action to potentially Intimidate a target (Charisma-based Ability Check).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_faceoff",
+    "name": "Faceoff",
+    "text": "If an enemy damages you, use your Reaction to potentially Intimidate them (Charisma-based Ability Check).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_furious_criticals",
+    "name": "Furious Criticals",
+    "text": "While enraged, the number required to roll a Critical Hit is reduced by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_lands_stride",
+    "name": "Land's Stride",
+    "text": "Difficult Terrain no longer slows you. While enraged, gain the effects of Water Walk.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_overwhelming_power",
+    "name": "Overwhelming Power",
+    "text": "While enraged, ignore all physical Resistances when dealing damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_peak_physicality",
+    "name": "Peak Physicality",
+    "text": "Gain Advantage on Strength-based Ability Checks and Saving Throws. Strength increases by 2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_rage_of_the_mountain",
+    "name": "Rage of the Mountain",
+    "text": "While enraged, become Enlarged (size +1, weight +100lbs, carry capacity x2, jump +25%, reach x1.5, damage +1d6).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_rage_of_the_undefeated",
+    "name": "Rage of the Undefeated",
+    "text": "While below 25% HP, make an additional Melee Weapon Attack using your Reaction.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_raging_vitality",
+    "name": "Raging Vitality",
+    "text": "While enraged, recover +1d6 HP per turn (no effect while Downed).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_relentless_endurance",
+    "name": "Relentless Endurance",
+    "text": "If you start your turn below half HP, gain total damage Immunity until the start of your next turn (once per Short Rest).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_rip_and_tear",
+    "name": "Rip and Tear",
+    "text": "Once per turn, landing a Killing Blow or Critical Hit may Intimidate enemies within 9m (Charisma-based Ability Check).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_rooted_in_anger",
+    "name": "Rooted in Anger",
+    "text": "At the start of combat, enrage as a free action. If still enraged at combat end, regain one Rage Charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_tempered_retaliation",
+    "name": "Tempered Retaliation",
+    "text": "While enraged, when damaged you may use your Reaction to make a Melee or Ranged Weapon Attack against the attacker.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_terrifying_bellow",
+    "name": "Terrifying Bellow",
+    "text": "Upon becoming enraged, potentially Intimidate all enemies within 9m (Charisma-based Ability Check).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_unrelenting_rampage",
+    "name": "Unrelenting Rampage",
+    "text": "Upon landing a Killing Blow or Critical Hit, restore +1d12 HP (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_unfettered_beast",
+    "name": "Unfettered Beast",
+    "text": "Increase Hit Points by 2 per character level.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barbarian_unstoppable_force",
+    "name": "Unstoppable Force",
+    "text": "While enraged, successful Melee and Throw attacks have a chance to knock targets Prone.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_aegis",
+    "name": "Aegis",
+    "text": "Gain Advantage on all Constitution-based Saving Throws.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_blessed_resolve",
+    "name": "Blessed Resolve",
+    "text": "Upon landing a Killing Blow or Critical Hit on a non-allied creature, emit an aura that Blesses all allies within 9m for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_blood_for_blood",
+    "name": "Blood for Blood",
+    "text": "The first time you heal a creature each turn, reduce the number required to roll a Critical Hit by 1. This resets upon landing a Critical Hit.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_consecrative_sacrifice",
+    "name": "Consecrative Sacrifice",
+    "text": "Upon landing a Killing Blow or Critical Hit on a non-allied creature, emit a 9m healing aura restoring 1d6 HP × your Proficiency Bonus to yourself and allies (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_divine_commune",
+    "name": "Divine Commune",
+    "text": "Increase the chance of Divine Intervention occurring from 33% to 50%.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_divine_restoration",
+    "name": "Divine Restoration",
+    "text": "At the end of combat, emit a 45m healing aura restoring 1d6 HP × your Proficiency Bonus to yourself and all allies.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_ethereal_intuition",
+    "name": "Ethereal Intuition",
+    "text": "Permanently gain the effects of Guidance and Resistance.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_fell_repentance",
+    "name": "Fell Repentance",
+    "text": "When an enemy makes an Attack Roll against an ally within 9m, use your Reaction to retaliate with Sacred Flame, Bone Chill, or Spark Surge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_holy_fortitude",
+    "name": "Holy Fortitude",
+    "text": "While below half HP, regain the maximum possible Hit Points when healed.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_guided_strikes",
+    "name": "Guided Strikes",
+    "text": "Upon healing a creature with a Spell, gain Advantage on your next Attack Roll.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_immaculate_retribution",
+    "name": "Immaculate Retribution",
+    "text": "When damaged by a melee Attack Roll, deal Radiant/Lightning/Necrotic damage equal to your Wisdom Modifier ×2 (damage type depends on subclass).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_immaculate_ward",
+    "name": "Immaculate Ward",
+    "text": "When an enemy makes an Attack Roll against you, expend a Reaction and a Channel Divinity charge to gain Immaculate Blade Ward (immunity to next damage instance for one turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_martyrdom",
+    "name": "Martyrdom",
+    "text": "Upon being Downed or killed, erupt in a raging inferno, scorching everything nearby.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_paradisiacal_gift",
+    "name": "Paradisiacal Gift",
+    "text": "Once per turn, upon a Killing Blow or Critical Hit, recover one Channel Divinity charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_sacral_touch",
+    "name": "Sacral Touch",
+    "text": "Upon healing a creature, potentially trigger Divine Intervention (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_sanctified_presence",
+    "name": "Sanctified Presence",
+    "text": "At the beginning of your turn in combat, regain HP equal to Proficiency Bonus ×2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_sanctifying_aura",
+    "name": "Sanctifying Aura",
+    "text": "Emit a 9m aura granting Sanctuary to Downed allies.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_stalwart",
+    "name": "Stalwart",
+    "text": "Permanently gain the effects of Dispel Evil and Good.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_stout_believer",
+    "name": "Stout Believer",
+    "text": "Gain immunity to Fear. When healing a creature with a Spell, they receive Death Ward for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cleric_venerational_strikes",
+    "name": "Venerational Strikes",
+    "text": "Upon landing a Killing Blow or Critical Hit, gain Veneration for three turns (weapons deal additional Radiant/Lightning/Necrotic damage equal to your Wisdom Modifier).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_armour_of_thorns",
+    "name": "Armour of Thorns",
+    "text": "When a creature damages you with a melee Attack Roll, deal Piercing damage equal to your Wisdom Modifier. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_combats_harvest",
+    "name": "Combat’s Harvest",
+    "text": "On your first turn of any combat encounter, cast Goodberry as a 1st-level spell targeting yourself.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_earthen_sentinel",
+    "name": "Earthen Sentinel",
+    "text": "When you roll a Critical Hit with a spell, Petrify the target for one turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_feral_precision",
+    "name": "Feral Precision",
+    "text": "Gain +2 to all Attack Rolls. Doubled while Wild Shaped, in Shape of the Cosmos, or while Symbiotic Entity is active. Your Dryad gains +4 to Attack Rolls if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_feral_resilience",
+    "name": "Feral Resilience",
+    "text": "Upon entering a Wild Shape from your natural form, gain Temporary HP equal to your Druid level ×4 (not when swapping forms with Moonbreak).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_ferocious_stand",
+    "name": "Ferocious Stand",
+    "text": "Gain +1 Armour Class. Doubled while Wild Shaped, in Shape of the Cosmos, or while Symbiotic Entity is active. Your Dryad gains +2 AC if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_instinctive_defense",
+    "name": "Instinctive Defense",
+    "text": "While Wild Shaped, gain Resistance to all Physical damage. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_killer_instinct",
+    "name": "Killer Instinct",
+    "text": "While Wild Shaped, gain Advantage on all damage rolls. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_mantra_of_restoration",
+    "name": "Mantra of Restoration",
+    "text": "While not Wild Shaped, expend Wild Shape charges with Solar Mend to restore Spell Slots (free action). Also gain Lunar Mend to heal yourself while Wild Shaped.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_natural_bounty",
+    "name": "Natural Bounty",
+    "text": "Once per turn, upon a Killing Blow or Critical Hit, restore one Wild Shape charge. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_natural_resurgence",
+    "name": "Natural Resurgence",
+    "text": "While in combat, regenerate Hit Points each turn equal to your Wisdom Modifier (no effect while Downed). Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_natures_mercy",
+    "name": "Nature’s Mercy",
+    "text": "Gain Resistance to Cold, Fire, and Lightning damage. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_natures_wrath",
+    "name": "Nature’s Wrath",
+    "text": "Use Wild Shape charges to deal +1d12 Cold, Lightning, or Poison damage on any successful weapon Attack Roll. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_pack_leader",
+    "name": "Pack Leader",
+    "text": "While Wild Shaped, damaging creatures may Goad them into attacking you. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_primal_bloodletter",
+    "name": "Primal Bloodletter",
+    "text": "While Wild Shaped, in Shape of the Cosmos, or while Symbiotic Entity is active, successful Attack Rolls have a chance to inflict Gaping Wounds. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_primal_surge",
+    "name": "Primal Surge",
+    "text": "Deal additional damage while Wild Shaped equal to your Wisdom Modifier. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_primal_takedown",
+    "name": "Primal Takedown",
+    "text": "While Wild Shaped, in Shape of the Cosmos, or while Symbiotic Entity is active, successful Attack Rolls have a chance to knock targets Prone. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_shapechangers_versatility",
+    "name": "Shapechanger’s Versatility",
+    "text": "Outside of combat, you may Wild Shape as a free action (Wild Shape charges are not consumed outside combat).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_territorial_dominance",
+    "name": "Territorial Dominance",
+    "text": "Gain Advantage on Attack Rolls against targets in Difficult Terrain. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druid_wild_stride",
+    "name": "Wild Stride",
+    "text": "While in combat, regenerate one Wild Shape charge every three turns. Also applies to your Dryad if attuned to Circle of the Land.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_aspect_of_defiance",
+    "name": "Aspect of Defiance",
+    "text": "When damaged below 50% HP, gain Resistance to all physical damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_challengers_call",
+    "name": "Challenger’s Call",
+    "text": "When an ally within 9m is damaged while below 50% HP, use your Reaction to Challenge that enemy and additional enemies within 9m of the aggressor.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_charge_of_the_collective",
+    "name": "Charge of the Collective",
+    "text": "When you are affected by a Dash effect, all allies within 18m also Dash.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_duellist",
+    "name": "Duellist",
+    "text": "Gain +2 to Attack Rolls.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_full_arsenal",
+    "name": "Full Arsenal",
+    "text": "Upon landing a Killing Blow or Critical Hit, restore one Superiority Die (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_heavy_assault",
+    "name": "Heavy Assault",
+    "text": "While wielding a Two-Handed Weapon, roll your damage dice with Advantage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_intuitive_warning",
+    "name": "Intuitive Warning",
+    "text": "When an enemy makes an Attack Roll against an ally within 9m, use your Reaction to impose Disadvantage. You must see the attacker.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_ironclad",
+    "name": "Ironclad",
+    "text": "You cannot be forcibly moved. Constitution increases by 2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_iron_will",
+    "name": "Iron Will",
+    "text": "On your first turn of combat and after recovering from a Lockdown Condition, gain immunity to all Lockdown Conditions for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_leaders_momentum",
+    "name": "Leader’s Momentum",
+    "text": "Increase Initiative by 2. When Rallying another creature, their Initiative increases by 2 while Rallied.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_martial_fortress",
+    "name": "Martial Fortress",
+    "text": "Once per turn, upon a Killing Blow or Critical Hit, gain Temporary HP equal to character level ×2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_martial_prowess",
+    "name": "Martial Prowess",
+    "text": "When dealing damage, ignore Slashing Resistance.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_merciless",
+    "name": "Merciless",
+    "text": "When attacking an enemy below 25% HP, deal additional damage equal to Fighter level ×2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_natural_born_leader",
+    "name": "Natural Born Leader",
+    "text": "Once per turn, upon a Critical Hit, immediately Rally (12 Temporary HP) all allies within 9m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_opportunist",
+    "name": "Opportunist",
+    "text": "Successful Opportunity Attacks reduce the target’s Movement Speed to 0.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_proper_form",
+    "name": "Proper Form",
+    "text": "When damaged, use your Reaction to reduce the damage by 1d4 × your Proficiency Bonus. You must see the attacker.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_reckless_abandon",
+    "name": "Reckless Abandon",
+    "text": "While in combat, restore one Superiority Die every three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_sentinels_protection",
+    "name": "Sentinel’s Protection",
+    "text": "When an enemy damages an ally within 3m, use your Reaction to reduce the damage by 1d4 × your Proficiency Bonus. You must see the attacker.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_tactical_advantage",
+    "name": "Tactical Advantage",
+    "text": "Increase the reach of basic Melee Attacks, Unarmed Strikes, and Dual-Wield Melee Attacks by 50%.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fighter_tenacious_fighter",
+    "name": "Tenacious Fighter",
+    "text": "Gain an additional Reaction and Advantage on Opportunity Attacks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_counterflow",
+    "name": "Counterflow",
+    "text": "When an enemy fails to damage you with a Melee Weapon Attack, use your Reaction and a Ki Point to retaliate with Flurry of Blows.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_critical_flow",
+    "name": "Critical Flow",
+    "text": "On a Critical Hit, restore one Ki Point (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_dance_of_flowing_water",
+    "name": "Dance of Flowing Water",
+    "text": "On a successful Attack Roll, gain +1 Armour Class until you avoid an attack. Stacks and resets at the start of your turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_deflective_missiles",
+    "name": "Deflective Missiles",
+    "text": "When targeted by a Ranged Weapon Attack, use your Reaction to reduce damage by 1d12 + Dexterity Modifier + character level. If reduced to 0, you may spend a Ki Point to throw it back.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_dexterous_ward",
+    "name": "Dexterous Ward",
+    "text": "When an effect deals half damage on a successful Dexterity Saving Throw, take no damage on success and half on failure.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_fist_of_crushing_rock",
+    "name": "Fist of Crushing Rock",
+    "text": "When a creature fails an Attack Roll against you, gain +1 to Attack Rolls on your next turn. Stacks and resets at end of turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_focused_stream",
+    "name": "Focused Stream",
+    "text": "On a successful Attack Roll, reduce the number required for a Critical Hit by 1. Stacks and resets at end of turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_fortified_body_and_mind",
+    "name": "Fortified Body and Mind",
+    "text": "Gain immunity to being Charmed, Frightened, or Restrained.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_harmonious_barrage",
+    "name": "Harmonious Barrage",
+    "text": "Flurry of Blows deals additional damage equal to your Wisdom Modifier.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_harmonious_footwork",
+    "name": "Harmonious Footwork",
+    "text": "Increase Movement Speed by 9m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_martial_empowerment",
+    "name": "Martial Empowerment",
+    "text": "On a Killing Blow, restore one Ki Point (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_mystic_strikes",
+    "name": "Mystic Strikes",
+    "text": "Ignore Bludgeoning Resistance when dealing damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_opportune_reversal",
+    "name": "Opportune Reversal",
+    "text": "When an enemy fails to damage you with a Melee Weapon Attack, use your Reaction to retaliate with an Unarmed Strike.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_resonance_of_body",
+    "name": "Resonance of Body",
+    "text": "While in combat, regenerate one Ki Point every three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_sagacious_resilience",
+    "name": "Sagacious Resilience",
+    "text": "Gain Advantage on Wisdom-based Saving Throws.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_soused_rempart",
+    "name": "Soused Rempart",
+    "text": "While Inebriated or Tipsy, gain +2 Armour Class.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_tempestuous_reprise",
+    "name": "Tempestuous Reprise",
+    "text": "When an enemy attacks an ally within 9m, use your Reaction to retaliate with air pressure dealing Unarmed Strike damage and pushing them 4.5m if they fail a Strength Save.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_tranquil_fortitude",
+    "name": "Tranquil Fortitude",
+    "text": "Gain an additional Reaction and Patient Defense (Bonus Action: attacks against you have Disadvantage; you gain Advantage on Dexterity Saves for 1 turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_windwaker",
+    "name": "Windwaker",
+    "text": "Gain Step of the Wind: Dash and Disengage. May be cast once per turn as a free action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "monk_zen_recovery",
+    "name": "Zen Recovery",
+    "text": "On a Killing Blow or Critical Hit, expend your Reaction to restore your Bonus Action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_atonement",
+    "name": "Atonement",
+    "text": "Upon expending a Channel Oath charge, you have a 33% chance to recover a Crusader’s Smite charge. Upon expending a Crusader’s Smite charge, you have a 33% chance to recover a Channel Oath charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_critical_oath",
+    "name": "Critical Oath",
+    "text": "Once per turn, upon landing a Critical Hit, restore one Channel Oath charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_death_sentence",
+    "name": "Death Sentence",
+    "text": "Each turn, you have a 33% chance to recover a Crusader’s Smite charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_divine_health",
+    "name": "Divine Health",
+    "text": "Gain Resistance to Poison and Necrotic damage. Upon killing an enemy, heal for 1d6 × Proficiency Bonus.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_divine_resurgence",
+    "name": "Divine Resurgence",
+    "text": "While in combat, restore one Crusader Smite charge every three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_divine_sense",
+    "name": "Divine Sense",
+    "text": "Gain Advantage on Attack Rolls against Fey, Fiends, Undead, and Aberrations.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_divine_shielding",
+    "name": "Divine Shielding",
+    "text": "When taking physical damage, gain Resistance to that damage type for 3 rounds.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_holy_smite",
+    "name": "Holy Smite",
+    "text": "When dealing damage with Smite, heal all allies (including yourself) within 3m for the value of your Smite’s damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_holy_wrath",
+    "name": "Holy Wrath",
+    "text": "When dealing damage with Smite, gain Divine Favor and Shield of Faith for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_infaillible_beacon",
+    "name": "Infaillible Beacon",
+    "text": "In combat, enemies within 9m suffer a -1d4 penalty to Attack Rolls if they are not attacking you.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_lay_on_hands",
+    "name": "Lay on Hands",
+    "text": "Expend a Crusader Smite charge to heal yourself or an ally, or cure poison (1d12 HP per 2 levels, Bonus Action, melee range).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_oathbound_renewal",
+    "name": "Oathbound Renewal",
+    "text": "While in combat, restore one Channel Oath charge every three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_oath_channeling",
+    "name": "Oath Channeling",
+    "text": "Spend Channel Oath charges to restore Spell Slots (Free Action once per turn; 1 charge restores 1 slot).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_principle_of_belief",
+    "name": "Principle of Belief",
+    "text": "When damaging Fey, Fiends, Undead, or Aberrations, deal an additional +1d12 Radiant damage (damage type may change based on subclass).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_repel_the_damned",
+    "name": "Repel the Damned",
+    "text": "Enemies within 9m take damage each turn equal to your Charisma Modifier (damage type may change based on subclass).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_resplendent_reverb",
+    "name": "Resplendent Reverb",
+    "text": "When healing another creature with a Spell, heal yourself for Charisma Modifier × Proficiency Bonus.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_smite_makes_right",
+    "name": "Smite Makes Right",
+    "text": "Once per turn, when killing an enemy with Smite, restore one Channel Oath charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_stalwart_eruption",
+    "name": "Stalwart Eruption",
+    "text": "When killing an enemy with Smite, gain Heroism for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_stalwart_resolve",
+    "name": "Stalwart Resolve",
+    "text": "Reduce elemental damage taken by your Charisma Modifier.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "paladin_visage_of_sanctity",
+    "name": "Visage of Sanctity",
+    "text": "Gain a bonus to Ability Checks equal to your Charisma Modifier.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_ambush_breaker",
+    "name": "Ambush Breaker",
+    "text": "Gain +2 Initiative and can no longer be Surprised.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_ballistic_infusion",
+    "name": "Ballistic Infusion",
+    "text": "Upcast arrows using Spell Slots, dealing +1d12 Force damage per Spell Slot level spent.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_beastbonds_precision",
+    "name": "Beastbond’s Precision",
+    "text": "Gain +4 to Ranged Weapon Attack Rolls. Ranger Companions also gain +4 to their Attack Rolls.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_bestial_foresight",
+    "name": "Bestial Foresight",
+    "text": "Outside combat, summon your Ranger Companion without consuming Natural Focus charges.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_blood_bond",
+    "name": "Blood Bond",
+    "text": "Your Ranger Companion gains Resistance to all Physical damage (Bear Companion already has this).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_bounty_hunter",
+    "name": "Bounty Hunter",
+    "text": "Bounty targets grant bonus gold when killed. Gain Advantage on Attack Rolls against targets with bounties.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_close_quarters_shooter",
+    "name": "Close Quarters Shooter",
+    "text": "While Threatened by one enemy, ranged attacks against them do not suffer Disadvantage and roll damage with Advantage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_escapist",
+    "name": "Escapist",
+    "text": "You no longer provoke Opportunity Attacks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_explosive_arrowheads",
+    "name": "Explosive Arrowheads",
+    "text": "Ranged attacks deal Force damage equal to Proficiency Bonus ×2 in a 3m area around the target (not the initial target). Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_hidden_inventory",
+    "name": "Hidden Inventory",
+    "text": "Once per turn, upon a Killing Blow or Critical Hit, restore one Natural Focus charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_marksman_edge",
+    "name": "Marksman’s Edge",
+    "text": "Weapon damage has a chance to inflict Bleeding.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_multi_attack_defense",
+    "name": "Multi-Attack Defense",
+    "text": "When attacked, additional Attack Rolls against you have Disadvantage until the attacker’s next turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_natural_huntsman",
+    "name": "Natural Huntsman",
+    "text": "Making an Attack Roll grants +2 to additional Attack Rolls that turn. Stacks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_natural_opportunity",
+    "name": "Natural Opportunity",
+    "text": "Gain an additional Reaction. Opportunity Attacks hit with both weapons while dual-wielding.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_protective_bond",
+    "name": "Protective Bond",
+    "text": "Ranger Companions gain +4 Armour Class.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_sniper",
+    "name": "Sniper",
+    "text": "Ranged Weapon Attacks deal +1 Piercing damage per 3m distance to target (max +6).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_superior_technique",
+    "name": "Superior Technique",
+    "text": "Ignore Piercing Resistance when dealing damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_sure_shot",
+    "name": "Sure Shot",
+    "text": "Reduce the number required to score a Critical Hit with Ranged Weapon Attacks by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_two_weapon_fighting",
+    "name": "Two-Weapon Fighting",
+    "text": "Off-hand weapon Attack Rolls and damage rolls are rolled with Advantage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ranger_wanton_synergy",
+    "name": "Wanton Synergy",
+    "text": "Once per turn, on a Critical Hit, your Ranger Companion’s next damage is also a Critical Hit (within 18m).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_cunning_fangs",
+    "name": "Cunning Fangs",
+    "text": "Throw a dagger (18m range, 1d6 damage per 2 character levels, piercing) as a Bonus Action. Counts as a ranged throwing unarmed attack roll and can trigger Sneak Attack.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_cutthroat",
+    "name": "Cutthroat",
+    "text": "On a Critical Hit, roll an additional damage die.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_elusive_retreat",
+    "name": "Elusive Retreat",
+    "text": "Upon landing a Killing Blow or Critical Hit, immediately Dash and Disengage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_elusive_shadow",
+    "name": "Elusive Shadow",
+    "text": "Upon landing a Killing Blow or Critical Hit, you may Hide once without expending resources.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_fast_hands",
+    "name": "Fast Hands",
+    "text": "Gain Advantage on Dexterity-based Ability Checks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_fatal_manoeuvre",
+    "name": "Fatal Manoeuvre",
+    "text": "While Sneaking or Invisible, reduce the number required to roll a Critical Hit by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_grievous_wounds",
+    "name": "Grievous Wounds",
+    "text": "Sneak Attacks halve the target’s Movement Speed and prevent them from using Reactions.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_illusory_advantage",
+    "name": "Illusory Advantage",
+    "text": "Gain Enhanced Illusion (Bonus Action, 18m range): create an Illusory Decoy that blinds nearby enemies upon vanishing.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_light_footwork",
+    "name": "Light Footwork",
+    "text": "Gain the effects of Freedom of Movement.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_low_visibility",
+    "name": "Low Visibility",
+    "text": "While obscured in shadow, Armour Class increases by 2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_manipulator",
+    "name": "Manipulator",
+    "text": "Gain Advantage on Deception and Persuasion checks. At the start of your turn, 50% chance to gain a Luck Point (scales with rogue level 5).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_now_you_see_me",
+    "name": "Now You See Me",
+    "text": "When an enemy fails a Melee Weapon Attack against you, spend your Reaction to deal your attack damage and Blind them for the rest of their turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_quick_reflexes",
+    "name": "Quick Reflexes",
+    "text": "Gain an additional Reaction. Opportunity Attacks inflict Haemorrhaged (1d8 piercing damage per tick) for 3 turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_reactive_movement",
+    "name": "Reactive Movement",
+    "text": "Gain the ability to Dash, Disengage, and Hide as a Reaction. Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_sharp_eyes",
+    "name": "Sharp Eyes",
+    "text": "Add +20 to Perception and Insight Ability Checks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_spectre",
+    "name": "Spectre",
+    "text": "While Sneaking or Invisible, teleport up to 9m. Warp is not limited by line of sight.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_spectral_hunter",
+    "name": "Spectral Hunter",
+    "text": "Upon Sneaking or becoming Invisible, all enemies within 9m are afflicted with Hunter’s Mark.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_umbral_sight",
+    "name": "Umbral Sight",
+    "text": "Gain Superior Darkvision and the ability to see within Magical Darkness.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_vanishing_act",
+    "name": "Vanishing Act",
+    "text": "When an enemy fails an Attack Roll against you, spend your Reaction to become Invisible until the end of your turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rogue_venomous",
+    "name": "Venomous",
+    "text": "Weapon damage has a chance to apply Wyvern Poison (1d8 poison damage at the start of target’s next round). DC is INT-based.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_arcane_overflow",
+    "name": "Arcane Overflow",
+    "text": "On a Killing Blow or Critical Hit, generate one Sorcery Point (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_arcane_oppression",
+    "name": "Arcane Oppression",
+    "text": "After using Sorcery Channeling or Spell Channeling, enemies within 9m roll with Disadvantage when resisting your Spells.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_arcane_reservoir",
+    "name": "Arcane Reservoir",
+    "text": "Once per turn, casting a Spell generates one Sorcery Point.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_charismatic_infusion",
+    "name": "Charismatic Infusion",
+    "text": "After using Sorcery or Spell Channeling, Spells add your Charisma Modifier to damage rolls.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_charismatic_shield",
+    "name": "Charismatic Shield",
+    "text": "Gain Resistance to all damage while you have Sorcery Points. Taking damage consumes one Sorcery Point. Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_dormant_charge",
+    "name": "Dormant Charge",
+    "text": "While Threatened, increase Cantrip and Spell damage by your Proficiency Bonus.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_elemental_afterglow",
+    "name": "Elemental Afterglow",
+    "text": "Elemental Spell damage applies a matching status effect in a 9m radius (Acid: Acid, Cold: Frostbite, Fire: Burning, Force: Pull, Lightning: Shocked, Necrotic: Bone Chill, Poison: Poisoned, Psychic: Mind Sliver, Thunder: Push, Radiant: Radiating Orb). Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_enchanting_influence",
+    "name": "Enchanting Influence",
+    "text": "Increase your Spell Save DC by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_ephemeral_vacuum",
+    "name": "Ephemeral Vacuum",
+    "text": "Expend two Sorcery Points to pull all creatures to a chosen point.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_essential_epiphany",
+    "name": "Essential Epiphany",
+    "text": "Gain Astral Knowledge (Bonus Action: proficiency in all skills of one Ability Score until Long Rest).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_evasive_warp",
+    "name": "Evasive Warp",
+    "text": "When you or an ally are attacked within 18m, swap positions of target and aggressor as a free Reaction.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_latent_acuity",
+    "name": "Latent Acuity",
+    "text": "On a Killing Blow, gain Arcane Acuity for three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_misty_escape",
+    "name": "Misty Escape",
+    "text": "If you start your turn Threatened, cast Misty Step without expending a Spell Slot.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_mystic_empowerment",
+    "name": "Mystic Empowerment",
+    "text": "If you roll with Advantage on Spell Attack Rolls or Saving Throws, roll Spell damage with Advantage as well.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_natural_vortex",
+    "name": "Natural Vortex",
+    "text": "When a creature within 18m casts a Spell, generate two stacks of Sorcerous Overflow instead of one.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_reactive_blood",
+    "name": "Reactive Blood",
+    "text": "When damaged by an enemy, generate one stack of Sorcerous Overflow.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_shared_creation",
+    "name": "Shared Creation",
+    "text": "Creationary can now target allies.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_sorcerous_acumen",
+    "name": "Sorcerous Acumen",
+    "text": "Expend one Sorcery Point to gain Advantage on any Ability Check.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_sorcerous_focus",
+    "name": "Sorcerous Focus",
+    "text": "After using Spell or Sorcery Channeling, gain Advantage on Spell Attack Rolls for the rest of your turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sorcerer_veiled_synergy",
+    "name": "Veiled Synergy",
+    "text": "Gain Arcane Synergy by expending one Sorcery Point per turn while in combat. Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_bane_of_the_pact",
+    "name": "Bane of the Pact",
+    "text": "Eldritch Blast applies Bane for 3 turns. Toggleable. Only one Eldritch Boon may modify Eldritch Blast at a time.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_binding_transposition",
+    "name": "Binding Transposition",
+    "text": "On a successful Eldritch Blast hit against a Large or smaller creature, swap places with them. Toggleable. Only one Eldritch Boon may modify Eldritch Blast at a time.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_bound_elements",
+    "name": "Bound Elements",
+    "text": "After casting a Spell, use a Free Reaction to gain Resistance to all damage for one turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_bound_compulsion",
+    "name": "Bound Compulsion",
+    "text": "Once per turn, upon a Killing Blow or Critical Hit, enemies within 9m must succeed a Wisdom Save or be Compelled to duel you on their next turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_curse_of_hellfire",
+    "name": "Curse of Hellfire",
+    "text": "On a successful melee Attack Roll, apply a stack of Curse of Hellfire (1d4 fire per round, duration stacks). Advantage against the target.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_dark_retaliation",
+    "name": "Dark Retaliation",
+    "text": "When an enemy fails an Attack Roll against you, spend your Reaction to cast Darkness. While Heavily Obscured, Chained Companions gain Advantage on Attack Rolls.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_devils_sight",
+    "name": "Devil’s Sight",
+    "text": "See normally in magical and non-magical darkness up to 18m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_eldritch_enervation",
+    "name": "Eldritch Enervation",
+    "text": "Eldritch Blast damage heals you equal to your Charisma Modifier.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_eldritch_lance",
+    "name": "Eldritch Lance",
+    "text": "Fire a piercing variant of Eldritch Blast dealing 1d12 Force per spell level at the cost of one Warlock Spell Slot. Modifiers apply to both.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_eldritch_strike",
+    "name": "Eldritch Strike",
+    "text": "Channel Eldritch Blast into your main-hand weapon (cost: 1 Spell Slot). On hit, fire a Beam at an enemy within 18m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_hellish_rebuttal",
+    "name": "Hellish Rebuttal",
+    "text": "When an enemy fails a melee Attack Roll against you, gain True Strike as a Free Reaction. Chained Companions ignore Resistance.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_hellbound_vision",
+    "name": "Hellbound Vision",
+    "text": "Eldritch Blast Blinds the target for 1 turn. Toggleable. Only one Eldritch Boon may modify Eldritch Blast at a time.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_luck_of_the_devil",
+    "name": "Luck of the Devil",
+    "text": "Once per turn, upon a Critical Hit, restore one Warlock Spell Slot.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_master_of_chaos",
+    "name": "Master of Chaos",
+    "text": "Eldritch Blast may trigger a negative Wild Magic surge. Radiant Eldritch Blast may trigger a positive surge under Pact of Penumbra.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_one_with_shadows",
+    "name": "One with Shadows",
+    "text": "On a Killing Blow or Critical Hit, you and Chained Companions within 18m become Invisible for 3 turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_onus_hematic",
+    "name": "Onus Hematic",
+    "text": "Hematic Invocation restores 2 Spell Slots instead of 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_pact_stricken",
+    "name": "Pact Stricken",
+    "text": "On a successful Melee Weapon Attack, apply one stack of Eldritch Inertia.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_repelling_blast",
+    "name": "Repelling Blast",
+    "text": "Eldritch Blast pushes targets up to 9m. Toggleable. Only one Eldritch Boon may modify Eldritch Blast at a time.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_resilient_servitude",
+    "name": "Resilient Servitude",
+    "text": "Increase HP by character level ×2. Chained Companions gain +4 AC.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warlock_shade_walker",
+    "name": "Shade Walker",
+    "text": "Teleport up to 9m at will as a Bonus Action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_arcane_interruption",
+    "name": "Arcane Interruption",
+    "text": "Use your Reaction to interrupt any Spell. Doing so reduces your maximum Arcane Recovery charges by 1 until your next Long Rest.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_arcane_reverb",
+    "name": "Arcane Reverb",
+    "text": "When damaged by a melee Attack Roll, release a shockwave that pushes nearby enemies 9m.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_arcane_shield",
+    "name": "Arcane Shield",
+    "text": "While Concentrating, gain Resistance to Bludgeoning, Piercing, and Slashing damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_boon_of_plumes",
+    "name": "Boon of Plumes",
+    "text": "Emit a 9m aura granting Feather Fall to you and allies. Effects persist one turn after leaving the aura.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_edict_of_divinity",
+    "name": "Edict of Divinity",
+    "text": "After a Long Rest, gain three random Portent Dice. Use your Reaction and Arcane Recovery to replace nearby Attack Rolls or Saving Throws with a Portent Die. Spent dice may be regained via Prophecies.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_elemental_countercharge",
+    "name": "Elemental Countercharge",
+    "text": "When an enemy fails a Melee Weapon Attack against you, use your Reaction to retaliate with Shocking Grasp.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_enchanted_safeguard",
+    "name": "Enchanted Safeguard",
+    "text": "Expend an Arcane Recovery charge to cast Shield as a Reaction (+4 AC for one round).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_flames_riposte",
+    "name": "Flames Riposte",
+    "text": "When an enemy fails an Attack Roll against you, use your Reaction to retaliate with Firebolt.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_illusory_phantasm",
+    "name": "Illusory Phantasm",
+    "text": "On your first turn of combat, immediately gain Mirror Image.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_magical_insight",
+    "name": "Magical Insight",
+    "text": "Gain Advantage on Intelligence-based Ability Checks and Saving Throws. Add your Intelligence Modifier to Charisma-based Skill Checks.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_mystic_override",
+    "name": "Mystic Override",
+    "text": "Ignore elemental Resistances when dealing damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_potent_cantrips",
+    "name": "Potent Cantrips",
+    "text": "Cantrips deal additional damage equal to Proficiency Bonus ×2.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_potent_spells",
+    "name": "Potent Spells",
+    "text": "Spells gain bonus damage equal to 4 × Spell Slot level used.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_spellblade",
+    "name": "Spellblade",
+    "text": "Use your Spellcasting Ability Modifier for weapon Attack Rolls and damage. Killing Blow or Critical Hit restores one Arcane Recovery charge.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_spellbound_rebirth",
+    "name": "Spellbound Rebirth",
+    "text": "On a Killing Blow or Critical Hit, restore one Arcane Recovery charge (once per turn).",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_spell_surge",
+    "name": "Spell Surge",
+    "text": "While in combat, regenerate one Arcane Recovery charge every three turns.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_telekinetic_command",
+    "name": "Telekinetic Command",
+    "text": "Gain Telekinetic Push and Pull (18m range, 9m movement on failed Strength Save). Once per turn, use as a free action.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_war_magic",
+    "name": "War Magic",
+    "text": "After making a melee Attack Roll or casting a Spell, cast one Cantrip as a Bonus Action. Toggleable.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_wizards_clarity",
+    "name": "Wizard’s Clarity",
+    "text": "After spending Arcane Recovery charges, gain Advantage on Spell and Cantrip damage rolls for a duration equal to the Spell Slot level recovered.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wizard_woven_precision",
+    "name": "Woven Precision",
+    "text": "Reduce the number required to roll a Critical Hit with Spells and Cantrips by 1.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  }
+]

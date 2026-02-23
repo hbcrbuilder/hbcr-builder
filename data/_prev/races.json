@@ -1,0 +1,382 @@
+{
+  "meta": {
+    "standardized": {
+      "meleeReach": "standard",
+      "baseMove": "9m/30ft"
+    }
+  },
+  "races": [
+    {
+      "id": "dragonborn",
+      "name": "Dragonborn",
+      "icon": "./assets/icons/races/dragonborn/dragonborn.png",
+      "subraces": [
+        {
+          "id": "black",
+          "name": "Black Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-black.png",
+          "description": "Gain Resistance to Acid damage and a Breath Cantrip that deals Acid elemental damage and inflicts the Acid condition.",
+          "resistance": "Acid",
+          "breath": {
+            "condition": "Acid"
+          }
+        },
+        {
+          "id": "blue",
+          "name": "Blue Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-blue.png",
+          "description": "Gain Resistance to Lightning damage and a Breath Cantrip that deals Lightning elemental damage and inflicts the Shocked condition.",
+          "resistance": "Lightning",
+          "breath": {
+            "condition": "Shocked"
+          }
+        },
+        {
+          "id": "brass",
+          "name": "Brass Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-brass.png",
+          "description": "Gain Resistance to Fire damage and a Breath Cantrip that deals Fire elemental damage and inflicts the Burning condition.",
+          "resistance": "Fire",
+          "breath": {
+            "condition": "Burning"
+          }
+        },
+        {
+          "id": "bronze",
+          "name": "Bronze Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-bronze.png",
+          "description": "Gain Resistance to Lightning damage and a Breath Cantrip that deals Lightning elemental damage and inflicts the Shocked condition.",
+          "resistance": "Lightning",
+          "breath": {
+            "condition": "Shocked"
+          }
+        },
+        {
+          "id": "copper",
+          "name": "Copper Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-copper.png",
+          "description": "Gain Resistance to Acid damage and a Breath Cantrip that deals Acid elemental damage and inflicts the Acid condition.",
+          "resistance": "Acid",
+          "breath": {
+            "condition": "Acid"
+          }
+        },
+        {
+          "id": "gold",
+          "name": "Gold Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-gold.png",
+          "description": "Gain Resistance to Fire damage and a Breath Cantrip that deals Fire elemental damage and inflicts the Burning condition.",
+          "resistance": "Fire",
+          "breath": {
+            "condition": "Burning"
+          }
+        },
+        {
+          "id": "green",
+          "name": "Green Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-green.png",
+          "description": "Gain Resistance to Poison damage and a Breath Cantrip that deals Poison elemental damage and inflicts the Poisoned condition.",
+          "resistance": "Poison",
+          "breath": {
+            "condition": "Poisoned"
+          }
+        },
+        {
+          "id": "red",
+          "name": "Red Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-red.png",
+          "description": "Gain Resistance to Fire damage and a Breath Cantrip that deals Fire elemental damage and inflicts the Burning condition.",
+          "resistance": "Fire",
+          "breath": {
+            "condition": "Burning"
+          }
+        },
+        {
+          "id": "silver",
+          "name": "Silver Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-silver.png",
+          "description": "Gain Resistance to Cold damage and a Breath Cantrip that deals Cold elemental damage and inflicts the Frostbite condition.",
+          "resistance": "Cold",
+          "breath": {
+            "condition": "Frostbite"
+          }
+        },
+        {
+          "id": "white",
+          "name": "White Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-white.png",
+          "description": "Gain Resistance to Cold damage and a Breath Cantrip that deals Cold elemental damage and inflicts the Frostbite condition.",
+          "resistance": "Cold",
+          "breath": {
+            "condition": "Frostbite"
+          }
+        },
+        {
+          "id": "amethyst",
+          "name": "Amethyst Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-amethyst.png",
+          "description": "Gain Resistance to Force damage and a Breath Cantrip that deals Force elemental damage.",
+          "resistance": "Force"
+        },
+        {
+          "id": "crystal",
+          "name": "Crystal Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-crystal.png",
+          "description": "Gain Resistance to Radiant damage and a Breath Cantrip that deals Radiant elemental damage.",
+          "resistance": "Radiant"
+        },
+        {
+          "id": "emerald",
+          "name": "Emerald Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-emerald.png",
+          "description": "Gain Resistance to Psychic damage and a Breath Cantrip that deals Psychic elemental damage.",
+          "resistance": "Psychic"
+        },
+        {
+          "id": "sapphire",
+          "name": "Sapphire Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-sapphire.png",
+          "description": "Gain Resistance to Thunder damage and a Breath Cantrip that deals Thunder elemental damage.",
+          "resistance": "Thunder"
+        },
+        {
+          "id": "topaz",
+          "name": "Topaz Dragonborn",
+          "icon": "./assets/icons/races/dragonborn/dragonborn-topaz.png",
+          "description": "Gain Resistance to Necrotic damage and a Breath Cantrip that deals Necrotic elemental damage.",
+          "resistance": "Necrotic"
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": "All Dragonborn gain two features, determined by their subrace: (1) resistance to a specific element (improves to immunity at character level 9) and (2) an Elemental Breath cantrip. Breath costs an Action, cone 6m/20ft, attack roll vs all targets. Damage scales: L1 1d12; L5 2d12 and condition lasts 3 turns; L9 3d12+12. Spellcasting attribute is determined by the class in which you have the most levels."
+      }
+    },
+    {
+      "id": "drow",
+      "name": "Drow",
+      "icon": "./assets/icons/races/drow/drow.png",
+      "subraces": [
+        {
+          "id": "lolth-sworn",
+          "name": "Lolth-Sworn Drow",
+          "icon": "./assets/icons/races/drow/drow-lolthsworn.png",
+          "description": "Cast Silence as an Action once per combat."
+        },
+        {
+          "id": "seldarine",
+          "name": "Seldarine Drow",
+          "icon": "./assets/icons/races/drow/drow-seldarine.png",
+          "description": "Cast Misty Step as a Bonus Action once per combat."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "superior_darkvision",
+        "description": "All Drow gain Superior Darkvision, granting the ability to see in magical darkness. Additionally, while shrouded in total darkness they make all Attack Rolls with Advantage."
+      }
+    },
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "icon": "./assets/icons/races/dwarf/dwarf.png",
+      "subraces": [
+        {
+          "id": "gold",
+          "name": "Gold Dwarf",
+          "icon": "./assets/icons/races/dwarf/dwarf-gold.png",
+          "description": "Gain a +2 bonus to all damage dealt with weapons. (Does not include unarmed attacks.)"
+        },
+        {
+          "id": "shield",
+          "name": "Shield Dwarf",
+          "icon": "./assets/icons/races/dwarf/dwarf-shield.png",
+          "description": "Reduce all damage taken by 2. (Calculated after Resistances and stacks with all other sources of Damage Reduction.)"
+        },
+        {
+          "id": "duergar",
+          "name": "Duergar",
+          "icon": "./assets/icons/races/dwarf/duergar.png",
+          "description": "Cast Enlarge on yourself as a Bonus Action once per combat. Duergar gain Superior Darkvision, granting the ability to see in magical darkness. Additionally, while shrouded in total darkness they make all Attack Rolls with Advantage."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": ""
+      }
+    },
+    {
+      "id": "elf",
+      "name": "Elf",
+      "icon": "./assets/icons/races/elf/elf.png",
+      "subraces": [
+        {
+          "id": "high",
+          "name": "High Elf",
+          "icon": "./assets/icons/races/elf/elf-highelf.png",
+          "description": "Gain Advantage on all Wisdom based Ability Checks and Saving Throws."
+        },
+        {
+          "id": "wood",
+          "name": "Wood Elf",
+          "icon": "./assets/icons/races/elf/elf-woodelf.png",
+          "description": "Movement speed is increased by 6m/20ft."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": ""
+      }
+    },
+    {
+      "id": "githyanki",
+      "name": "Githyanki",
+      "icon": "./assets/icons/races/githyanki/githyanki.png",
+      "subraces": [],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": "When making any Attack Roll, add your Proficiency Bonus to the roll twice."
+      }
+    },
+    {
+      "id": "gnome",
+      "name": "Gnome",
+      "icon": "./assets/icons/races/gnome/gnome.png",
+      "subraces": [
+        {
+          "id": "rock",
+          "name": "Rock Gnome",
+          "icon": "./assets/icons/races/gnome/gnome-rock.png",
+          "description": "Armour Class is increased by 2."
+        },
+        {
+          "id": "forest",
+          "name": "Forest Gnome",
+          "icon": "./assets/icons/races/gnome/gnome-forest.png",
+          "description": "Cast Dominate Beast as an Action once per combat. Forest Gnomes have the ability to Speak With Animals at all times."
+        },
+        {
+          "id": "deep",
+          "name": "Deep Gnome",
+          "icon": "./assets/icons/races/gnome/gnome-deep.png",
+          "description": "Cast Invisibility on yourself as a Bonus Action once per combat. Deep Gnomes gain Superior Darkvision, granting the ability to see in magical darkness. Additionally, while shrouded in total darkness they make all Attack Rolls with Advantage."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": ""
+      }
+    },
+    {
+      "id": "half-elf",
+      "name": "Half-Elf",
+      "icon": "./assets/icons/races/half-elf/halfelf.png",
+      "subraces": [
+        {
+          "id": "high",
+          "name": "High Half-Elf",
+          "icon": "./assets/icons/races/half-elf/halfelf-high.png",
+          "description": "Gain Advantage on all Wisdom based Ability Checks."
+        },
+        {
+          "id": "wood",
+          "name": "Wood Half-Elf",
+          "icon": "./assets/icons/races/half-elf/halfelf-wood.png",
+          "description": "Movement speed is increased by 3m/10ft."
+        },
+        {
+          "id": "drow",
+          "name": "Drow Half-Elf",
+          "icon": "./assets/icons/races/half-elf/halfelf-drow.png",
+          "description": "Gain Superior Darkvision, granting them the ability to see in magical darkness. Additionally, while shrouded in total darkness they make all Attack Rolls with Advantage."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": "All Half-Elves gain a +1 bonus to Initiative."
+      }
+    },
+    {
+      "id": "half-orc",
+      "name": "Half-Orc",
+      "icon": "./assets/icons/races/half-orc/halforc.png",
+      "subraces": [],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": "Gain a +1 bonus to Initiative, as well as Advantage on all Strength based Ability Checks."
+      }
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "icon": "./assets/icons/races/halfling/halfling.png",
+      "subraces": [
+        {
+          "id": "lightfoot",
+          "name": "Lightfoot Halfling",
+          "icon": "./assets/icons/races/halfling/halfling-lightfoot.png",
+          "description": "Gain Advantage on all Dexterity based Ability Checks and Saving Throws."
+        },
+        {
+          "id": "strongheart",
+          "name": "Strongheart Halfling",
+          "icon": "./assets/icons/races/halfling/halfling-strongheart.png",
+          "description": "Gain Advantage on all Constitution based Ability Checks and Saving Throws."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": ""
+      }
+    },
+    {
+      "id": "human",
+      "name": "Human",
+      "icon": "./assets/icons/races/human/human.png",
+      "subraces": [],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "none",
+        "description": "Gain a +2 bonus to Initiative."
+      }
+    },
+    {
+      "id": "tiefling",
+      "name": "Tiefling",
+      "icon": "./assets/icons/races/tiefling/tiefling.png",
+      "subraces": [
+        {
+          "id": "asmodeus",
+          "name": "Asmodeus Tiefling",
+          "icon": "./assets/icons/races/tiefling/tiefling-asmodeus.png",
+          "description": "Cast Scorching Ray as an Action once per combat."
+        },
+        {
+          "id": "mephistopheles",
+          "name": "Mephistopheles Tiefling",
+          "icon": null,
+          "description": "Cast Burning Hands as an Action once per combat."
+        },
+        {
+          "id": "zariel",
+          "name": "Zariel Tiefling",
+          "icon": "./assets/icons/races/tiefling/tiefling-zariel.png",
+          "description": "Cast Heat Metal as an Action once per combat."
+        }
+      ],
+      "rules": {
+        "movementMeters": 9,
+        "vision": "darkvision",
+        "description": "All Tieflings gain Resistance to Fire and Basic Darkvision, granting them the ability to see in darkness. Additionally, they gain the ability to cast a specific spell once per combat. This spell scales with character level, being treated as if cast with a higher level spell slot at third level and every odd level thereafter. Spellcasting attribute is determined by the class in which you have the most levels."
+      }
+    }
+  ]
+}

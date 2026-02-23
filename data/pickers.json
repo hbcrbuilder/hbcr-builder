@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "pickTypeRoutes": {
+    "cantrip": "cantrips",
+    "spell": "spells",
+    "feat": "feats",
+    "passive": "passives",
+    "metamagic": "metamagic",
+    "wildshape": "wildshapes",
+    "smite": "smites",
+    "frontier_ballistics": "frontierBallistics",
+    "manoeuvre": "manoeuvres",
+    "draconic_ancestry": "dragonAncestor",
+    "combat_technique": "combatTechniques",
+    "fletching": "elementalFletchings",
+    "optimization_matrix": "optimizationMatrix",
+    "sabotage_matrix": "sabotageMatrix"
+  },
+  "labels": {
+    "cantrips": "Cantrips",
+    "spells": "Spells",
+    "feats": "Feats",
+    "passives": "Passives",
+    "metamagic": "Metamagic",
+    "wildshapes": "Wildshapes",
+    "smites": "Smites",
+    "frontierBallistics": "Frontier Ballistics",
+    "manoeuvres": "Manoeuvres",
+    "dragonAncestor": "Dragon Ancestor",
+    "combatTechniques": "Combat Techniques",
+    "elementalFletchings": "Elemental Fletchings",
+    "optimizationMatrix": "Optimization Matrix",
+    "sabotageMatrix": "Sabotage Matrix"
+  },
+  "order": [
+    "cantrips",
+    "spells",
+    "metamagic",
+    "frontierBallistics",
+    "manoeuvres",
+    "smites",
+    "wildshapes",
+    "passives",
+    "feats",
+    "dragonAncestor",
+    "combatTechniques",
+    "elementalFletchings",
+    "optimizationMatrix",
+    "sabotageMatrix"
+  ]
+}

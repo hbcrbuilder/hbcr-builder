@@ -1,0 +1,208 @@
+{
+  "classId": "warlock",
+  "displayName": "Warlock",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "warlock.eldritch_blast",
+        "name": "Eldritch Blast"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.serrated_hematic_invocation",
+        "name": "Serrated Hematic Invocation"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.cantrips",
+        "name": "Cantrips"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.pact_2_1st_weapon",
+        "name": "Pact 2 1st Weapon"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.hellfire_1d4",
+        "name": "Hellfire (1d4)"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "warlock.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "warlock.dark_ones_blessing_2_2nd",
+        "name": "Dark Ones Blessing 2 2nd"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "warlock.mystic_arcanum",
+        "name": "Mystic Arcanum"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.extra_attack",
+        "name": "Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.hellfire_2d4_3_3rd",
+        "name": "Hellfire (2d4) 3 3rd"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "warlock.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "warlock.entropic_resonation_3_4th",
+        "name": "Entropic Resonation 3 4th"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "warlock.deepened_arcanum",
+        "name": "Deepened Arcanum"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.steel_cast",
+        "name": "Steel Cast"
+      },
+      {
+        "type": "feature",
+        "id": "warlock.hellfire_3d4_4_5th",
+        "name": "Hellfire (3d4) 4 5th"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "warlock.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "warlock.eldritch_inferno_4_6th",
+        "name": "Eldritch Inferno 4 6th"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "pact",
+    "pactSlotsByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "pactSlotLevelByLevel": {
+      "1": "1st",
+      "2": "1st",
+      "3": "2nd",
+      "4": "2nd",
+      "5": "3rd",
+      "6": "3rd",
+      "7": "4th",
+      "8": "4th",
+      "9": "5th",
+      "10": "5th",
+      "11": "6th",
+      "12": "6th"
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "spellsKnownByLevel": {
+      "1": 2,
+      "2": 4,
+      "3": 6,
+      "4": 8,
+      "5": 10,
+      "6": 12,
+      "7": 14,
+      "8": 16,
+      "9": 18,
+      "10": 20,
+      "11": 22,
+      "12": 24
+    },
+    "ability": "cha"
+  }
+}

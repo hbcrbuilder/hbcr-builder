@@ -1,0 +1,56 @@
+[
+  {
+    "id": "wildshape_badger",
+    "name": "Badger",
+    "iconKey": "wildshape_badger",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_bear",
+    "name": "Bear",
+    "iconKey": "wildshape_bear",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_cat",
+    "name": "Cat",
+    "iconKey": "wildshape_cat",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_deep_rothe",
+    "name": "Deep Rothé",
+    "iconKey": "wildshape_deep_rothe",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_dilophosaurus",
+    "name": "Dilophosaurus",
+    "iconKey": "wildshape_dilophosaurus",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_dire_raven",
+    "name": "Dire Raven",
+    "iconKey": "wildshape_dire_raven",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_dire_wolf",
+    "name": "Dire Wolf",
+    "iconKey": "wildshape_dire_wolf",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_giant_spider",
+    "name": "Giant Spider",
+    "iconKey": "wildshape_giant_spider",
+    "pool": "base"
+  },
+  {
+    "id": "wildshape_saber_tooth",
+    "name": "Saber-Tooth",
+    "iconKey": "wildshape_saber_tooth",
+    "pool": "base"
+  }
+]

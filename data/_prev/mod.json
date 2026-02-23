@@ -1,0 +1,7 @@
+{
+  "modName": "Home Brew - Comprehensive Reworks",
+  "modVersion": "0.0.0",
+  "builderVersion": "0.3.0-radial",
+  "lastUpdated": "2026-02-07",
+  "notes": "Starter repo: visuals + router stub. Update /data/*.json when the mod updates."
+}

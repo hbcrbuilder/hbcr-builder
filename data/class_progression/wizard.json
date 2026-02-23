@@ -1,0 +1,268 @@
+{
+  "classId": "wizard",
+  "displayName": "Wizard",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "wizard.arcane_recovery_charges",
+        "name": "Arcane Recovery Charges"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.arcane_channeling",
+        "name": "Arcane Channeling"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.scholarly_acumen",
+        "name": "Scholarly Acumen"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.cantrips",
+        "name": "Cantrips"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.siphon_arcana",
+        "name": "Siphon Arcana"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "wizard.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "wizard.steel_wind_storm",
+        "name": "Steel-Wind Storm"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.steel_wind_burst",
+        "name": "Steel-Wind Burst"
+      },
+      {
+        "type": "feature",
+        "id": "wizard.steel_wind_strike",
+        "name": "Steel-Wind Strike"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "wizard.extra_attack",
+        "name": "Extra Attack"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "wizard.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "wizard.winds_of_the_arcblade",
+        "name": "Winds of the Arcblade"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "wizard.steel_cast",
+        "name": "Steel Cast"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "wizard.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "wizard.a_storm_of_swords",
+        "name": "A Storm of Swords"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "known",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "2": [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        4,
+        0,
+        0,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        4,
+        2,
+        0,
+        0,
+        0
+      ],
+      "6": [
+        4,
+        4,
+        4,
+        0,
+        0,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        4,
+        1,
+        0,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        4,
+        2,
+        0,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        4,
+        2,
+        1,
+        0
+      ],
+      "10": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        0
+      ],
+      "11": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        1
+      ],
+      "12": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        2
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "spellsKnownByLevel": {
+      "1": 2,
+      "2": 4,
+      "3": 6,
+      "4": 8,
+      "5": 10,
+      "6": 12,
+      "7": 14,
+      "8": 16,
+      "9": 18,
+      "10": 20,
+      "11": 22,
+      "12": 24
+    },
+    "ability": "int"
+  }
+}

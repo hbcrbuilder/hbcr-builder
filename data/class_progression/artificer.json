@@ -1,0 +1,230 @@
+{
+  "classId": "artificer",
+  "displayName": "Artificer",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "artificer.firepower",
+        "name": "Firepower"
+      },
+      {
+        "type": "feature",
+        "id": "artificer.the_right_tool_for_the_job",
+        "name": "The Right Tool for the Job"
+      },
+      {
+        "type": "feature",
+        "id": "artificer.cantrips",
+        "name": "Cantrips"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "artificer.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "artificer.mystic_reload",
+        "name": "Mystic Reload"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "artificer.arcane_ballistics",
+        "name": "Arcane Ballistics"
+      },
+      {
+        "type": "feature",
+        "id": "artificer.extra_attack",
+        "name": "Extra Attack"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "artificer.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "artificer.ballistic_ricochet",
+        "name": "Ballistic Ricochet"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "artificer.runic_reload_module",
+        "name": "Runic Reload Module"
+      },
+      {
+        "type": "feature",
+        "id": "artificer.improved_extra_attack",
+        "name": "Improved Extra Attack"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "artificer.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "artificer.arcane_aim",
+        "name": "Arcane Aim"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "unknown",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "2": [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        4,
+        0,
+        0,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        4,
+        2,
+        0,
+        0,
+        0
+      ],
+      "6": [
+        4,
+        4,
+        4,
+        0,
+        0,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        4,
+        1,
+        0,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        4,
+        2,
+        0,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        4,
+        2,
+        1,
+        0
+      ],
+      "10": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        0
+      ],
+      "11": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        1
+      ],
+      "12": [
+        4,
+        4,
+        4,
+        2,
+        2,
+        2
+      ]
+    },
+    "ability": "int"
+  }
+}

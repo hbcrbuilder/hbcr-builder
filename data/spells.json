@@ -1,0 +1,2002 @@
+[
+  {
+    "id": "absorb-elements",
+    "name": "Absorb Elements",
+    "text": "Bonus 3 turns Grant a creature Resistance to an element of your choice for 3 turns Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "acid-cloud",
+    "name": "Acid Cloud",
+    "text": "Action (C) Permanent CON Create a 3m cloud dealing 1D6+4 Acid dmg. Prevent creatures from taking actions on failed save Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "aid",
+    "name": "Aid",
+    "text": "Action Until Long Rest 4 temporary HP for you and all nearby allies Provide +4 HP/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "animate-dead",
+    "name": "Animate Dead",
+    "text": "Bonus Until Long Rest Animate a skeleton or a zombie from a corpse Animate 1 more undead/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "arcane-gate",
+    "name": "Arcane Gate",
+    "text": "Action Until Long Rest Create two linked teleporation portals (18m range) No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "arcane-lock",
+    "name": "Arcane Lock",
+    "text": "Bonus (C) Until Long Rest Lock a door or container Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "arcane-vortex",
+    "name": "Arcane Vortex",
+    "text": "Action 3 turns STR Deal 1D12 force dmg in a very large AOE. The vortex is Difficult Terrain Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "armour-of-agathys",
+    "name": "Armour of Agathys",
+    "text": "Bonus Until Long Rest Gain 4 temporary HP and deal 4 cold damage to any creature that hits you with a melee attack Gain +4 HP and deal +4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "arms-of-hadar",
+    "name": "Arms of Hadar",
+    "text": "Action 1 turn STR Deal 1D12+4 necrotic dmg  in a 3m AOE around the caster and prevent creatures from taking reactions on failed save Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "aura-of-life",
+    "name": "Aura of Life",
+    "text": "Bonus (C) until Long Rest Downed allies within 3m of the caster regain 1HP at the start of their turn Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bane",
+    "name": "Bane",
+    "text": "Bonus (C) Until Long Rest No save Apply a -1d4 penalty to attack rolls and saving throws Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "banishment",
+    "name": "Banishment",
+    "text": "Action 1 turn No save Banish a target from existence for 1 turn without save Increase the duration by 1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barkskin",
+    "name": "Barkskin",
+    "text": "Bonus 3 rounds Grant 1 phy damage reduction Increase DR by +1/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "barrier-of-holding",
+    "name": "Barrier of Holding",
+    "text": "Action (C) Until Long Rest STR Creatures in a 3m AOE are bound and can't move on failed save No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "beacon-of-hope",
+    "name": "Beacon of Hope",
+    "text": "Bonus 3 turns Target creature regain the maximum HP when healed Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blade-barrier",
+    "name": "Blade Barrier",
+    "text": "Action (C) Until Long Rest DEX Wall of razor, 1d12 slashing dmg Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bless",
+    "name": "Bless",
+    "text": "Bonus (C) Until Long Rest Apply +1d4 to Attack rolls and Saving Throws Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blight",
+    "name": "Blight",
+    "text": "Action CON Deal 1d12+4 necrotic dmg, range 18m, undeads have disadvantage on save On Save: half damage Deal 1d12+4/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blindness",
+    "name": "Blindness",
+    "text": "Bonus 3 turns CON Blind a creature. Save at the end of each turn Select +1 creature/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blink",
+    "name": "Blink",
+    "text": "Bonus Swap place with another creature No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blood-broker",
+    "name": "Blood Broker",
+    "text": "Action Sacrifice your own life to resurrect a companion with all their hit point. Melee range Increase range by 1,5m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blur",
+    "name": "Blur",
+    "text": "Bonus 3 turns All attacks against affected target have disadvantage, 18m range. Does not affect creatures that don't rely on sight or that can see trough illusions. Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "borrowed-knowledge",
+    "name": "Borrowed Knowledge",
+    "text": "Bonus Until Long Rest Grants yourself or another creature advantage on Skill Checks. No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "burning-hands",
+    "name": "Burning Hands",
+    "text": "Action 1 turn (prone) DEX Deal 1d12+4 fire dmg in a 3m AOE cone. Affected creatures are thrown backward by 3m and forced Prone. On Save: Half damage Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "call-lightning",
+    "name": "Call Lightning",
+    "text": "Action (C) Until Long Rest DEX Deal 1d6+4 lightning dmg to all creatures in a small AOE, then do it again as a free action every round Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "calm-emotions",
+    "name": "Calm Emotions",
+    "text": "Bonus (C) Until Long Rest No save Prevents a HUMANOID from being Charmed, Confused, Dominated, Enraged, Frightened or Inebriated Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "catnap",
+    "name": "Catnap",
+    "text": "Action 3 Turn Make an ally sleep for 3 turn, then it gains a short rest. Can't target the same ally twice until long rest No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cause-fear",
+    "name": "Cause Fear",
+    "text": "Action 1 turn WIS Frighten a creature, 18m range Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "chain-lightning",
+    "name": "Chain Lightning",
+    "text": "Action DEX Deal 1d6+4 lightning dmg on target, 18m range, then swap to all other targets in range for same dmg Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "charm",
+    "name": "Charm",
+    "text": "Bonus Until Long Rest WIS Target creature can't attack you and you have advantage on Charisma when speaking with them Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "chromatic-orb",
+    "name": "Chromatic Orb",
+    "text": "Action Deal 1D12+4 dmg of an element of your choice, 18m range Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "circle-of-death",
+    "name": "Circle of Death",
+    "text": "Action CON Deal 1d6+4 necrotic damage in a very large AOE Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cloud-of-daggers",
+    "name": "Cloud of Daggers",
+    "text": "Action 3 turns No save Deal 1d12 slashing dmg in a 3m AOE Deal 1d12 dmg/level and +1 cloud/level (damage doesn't stack) X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cloudkill",
+    "name": "Cloudkill",
+    "text": "Action (C) Until Long Rest CON (partial) Deal 1d6 poison damage in an AOE around a target and Poison (no save) targets within. Also Heavily Obscure targets. On Save: half damage Deal 1d6 dmg/level and +1 cloud/level (damage stack) X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "colour-spray",
+    "name": "Colour Spray",
+    "text": "Bonus 3 turns CON Blind all targets in a 3m cone AOE Increase range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "command",
+    "name": "Command",
+    "text": "Action 1 turn WIS Command a creature to approach, drop their weapon, flee, grovel or halt Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "compelled-duel",
+    "name": "Compelled Duel",
+    "text": "Bonus 3 turns WIS Force a creature to attack only you, 18m range Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cone-of-cold",
+    "name": "Cone of Cold",
+    "text": "Action CON Deal 1d6+4 cold dmg in a 9m cone AOE On Save: Half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "confusion",
+    "name": "Confusion",
+    "text": "Action 3 turns WIS The target skip their turn. Save at the end of every round and when taking dmg Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "conjure-barrage",
+    "name": "Conjure Barrage",
+    "text": "Action Deal your weapon dmg in a 3m cone AOE Increase range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "contagion",
+    "name": "Contagion",
+    "text": "Bonus 6 turns CON Disadvantage on CON save. If 0 turn remaining, target become vulnerable to all damage permanently Decrease duration by 1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "counterspell",
+    "name": "Counterspell",
+    "text": "Reaction Same rule as vanilla counterspell (If not same level or higher spell level was used ability check 10+ spell level). Dangerous and Fatal foes cannot be countered Counter higher level spells X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "create-or-destroy-water",
+    "name": "Create or Destroy Water",
+    "text": "Bonus Create some water or destroy a water based surface. Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "crown-of-madness",
+    "name": "Crown of Madness",
+    "text": "Action 3 turns WIS The target humanoid attack the closest target, friend or foe. Save at the end of each turn Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "crusader-s-mantle",
+    "name": "Crusader's Mantle",
+    "text": "Bonus Until Long Rest deal +1 radiant OR necrotic dmg Deal +1 radiant dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "cure-wounds",
+    "name": "Cure Wounds",
+    "text": "Action Heal 1d12+8, melee range Heal 1d12+8/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "darkness",
+    "name": "Darkness",
+    "text": "Bonus (C) Permanent Create a zone of darkness, 3m AOE Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "darkvision",
+    "name": "Darkvision",
+    "text": "Bonus Until Long Rest Grant Darkvision to a creature Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "daylight",
+    "name": "Daylight",
+    "text": "Bonus Until Long Rest Makes 18m AOE light which dispel darkness magical or not. No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "death-ward",
+    "name": "Death Ward",
+    "text": "Bonus 3 turns The next time target is reduced to 0 hit point, they remain conscious with 1 HP Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "destructive-wave",
+    "name": "Destructive Wave",
+    "text": "Action 1 turn CON Deal 1d12+4 thunder dmg in a 3m AOE around you and knock prone on failed save. On Save: half damage Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "detect-thoughts",
+    "name": "Detect Thoughts",
+    "text": "Bonus Until Long Rest Can Read Thoughts No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dimension-door",
+    "name": "Dimension Door",
+    "text": "Action Teleport yourself and an ally within 3m to a place you can see. Ally cannot be bigger than medium size. Increase range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "disintegrate",
+    "name": "Disintegrate",
+    "text": "Action DEX Deal 1d12+12 force damage, range 18m. On save, you take half of the dmg Deal 1d12+12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dispel-evil-and-good",
+    "name": "Dispel Evil and Good",
+    "text": "Action (C) Until Long Rest Selected target is protected and aberrations, undeads, celestials, elementals, feys and fiends have disadvantage against them. Selected creature can also dispel Charm, Frighten and Possess on allies Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dispel-magic",
+    "name": "Dispel Magic",
+    "text": "Bonus 3 turns No save Silence everyone in a 3m AOE Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dissonant-whispers",
+    "name": "Dissonant Whispers",
+    "text": "Action 1 turn WIS Deal 1d12+4 psychic and frighten the target on failed save Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "divine-favor",
+    "name": "Divine Favor",
+    "text": "Bonus 3 turns Target creature deal +1d4 radiant dmg with every weapon attacks Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "divine-strike",
+    "name": "Divine Strike",
+    "text": "Action DEX Deal 1d6+4 radiant dmg in a large AOE and inflicts 3 stacks of Radiating Orbs on targets Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dominate",
+    "name": "Dominate",
+    "text": "Action (C) Until Long Rest WIS Dominate a creature. Creature break free the first time they take dmg from you or your allies. No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "earth-tremor",
+    "name": "Earth Tremor",
+    "text": "Action Permanent DEX Deal 1d12+4 bludgeoning dmg in a 3m AOE around you, knock targets prone on failed save, and create difficult terrain On Save: half damage Deal 1d12+4 dmg/lvl X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "elemental-weapon",
+    "name": "Elemental Weapon",
+    "text": "Bonus Until Long Rest Target deals +1d4 dmg of an element of your choice with weapon attacks X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "enhance-ability",
+    "name": "Enhance Ability",
+    "text": "Bonus (C) Permanent advantage on saving throws of chosen ability and +2 to that stats Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "enhanced-leap",
+    "name": "Enhanced Leap",
+    "text": "Bonus 3 turns Double the jump distance of all targets in a 3m AOE. While active Jimping will not cost bonus action. Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "enlarge-reduce",
+    "name": "Enlarge/Reduce",
+    "text": "Bonus 3 turns CON Make a target bigger or smaller (impact dmg and saving throws) Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ensnaring-strike",
+    "name": "Ensnaring Strike",
+    "text": "Action 3 turns STR Attack a target and Ensnare them (1d6 piercing dmg/round and can't move, save at the end of each turn) on failed save Ensnared deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ensnaring-trap",
+    "name": "Ensnaring Trap",
+    "text": "Bonus Until Long Rest DEX Place a trap. Restrain targets on failed save. Create +1 trap/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "entangle",
+    "name": "Entangle",
+    "text": "Action (C) Permanent STR Create a 3m AOE surface, entangle creatures inside on failed save Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "enthrall",
+    "name": "Enthrall",
+    "text": "Bonus Until Long Rest WIS Target ignore peripheral vision on failed save. Can be cast while hidden Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "erupting-earth",
+    "name": "Erupting Earth",
+    "text": "Action Permanent CON Deal 1d6+4 bludgeoning dmg in a 3m AOE and create difficult terrain Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "evard-s-black-tentacles",
+    "name": "Evard's Black Tentacles",
+    "text": "Action (C) Permanent STR Create a 2m AOE surface of difficult terrain, Restraining creatures inside on failed save Increase AOE by 2m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "expeditious-retreat",
+    "name": "Expeditious Retreat",
+    "text": "Bonus 3 turn Target gain the effect of Dash and Disengage for 3 turns Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "eyebite",
+    "name": "Eyebite",
+    "text": "Bonus 1 turn WIS Target sleep for 1 round on failed save, 18m range Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "faerie-fire",
+    "name": "Faerie Fire",
+    "text": "Action 3 turns DEX All creatures inside a 2m AOE are revealed, you have advantage against them (on failed save) Increase AOE by 2m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "false-life",
+    "name": "False Life",
+    "text": "Bonus Until Long Rest Increase your own max HP by 4 (not temporary HP!) Increase HP by 4/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fear",
+    "name": "Fear",
+    "text": "Action 1 turn WIS Creatures in a 3m AOE cone flee in terror on failed save Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "featherfall",
+    "name": "Featherfall",
+    "text": "Bonus (C) Until Long Rest Grant all allies in a 3m radius immunity to fall dmg. Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "feign-death",
+    "name": "Feign Death",
+    "text": "Bonus (C) Until Long Rest WIS Target allies in 3m AOE are put to sleep but become resistant to all damage Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "feline-bombardment",
+    "name": "Feline Bombardment",
+    "text": "Bonus Until Long Rest When you land a killing blow, summon a cat. The cat explode for 1d12 fire dmg in a 3m AOE when killed. It takes dmg each round. Increase dmg by 1d12/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "find-familiar",
+    "name": "Find Familiar",
+    "text": "Bonus Until Long Rest Summon 2 familiars. They all have small effects on attacks (Blind, ...) Create 2 more familiars/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fire-shield",
+    "name": "Fire Shield",
+    "text": "Bonus 3 turns You become resistant to Cold dmg and deal 1d12 fire dmg when someone hits you in melee Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "text": "Action 3 turns DEX Deal 1d6+4 fire dmg in a large AOE and burn targets for 3 turns on failed save On Save: Half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "flame-arrows",
+    "name": "Flame Arrows",
+    "text": "Bonus Until Long Rest Create 6 flaming arrows. They deal +1d4 fire dmg per ranged attack. On short rest restoration. Create +6 arrows/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "flaming-armament",
+    "name": "Flaming Armament",
+    "text": "Bonus 3 turns Target weapon deals +1d4 fire damage on hit Deal +1d4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "flaming-sphere",
+    "name": "Flaming Sphere",
+    "text": "Bonus (C) Until Long Rest DEX Create a flaming sphere doing 1d6 fire dmg/round On Save: half damage Deal 1d6 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "flesh-to-stone",
+    "name": "Flesh to Stone",
+    "text": "Bonus 6 turns CON At the end of each turn, target make a save. After 6 turns, become petrified permanently. Your target has disadvantage on DEX save. Reduce duration by 1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fog-cloud",
+    "name": "Fog Cloud",
+    "text": "Bonus (C) Permanent Create a fog cloud, which blind and obscure creatures inside. 2m AOE. Increase AOE by 2m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "freedom-of-movement",
+    "name": "Freedom of Movement",
+    "text": "Bonus 3 turns Snap an ally our of any stun. Target ignore difficult terrain and can't be paralysed or restrained Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "frost-fingers",
+    "name": "Frost Fingers",
+    "text": "Action 3 turns No save Deal 1d12+8 cold dmg (melee range) and if target is Wet, apply 3 stacks of Frostbite and roll an additional dice Deal 1d12+8 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "frostflame-armaments",
+    "name": "Frostflame Armaments",
+    "text": "Bonus 3 turns When you deal a killing blow with a weapon, deal 1d6 fire dmg and 1d6 cold dmg to Enemies in a 3m AOE Deal 1d6 cold and 1d6 fire dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "globe-of-resistance",
+    "name": "Globe of Resistance",
+    "text": "Action 1 turn Create a barrier. Everyone inside is Resistant to all damage Increase duration by +1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "goodberry",
+    "name": "Goodberry",
+    "text": "Bonus Until Long Rest Create 4 berries in a target inventory. They heal for 1d12*prof each. Disappear after long rest Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "grant-flight",
+    "name": "Grant Flight",
+    "text": "Bonus 3 Turn Target creature can fly Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "grasping-vine",
+    "name": "Grasping Vine",
+    "text": "Bonus 3 turns STR Summon a vine. It can dragg creatures toward itself Summon +1 vine/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "grease",
+    "name": "Grease",
+    "text": "Bonus Permanent DEX (partial) Create a 2m AOE surface slowing creatures (no save) and knocking them prone on failed save Increase AOE by 2m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "great-cleanse",
+    "name": "Great Cleanse",
+    "text": "Bonus Cure Charm, Petrification, Polymorph or Curse (18m range) on target Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "greater-invisibility",
+    "name": "Greater Invisibility",
+    "text": "Bonus 1 turn/level Target creature is invisible and can act without breaking it. When doing most action, must pass increasingly difficult stealth check or spell will end Increase duration by 1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "guardian-of-faith",
+    "name": "Guardian of Faith",
+    "text": "Action Until Long Rest Create an immobile guardian with 50 HP. Every time it attacks, it loses the same amount of HP. Increase Guardian attack range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "guiding-bolt",
+    "name": "Guiding Bolt",
+    "text": "Action Deal 1d12+4 radiant damage on target , 18m range. Deal double damage to fey, fiends and undeads Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "guiding-ceremony",
+    "name": "Guiding Ceremony",
+    "text": "Bonus (C) Until Long Rest All allies in a 9m AOE have +1d4 to all ability checks Increase dice size X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "gust-of-wind",
+    "name": "Gust of Wind",
+    "text": "Bonus 3 turn STR Clear all clouds and push back all targets around you 3m, inflicting Off-Balance, on failed save Increase pushback by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hail-of-thorns",
+    "name": "Hail of Thorns",
+    "text": "Action DEX Deal weapon dmg +1d6+4 piercing dmg to all creatures within 3m of the target Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "harm",
+    "name": "Harm",
+    "text": "Action CON 1d12 +4 dmg 18m range On Save: half damage. Heal Undead creatures Extra ray/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "haste",
+    "name": "Haste",
+    "text": "Bonus 3 turn Target creature become hastened. Hastened actions generate Exhaustion. Exhaustion is also generated by damage and passively at start of each turn. All attack rolls are rolled advantage againts Exhausted target. At ten stack of exhaustion target immediately fall unconscious. Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "healing-glyph",
+    "name": "Healing Glyph",
+    "text": "Bonus (C) Until Long Rest Heal 1d12+4 on target when concentration is broken Heal 1d12+4/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "healing-spirit",
+    "name": "Healing Spirit",
+    "text": "Bonus (C) Until Long Rest Summon a familiar. It can heal an ally for 1d12 once/turn Heal 1d12/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "healing-word",
+    "name": "Healing Word",
+    "text": "Bonus Heal 1d6+4, 18m range Heal 1d6+4/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "heat-metal",
+    "name": "Heat Metal",
+    "text": "Action Deal 1d6+4 fire dmg on target, 18m range. Deal +1d6+4 dmg for each piece of metal equipment Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hellish-rebuke",
+    "name": "Hellish Rebuke",
+    "text": "Reaction DEX Deal 1D12+4 fire dmg, reaction on attack Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "heroes-feast",
+    "name": "Heroes Feast",
+    "text": "Bonus Until Long Rest Summon some camp supplies No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "heroism",
+    "name": "Heroism",
+    "text": "Action 3 turns Target creature gain 4 temporary HP each turn and can't be Frightened Gain +4 HP/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hex",
+    "name": "Hex",
+    "text": "Action 3 turns No save Target creature has Disadvantage on Saving Throws for an ability of your choosing Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hold-creature",
+    "name": "Hold Creature",
+    "text": "Action 1 turn WIS Target creature can't act on failed save. Attacks made against them within 3m will always be critical hit. Target breaks free after 1 attack. Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hunger-of-hadar",
+    "name": "Hunger of Hadar",
+    "text": "Action (C) Until Long Rest DEX Create a large AOE blinding creatures inside. They take 1d6 cold damage on failed save when they start their turn inside, they take 1d6 acid damage on failed save when ending their turn inside Deal 1d6 cold and 1d6 acid/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hunter-s-mark",
+    "name": "Hunter's Mark",
+    "text": "Bonus 3 turns No save When damaging the target with your weapon, roll your damage dice with advantage Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "hypnotic-pattern",
+    "name": "Hypnotic Pattern",
+    "text": "Action (C) Until Long Rest WIS Target creature can't move or notice your presence on failed save Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ice-knife",
+    "name": "Ice Knife",
+    "text": "Action DEX Deal 1d12+4 cold damage.On hit another projectile will spawn from target which seeks out another enemy within 9m. Splinter will do 5-10 cold damage. On Save: half damage Deal 1d12+4 dmg(splinter 1d6+4)/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ice-storm",
+    "name": "Ice Storm",
+    "text": "Action Permanent DEX Deal 1d6+4 cold damage in a 3m AOE. Create an icy surface and apply 3 turns of Frigid. On Save: half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "inflict-wounds",
+    "name": "Inflict Wounds",
+    "text": "Action 1 turn No save Deal 1d12+4 poison damage on hit (melee range) and Cripple target (no save) Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "insect-plague",
+    "name": "Insect Plague",
+    "text": "Action (C) CON Locusts attack everyone within 18m, Bleed and Gaping Wound on a failed save No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "internal-fortress",
+    "name": "Internal Fortress",
+    "text": "Action 3 turns Reduce all damage a creature take by its proficiency bonus Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "invisibility",
+    "name": "Invisibility",
+    "text": "Bonus (C) Until Long Rest Target become Invisible Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "kinetic-permeation",
+    "name": "Kinetic Permeation",
+    "text": "Bonus Until Long Rest All creatures in a 3m AOE become Permeable (can be moved through) Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "knock",
+    "name": "Knock",
+    "text": "Bonus Unlock an object Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "latent-restoration",
+    "name": "Latent Restoration",
+    "text": "Bonus Cure a creature from any disease, poison, paralysis, intoxication or blindness Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "lightning-arrow",
+    "name": "Lightning Arrow",
+    "text": "Action DEX Deal 1d6+4 lightning dmg in a small AOE, 18m range. Gain a stack of Lightning Charge for every target you damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "lightning-bolt",
+    "name": "Lightning Bolt",
+    "text": "Action DEX Deal 1d6+4 lightning damage in a huge line On Save: half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "longstrider",
+    "name": "Longstrider",
+    "text": "Bonus (C) Until Long Rest All allies in a 3m AOE have +4,5m Movement speed Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mage-armour",
+    "name": "Mage Armour",
+    "text": "Bonus (C) Until Long Rest Target gain a flat AC bonus equal to 1 per level. Select +1 target/level and +1 AC/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "magic-missile",
+    "name": "Magic Missile",
+    "text": "Action Shoot 3 darts, each dealing 1d4 force damage. Auto hit. Each dart deals + 1d4 force damage X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "magic-weapon",
+    "name": "Magic Weapon",
+    "text": "Bonus 3 turns Target weapon receive +2 dmg and attack rolls Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mass-cure-wounds",
+    "name": "Mass Cure Wounds",
+    "text": "Action Heal 1d12+4 in a 3m AOE around you Increase AOE by 3m/level and heal by 1d12/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mass-healing-word",
+    "name": "Mass Healing Word",
+    "text": "Bonus Heal 1d6+4 in a 9m AOE around you Increase AOE by 3m and heal by 1d6/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "maximilian-s-earthen-grasp",
+    "name": "Maximilian's Earthen Grasp",
+    "text": "Action 3 turns STR Deal 1d12+4 bludgeoning dmg and Restrain target on save On Save: half damage Deal 1d12+4/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "melf-s-acid-arrow",
+    "name": "Melf's Acid Arrow",
+    "text": "Action 3 turns Deal 1d12+4 acid dmg on hit, and 1d12+4 acid dmg 3 turns later Deal +1d12+4 dmg/level (both) X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "melf-s-minute-meterors",
+    "name": "Melf's Minute Meterors",
+    "text": "Bonus Until Long Rest Dex Summon 4 meteors. You can throw them for 1d12+4 fire dmg in a small AOE (1.5m) On short rest meteors are restored back. Summon +4 meteor/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mind-spike",
+    "name": "Mind Spike",
+    "text": "Action (C) Until Long Rest INT Deal 1d12+4 psychic dmg and lower intelligence by 1 on failed save. Stack and kill targets upon reaching 0 Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mirror-image",
+    "name": "Mirror Image",
+    "text": "Action 3 turns Increase AC by 6. Each time you evade a hit, decrease AC by 2. No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "misty-step",
+    "name": "Misty Step",
+    "text": "Bonus Teleport 18m No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "moonbeam",
+    "name": "Moonbeam",
+    "text": "Action 3 turns CON Deal 1D12 radiant damage to any creature in a 3m AOE. Can move the AOE each turn with bonus action Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "nathair-s-mischief",
+    "name": "Nathair's Mischief",
+    "text": "Bonus 3 turns No save Target experience a Wild Magic effect at the start of each turn Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "otiluke-freezing-sphere",
+    "name": "Otiluke Freezing Sphere",
+    "text": "Action Permanent Create a 6m surface of ice and deals 1d6+4 ice damage. Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "otiluke-resilient-sphere",
+    "name": "Otiluke Resilient Sphere",
+    "text": "Action (C) Until Long Rest DEX Enclose a target in a sphere, make it invulnerable but unable to deal agressive actions. Save each round. Reduce movement speed by half. 3m range. Target cannot be huge size. Increase range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "otto-s-irresistible-dance",
+    "name": "Otto's Irresistible Dance",
+    "text": "Action 3 turns WIS Target can't act and attackers have Advantage against them. Spell will transfer to the attacker when target takes damage Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "pass-without-trace",
+    "name": "Pass Without Trace",
+    "text": "Bonus Until Long Rest Target get a +10 bonus to Stealth checks Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "phantasmal-force",
+    "name": "Phantasmal Force",
+    "text": "Action (C) Until Long Rest INT Deal 1d12 dmg/round each round on failed save. Damage changes to last type target suffered. Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "phantasmal-killer",
+    "name": "Phantasmal Killer",
+    "text": "Action 3 turns WIS Deal 1d6 psychic dmg each turn, target movement is halved. Save at the end of each round Deal 1d6 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "plant-growth",
+    "name": "Plant Growth",
+    "text": "Action Permanent Create a 3m AOE surface of very difficult terrain (Movement speed quartered) Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "polymorph",
+    "name": "Polymorph",
+    "text": "Action 3 turns WIS Transform a creature into a harmless sheep. If health drop to 0, it transforms back Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "power-over-evil-and-good",
+    "name": "Power over evil and good",
+    "text": "Bonus (C) Until Long Rest When attacking Undeads, Abberations, Celestials, Elemental, Feys, Fiends you roll both damage and attack roll with advantage. Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "prayer-of-healing",
+    "name": "Prayer of Healing",
+    "text": "Action Outside of combat, heal all allies for 12 9m AOE Heal for 12/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "psionic-antagonism",
+    "name": "Psionic Antagonism",
+    "text": "Action 1 turn WIS Deal 1d6+4 psychic dmg in a large AOE and prevents reaction on failed save On Save: half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ray-of-enfeeblement",
+    "name": "Ray of Enfeeblement",
+    "text": "Action 3 turns No save On hit, target creature deal half damage with STR weapon attacks. Cannot benefit from Global Str Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ray-of-sickness",
+    "name": "Ray of Sickness",
+    "text": "Action 1 turn CON Deal 1d12+4 poison dmg, 18m range, and poison target on failed save additional ray/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "remediation",
+    "name": "Remediation",
+    "text": "Bonus Remove all Curses and Hexes on target Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "revivify",
+    "name": "Revivify",
+    "text": "Action Revive a dead companion with 1 HP, 3m range Increase range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "rime-s-binding-ice",
+    "name": "Rime's Binding Ice",
+    "text": "Action 1 turn CON Deal 1d6+4 cold damage in a large area, and reduce movement speed by half on failed save Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sanctuary",
+    "name": "Sanctuary",
+    "text": "Bonus 3 turns Target can't be targeted. End if target harm another creature or attack Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "scorching-ray",
+    "name": "Scorching Ray",
+    "text": "Action Shoot 1 rays,  dealing 1d12+4 fire damage on hit. Gain 3 stack of Heat for every target you hit Shoot 1 more rays/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "see-invisibility",
+    "name": "See Invisibility",
+    "text": "Bonus Until Long Rest DEX Reveal invisible tragets around you if they fail a DEX save Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "shadow-blade",
+    "name": "Shadow Blade",
+    "text": "Bonus Until Long Rest Illusion Blade 1d8 Psychic damage. In Heavily Obscured area, deal max damage. All attacks roll with advantage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "shatter",
+    "name": "Shatter",
+    "text": "Action 1 turn CON Deal 1d6+4 thunder damage in a large AOE around you, and silence targets on failed save Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "text": "Reaction 1 turn Increase AC by 4 for this turn and become immune to Force dmg No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "shield-of-faith",
+    "name": "Shield of Faith",
+    "text": "Bonus 3 turns Increase target's AC by 2 Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "silence",
+    "name": "Silence",
+    "text": "Action (C) Until Long Rest Create an area silencing everyone inside, and making them immune to Thunder dmg Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sleepveil",
+    "name": "Sleepveil",
+    "text": "Bonus 1 turn WIS Every creature in a 3m AOE around you are put to sleep on failed save Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sleet-storm",
+    "name": "Sleet Storm",
+    "text": "Bonus (C) Until Long Rest CON Disrupt concentration on failed save in huge area. Douses fires No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "slow",
+    "name": "Slow",
+    "text": "Action 3 turns WIS Target creature have half movement speed, -2 AC, and can't use reactions on failed save Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "snilloc-s-snow-storm",
+    "name": "Snilloc's Snow Storm",
+    "text": "Action CON Deal 1d12+4 cold damage in a 3m area around you. If target is Wet, apply 3 stacks of Frostbite. On Save: half damage Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "speak-with-animals",
+    "name": "Speak with Animals",
+    "text": "Bonus Until Long Rest Speak with animals No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "speak-with-dead",
+    "name": "Speak with Dead",
+    "text": "Bonus Until Long Rest Speak with dead No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spew-acid",
+    "name": "Spew Acid",
+    "text": "Action 1 turn DEX Deal 1d12+4 acid damage in a 3m cone AOE in front of you, and afflicts targets with Acid  (-2 AC) on failed save Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spike-growth",
+    "name": "Spike Growth",
+    "text": "Action (C) Permanent No save Create a 3m AOE surface of spikes. Everyone passing by takes 1d12 piercing dmg by 1,5m it moves Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spirit-guardians",
+    "name": "Spirit Guardians",
+    "text": "Action (C) Until Long Rest WIS Deal 1d12 radiant OR necrotic damage to every enemies around you when you end your turn and they are inside the area Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spiritual-shroud",
+    "name": "Spiritual Shroud",
+    "text": "Bonus 3 turns Deal 1d12 cold damage to anyone hitting you (melee or ranged) Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spiritual-weapon",
+    "name": "Spiritual Weapon",
+    "text": "Bonus (C) Until Long Rest Summon a weapon dealing 1d12 force damage on hit Summon +1 weapon/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "stoneskin",
+    "name": "Stoneskin",
+    "text": "Action 3 turns Target becomes Resistant to all Physical damage Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sunbeam",
+    "name": "Sunbeam",
+    "text": "Action 1 turn CON Deal 1d6+4 radiant damage in a line and blind all targets on save fail. Can cast the spell again (weakened) without expending a spell slot (free action) On Save: half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "tasha-s-caustic-brew",
+    "name": "Tasha's Caustic Brew",
+    "text": "Action DEX Deal 1d6+4 Acid damage in a large line and apply acid for 3 turns. On Save: half damage Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "tasha-s-hideous-laughter",
+    "name": "Tasha's Hideous Laughter",
+    "text": "Action 1 turn/level WIS Target creature is prone and can't act. Save at the end of each turn. Laughter targets now attempt a save when taking damage. Increase duration by 1 turn/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "telekinesis",
+    "name": "Telekinesis",
+    "text": "Bonus STR Throw a creature or object up to 18m. Range to target is 3m. Increase targetting range by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "thunder-step",
+    "name": "Thunder Step",
+    "text": "Action CON Teleport up to 18m and deal 1d6+4 Thunder damage in a small AOE when you appears Deal 1d6+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "thunderwave",
+    "name": "Thunderwave",
+    "text": "Action 3 turns CON Deal 1d12+4 in a 3m cone AOE, Inflicts Reverberate and push back targets 9m on failed save. On Save half damage Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "transposition",
+    "name": "Transposition",
+    "text": "Bonus CHA Forcibly teleport another creature to an area you can see on failed save No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "unseen-servant",
+    "name": "Unseen Servant",
+    "text": "Bonus Until Long Rest Summon an invisible servant. Can interact with the environment No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "vampiric-touch",
+    "name": "Vampiric Touch",
+    "text": "Action On melee hit, deal 1d12+4 necrotic damage and regain half as many HP Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "vitriolic-touch",
+    "name": "Vitriolic Touch",
+    "text": "Action 3 turns No save On melee hit, deal 1d12 +4 acid damage and lower AC by 2 Deal 1d12+4 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wall-of-fire",
+    "name": "Wall of Fire",
+    "text": "Action (C) Until Long Rest DEX Deal 1d12 fire damage inside the wall On Save: half damage Deal 1d12 dmg/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wall-of-ice",
+    "name": "Wall of Ice",
+    "text": "Action (C) 1 turn (frozen) No save 9m AOE Wall of ice which Freezes creatures within X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wall-of-stone",
+    "name": "Wall of Stone",
+    "text": "Action (C) Until Long Rest Raise a wall of solid stone, 9m AOE X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wall-of-thorns",
+    "name": "Wall of Thorns",
+    "text": "Action (C) Until Long Rest No save Raise a 9m wall of thorns. Creatures passing by the wall are Off-Balanced and Movement Speed is quartered X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ward-of-vitality",
+    "name": "Ward of Vitality",
+    "text": "Bonus 3 turns Target gains Advantage on all Saving Throws Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warding-bond",
+    "name": "Warding Bond",
+    "text": "Bonus (C) Until Long Rest Target gain Resistance to ALL damage. When the ally takes damage, you take the same amount Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warding-winds",
+    "name": "Warding Winds",
+    "text": "Action (C) Until Long Rest Clear clouds in 3m radius, create difficult terrain, ranged attacks against creatures inside are rolled with Disadvantage No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "water-walk",
+    "name": "Water walk",
+    "text": "Bonus (C) Until Long Rest Every ally in a 3m AOE around you ignore surfaces Increase area by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "web",
+    "name": "Web",
+    "text": "Bonus (C) 1Turn (enweb) DEX Create a 3m AOE surface, enwebs targets on save Increase AOE by 3m/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wind-walk",
+    "name": "Wind Walk",
+    "text": "Action Until Long Rest Transform yourself and nearby allies in mist. Become Resistant to non-magical damage, become tiny in size, can't act. ADV on Con,Dex and Str saves Increase AOE by 3m/level X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "witch-bolt",
+    "name": "Witch Bolt",
+    "text": "Action Deal 1d12+4 lightning damage on hit, and deal 1d12+4 lightning damage every subsequent turn by activating the tether Select +1 target/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "wither-and-bloom",
+    "name": "Wither and Bloom",
+    "text": "Action CON Deal 1d12 poison damage on enemies in a large AOE, and heals allies in the AOE for 1D12 Increase healing and damage by 1d12/level X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "zephyr-movement",
+    "name": "Zephyr Movement",
+    "text": "Bonus 3 turns You ignore Opportunity attacks. When you deal damage to another creature, you swap places with your target No upcasting X X",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  }
+]

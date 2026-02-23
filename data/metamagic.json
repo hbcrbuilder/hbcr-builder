@@ -1,0 +1,124 @@
+{
+  "metamagic": [
+    {
+      "id": "absorbing_spell",
+      "name": "Absorbing Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip grants Resistance to Elemental damage for 3 turns."
+    },
+    {
+      "id": "bloodied_spell",
+      "name": "Bloodied Spell",
+      "cost": 2,
+      "desc": "Damaging Spell/Cantrip inflicts Bleeding for 3 turns."
+    },
+    {
+      "id": "careful_spell",
+      "name": "Careful Spell",
+      "cost": 1,
+      "desc": "Allies automatically succeed Saving Throws against your Spell/Cantrip; AoE spells don't affect your allies."
+    },
+    {
+      "id": "defensive_spell",
+      "name": "Defensive Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip grants Resistance to Physical damage for 3 turns."
+    },
+    {
+      "id": "distance_spell",
+      "name": "Distance Spell",
+      "cost": 1,
+      "desc": "Increase range of targeted Spell/Cantrip by 50%, or increase melee Spell/Cantrip range to 9m/30ft."
+    },
+    {
+      "id": "dreadful_spell",
+      "name": "Dreadful Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip inflicts Terrified for 1 turn."
+    },
+    {
+      "id": "empowered_spell",
+      "name": "Empowered Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip rolls damage with Advantage."
+    },
+    {
+      "id": "extended_spell",
+      "name": "Extended Spell",
+      "cost": 2,
+      "desc": "Double duration of conditions, summons, and surfaces created by Spell/Cantrip."
+    },
+    {
+      "id": "favored_spell",
+      "name": "Favored Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip gains a +10 bonus to the Attack Roll."
+    },
+    {
+      "id": "heightened_spell",
+      "name": "Heightened Spell",
+      "cost": 2,
+      "desc": "Targets of Spell/Cantrip roll Saving Throws with Disadvantage."
+    },
+    {
+      "id": "maximized_spell",
+      "name": "Maximized Spell",
+      "cost": 2,
+      "desc": "Cantrip deals maximum amount of damage possible."
+    },
+    {
+      "id": "piercing_spell",
+      "name": "Piercing Spell",
+      "cost": 2,
+      "desc": "Damage-dealing Spell/Cantrip ignores all Resistances."
+    },
+    {
+      "id": "quickened_spell",
+      "name": "Quickened Spell",
+      "cost": 2,
+      "desc": "Spell/Cantrip that costs an Action now costs a Bonus Action."
+    },
+    {
+      "id": "regenerative_spell",
+      "name": "Regenerative Spell",
+      "cost": 1,
+      "desc": "Damage-dealing Spell/Cantrip heals you for half damage inflicted."
+    },
+    {
+      "id": "restorative_spell",
+      "name": "Restorative Spell",
+      "cost": 1,
+      "desc": "Single target Spell/Cantrip also provides Latent Restoration."
+    },
+    {
+      "id": "seeking_spell",
+      "name": "Seeking Spell",
+      "cost": 1,
+      "desc": "Spell/Cantrip rolls Attack Roll with Advantage."
+    },
+    {
+      "id": "subtle_spell",
+      "name": "Subtle Spell",
+      "cost": 1,
+      "desc": "Spell/Cantrip may be cast while Silenced."
+    },
+    {
+      "id": "tempestuous_spell",
+      "name": "Tempestuous Spell",
+      "cost": 2,
+      "desc": "Spell/Cantrip pushes targets back 9m/30ft and inflicts Prone on failed Strength Save."
+    },
+    {
+      "id": "tripled_spell",
+      "name": "Tripled Spell",
+      "cost": 3,
+      "desc": "Single target Spell/Cantrip now targets 3 creatures."
+    },
+    {
+      "id": "twinned_spell",
+      "name": "Twinned Spell",
+      "cost": 2,
+      "desc": "Single target Spell/Cantrip now targets 2 creatures."
+    }
+  ]
+}

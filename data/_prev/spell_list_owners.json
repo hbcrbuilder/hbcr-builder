@@ -1,0 +1,82 @@
+{
+  "owners": [
+    {
+      "ownerType": "class",
+      "ownerId": "bard",
+      "spellListId": 0,
+      "notes": "All spells"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "cleric",
+      "spellListId": 1,
+      "notes": "Cleric uses List 1"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "druid",
+      "spellListId": 2,
+      "notes": "Druid uses List 2"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "paladin",
+      "spellListId": 1,
+      "notes": "Paladin uses List 1"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "ranger",
+      "spellListId": 2,
+      "notes": "Ranger uses List 2"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "sorcerer",
+      "spellListId": 3,
+      "notes": "Sorcerer uses List 3"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "warlock",
+      "spellListId": 4,
+      "notes": "Warlock uses List 4"
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "wizard",
+      "spellListId": 5,
+      "notes": "Wizard uses List 5"
+    },
+    {
+      "ownerType": "subclass",
+      "ownerId": "artificer_arcanist",
+      "spellListId": 0,
+      "notes": "All spells"
+    },
+    {
+      "ownerType": "subclass",
+      "ownerId": "barbarian_wild_soul",
+      "spellListId": 3,
+      "notes": "Wild Soul uses List 3"
+    },
+    {
+      "ownerType": "subclass",
+      "ownerId": "fighter_eldritch_knight",
+      "spellListId": 4,
+      "notes": "Eldritch Knight uses List 4"
+    },
+    {
+      "ownerType": "subclass",
+      "ownerId": "monk_way_of_the_arcane",
+      "spellListId": 0,
+      "notes": "All spells"
+    },
+    {
+      "ownerType": "subclass",
+      "ownerId": "rogue_arcane_trickster",
+      "spellListId": 5,
+      "notes": "Arcane Trickster uses List 5"
+    }
+  ]
+}

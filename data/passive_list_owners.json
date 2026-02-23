@@ -1,0 +1,82 @@
+{
+  "owners": [
+    {
+      "ownerType": "class",
+      "ownerId": "artificer",
+      "passiveListId": "artificer_arcane_infusions",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "barbarian",
+      "passiveListId": "barbarian_tempered_furies",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "bard",
+      "passiveListId": "bard_rhythmic_empowerments",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "cleric",
+      "passiveListId": "cleric_holy_divinations",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "druid",
+      "passiveListId": "druid_druidic_roots",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "fighter",
+      "passiveListId": "fighter_honed_techniques",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "monk",
+      "passiveListId": "monk_ki_masteries",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "paladin",
+      "passiveListId": "paladin_refined_adjudications",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "ranger",
+      "passiveListId": "ranger_frontier_accolades",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "rogue",
+      "passiveListId": "rogue_cunning_subversions",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "sorcerer",
+      "passiveListId": "sorcerer_sorcerous_sundries",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "warlock",
+      "passiveListId": "warlock_eldritch_boons",
+      "notes": ""
+    },
+    {
+      "ownerType": "class",
+      "ownerId": "wizard",
+      "passiveListId": "wizard_arcane_threads",
+      "notes": ""
+    }
+  ]
+}

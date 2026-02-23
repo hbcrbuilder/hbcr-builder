@@ -1,0 +1,220 @@
+{
+  "feats": [
+    {
+      "id": "ability-improvement",
+      "name": "Ability Improvement",
+      "description": "Select two Abilities. These abilities increase by an amount equal to your Proficiency Bonus."
+    },
+    {
+      "id": "accord-of-the-arcane",
+      "name": "Accord Of The Arcane",
+      "description": "Learn two Cantrips of your choice. Additionally, Cantrips which cost an Action may be cast as a Bonus Action instead. This may be toggled at any time."
+    },
+    {
+      "id": "alchemist",
+      "name": "Alchemist",
+      "description": "Healing potions you consume always restore the maximum amount of Hit Points possible. Additionally, thrown grenades will trigger an additional explosion, dealing damage to all creatures nearby your original target. Furthermore, upon applying a coating to your weapon, it will persist until your next Long Rest."
+    },
+    {
+      "id": "alert",
+      "name": "Alert",
+      "description": "While starting your turn Threatened, you Dash and Disengage. Gain a +8 bonus to Initiative and you cannot be Surprised."
+    },
+    {
+      "id": "anchored-focus",
+      "name": "Anchored Focus",
+      "description": "For the first 3 turns of any combat encounter, you are unable to lose your Concentration on spells you have cast. Kills and Critical Hits will reset the duration of your focus if active."
+    },
+    {
+      "id": "arcane-echoes",
+      "name": "Arcane Echoes",
+      "description": "Once per turn, you recover a level one spell slot."
+    },
+    {
+      "id": "athleticism",
+      "name": "Athleticism",
+      "description": "You gain an additional Bonus Action. Your Jump distance is doubled and no longer requires Movement Speed."
+    },
+    {
+      "id": "blessing-of-the-moon",
+      "name": "Blessing Of The Moon",
+      "description": "Gain Blessing of Moonfire (Cantrip, bonus action, deal 1d12 radiant damage to any nearby foe), Lunar Flare (Action, Ranged cantrip, scaling 1d12 radiant damage in a 3m radius on impact + inflicts Holy Flame : 1d4 radiant damage for 3 turns) and Lunar Strike (Action, Melee cantrip, weapon damage + scaling 1d12 radiant damage + Inflicts Holy Flame). In addition, dealing damage to an enemy restores 1d4 heal points to all nearby allies."
+    },
+    {
+      "id": "charger",
+      "name": "Charger",
+      "description": "Gain the ability to charge toward nearby enemies as a Bonus Action once per turn, Attacking or Shoving (Push 9m/30ft) them in the process."
+    },
+    {
+      "id": "class-specialist",
+      "name": "Class Specialist",
+      "description": "Select two passives from any class passives list. You can pick this feat once per class, including your current class."
+    },
+    {
+      "id": "combat-medic",
+      "name": "Combat Medic",
+      "description": "Upon Helping another creature, they regain additional Hit Pints equal to the amount you currently have. In addition, you may Help creatures as a Reaction. This can be toggled at any time."
+    },
+    {
+      "id": "composed",
+      "name": "Composed",
+      "description": "You gain two Reactions: \"Regain Composure\" and \"Targeted Composure\". Upon taking or dealing damage, you may expend your Reaction in order to restore 1d12*your Proficiency Bonus Hit Points to anyone around yourself if you were hit, or anyone around your target if you were the one dealing damage."
+    },
+    {
+      "id": "defensive-duellist",
+      "name": "Defensive Duellist",
+      "description": "When an enemy misses you with a Melee or a Ranged attack, you can counterattack with a Melee or a Ranged Attack as a Reaction. You gain an additional Reaction."
+    },
+    {
+      "id": "duellists-instinct",
+      "name": "Duellist’S Instinct",
+      "description": "While dual-wielding, gain the ability to make an off-hand attack as a Bonus Action with either your Melee or Ranged weapon. In addition, you gain three Duellist Charges per Short Rest. These charges can be spent to gain Advantage on Attack Rolls, or to force enemies to attack you with Disadvantage. Once per turn, landing a killing blow or Critical hit on an enemy will restore one Duellist Charge. Additionally, your Opportunity Attacks hit with both weapons when dual-wielding. Finally, you can choose to attack with disadvantage to add your Global STR bonus while dual wielding."
+    },
+    {
+      "id": "dunesis",
+      "name": "Dunesis",
+      "description": "Your AOE Spells don’t affect your allies. Spells you cast and Conditions you apply have their Difficulty Class increased by 1. You may further increase this number by consuming Dunesis Charges. Upon casting a spell, you generate one additional Dunesis Charge, up to a maximum of three."
+    },
+    {
+      "id": "durable",
+      "name": "Durable",
+      "description": "You are Resistant to Physical Damage. Additionally, upon taking a Short Rest, your Hit Points are fully recovered.",
+      "notes": "♡also available on a set of Heavy armor found in Act 1 ♡"
+    },
+    {
+      "id": "elemental-adept",
+      "name": "Elemental Adept",
+      "description": "When dealing damage, you ignore Resistances and Immunities to two elemental damage types of your choice. When you deal damage of your chosen types to an enemy, you deal an additional +1d4 damage of that same type."
+    },
+    {
+      "id": "galvanized-stormsoul",
+      "name": "Galvanized Stormsoul",
+      "description": "Gain Immunity to Lightning and Thunder damage. Upon dealing or taking damage, you receive one stack of Lightning Charge. Additionally, you gain Galvanized Storm Strike, a melee cantrip which cast Witch Bolt at all enemies within 9m of you."
+    },
+    {
+      "id": "greater-impact",
+      "name": "Greater Impact",
+      "description": "Once per turn, when you kill a target with a Melee or a Ranged Weapon Attack, you can make another attack as a Free Action."
+    },
+    {
+      "id": "intrinsic-bulwark",
+      "name": "Intrinsic Bulwark",
+      "description": "You have Resistance to elemental damage. While wearing Medium or Heavy Armour, your Constitution Modifier also reduces elemental damage.",
+      "notes": "♡also available on a set of Medium armor found in Act 1 ♡"
+    },
+    {
+      "id": "lucky",
+      "name": "Lucky",
+      "description": "Any time that you roll a 7 or less on an Attack Roll, Saving Throw, Ability Check, or Skill Check, the result is immediately rerolled."
+    },
+    {
+      "id": "mage-slayer",
+      "name": "Mage Slayer",
+      "description": "When a caster casts a Spell, you can use your Reaction to make a weapon based Attack Roll against them. Enemies you hit immediately lose Concentration on any Spells they were maintaining. Upon dealing damage, you silence the target for one turn."
+    },
+    {
+      "id": "martial-adept",
+      "name": "Martial Adept",
+      "description": "When making a Melee Weapon Attack, Unarmed Attack, or Ranged Weapon Attack, reduce the number needed to roll a Critical Hit by 2."
+    },
+    {
+      "id": "masonry-of-chaos",
+      "name": "Masonry Of Chaos",
+      "description": "You have a 20% chance to experience a positive surge of Wild Magic at the beginning and end of your combat encounters, at the beginning of each of your turns, and when dealing or taking damage."
+    },
+    {
+      "id": "melee-expertise",
+      "name": "Melee Expertise",
+      "description": "Adds your Proficiency Bonus multiplied by 2 when dealing damage with your main-hand melee weapon."
+    },
+    {
+      "id": "multifaceted",
+      "name": "Multifaceted",
+      "description": "Select a Character Trait, a personality type, and four additional skills to become proficient in."
+    },
+    {
+      "id": "performer",
+      "name": "Performer",
+      "description": "Gain Musical Instrument Proficiency, as well as the ability to enter into a state of Performative Presence in order to buff your party. (Performative Presence costs an Action to begin, does not require concentration, and lasts until long rest. This ability can be used to apply a +1d4 bonus to either Attack Rolls, Ability Checks, or Saving Throws. It affects the performer and all allies with 9m/30ft. Performative Presence can be started out of combat and will persist when combat begins. It can also be used concurrently with the Bard’s Perform ability. A creature can only benefit from a single Performative Presence bonus, even if two performers are providing different bonuses.)"
+    },
+    {
+      "id": "psionic-dominance",
+      "name": "Psionic Dominance",
+      "description": "When dealing damage, you deal an additional 1d4 psychic damage and inflict one stack of Mental Fatigue. In addition, Illithid Powers no longer reduce your maximum hit points."
+    },
+    {
+      "id": "reactive-assault",
+      "name": "Reactive Assault",
+      "description": "Upon landing a Critical Hit, you can expend your Reaction in order to make a basic weapon-based Attack Roll."
+    },
+    {
+      "id": "resilient",
+      "name": "Resilient",
+      "description": "Add your Proficiency Bonus to any Saving Throws that you make, and heal for the maximum amount when healed."
+    },
+    {
+      "id": "restricted-territory",
+      "name": "Restricted Territory",
+      "description": "Gain the ability to use your Reactions to make a Melee Weapon Attack against an enemy who enters your weapon’s range. Additionally, when an enemy enters your weapon’s range, they will be knocked back if they take damage before ending their turn. Furthermore, when you make an Opportunity Attack, it deals the maximum damage possible (the damage part works for any opportunity attack, melee or ranged).",
+      "notes": "♡also available on Longsword found in Act 1 ♡"
+    },
+    {
+      "id": "savage-assault",
+      "name": "Savage Assault",
+      "description": "Roll all of your damage dice with Advantage. Additionally, when you damage a target, you reduce its AC by 1 (stacking).",
+      "notes": "♡also available on a Mace found in Act 1 ♡"
+    },
+    {
+      "id": "sentinel",
+      "name": "Sentinel",
+      "description": "When an enemy makes an Attack Roll against an ally, you can use your Reaction in order to make a Melee or a Ranged Weapon Attack against that enemy. You gain Advantage on Opportunity Attacks, and when you hit a creature with a Melee Opportunity Attack, it can no longer move for the rest of its turn. You gain an additional Reaction."
+    },
+    {
+      "id": "sharpshooter",
+      "name": "Sharpshooter",
+      "description": "Your Ranged Weapon Attacks do not receive penalties from High Ground Rules. Additionally, Attack Rolls with ranged weapons do not benefit from your Proficiency Bonus. However, the bonus is added twice when rolling for damage. This secondary effect can be toggled at any time. (Note: The toggled ability reduces your attack roll by your proficiency bonus, meaning that Githyanki still receive their proficiency bonus to attack instead of receiving it twice.)"
+    },
+    {
+      "id": "shieldbearer",
+      "name": "Shieldbearer",
+      "description": "Gain Advantage on Dexterity based Saving Throws while wielding a shield. Furthermore, gain three Shieldbearer Charges which can be used to negate an instance of incoming damage. Additionally, you can reflect projectiles for 1 turn after performing a Shield Bash. (Shieldbearer Charges recharge on a Short Rest, on a killing blow or on a critical hit.)",
+      "notes": "♡also available on a Shield found in Act 1 ♡"
+    },
+    {
+      "id": "spellbreak",
+      "name": "Spellbreak",
+      "description": "When casting a Spell or Cantrip, reduce the number needed to roll a Critical hit by 2."
+    },
+    {
+      "id": "tavern-brawler",
+      "name": "Tavern Brawler",
+      "description": "When making an unarmed attack or Throw, your Strength Modifier is added to all damage rolls. Additionally, your Dexterity Modifier is added to all Attack Rolls. Melee weapons you equip in your Main-Hand gain the Thrown property. When thrown, they will return back to you."
+    },
+    {
+      "id": "together-in-torment",
+      "name": "Together In Torment",
+      "description": "Dealing damage to an enemy will Torment them for 3 turns and grant you one stack of Tormentor. Upon damaging a tormented enemy, all nearby tormented enemies will take necrotic damage equal to the amount of Tormentor stacks you have."
+    },
+    {
+      "id": "tough",
+      "name": "Tough",
+      "description": "Your maximum Hit Points increases by 6 for each level you have gained. Additionally, any damage dealt to you that totals 2 or less is nullified."
+    },
+    {
+      "id": "visage-of-reflection",
+      "name": "Visage Of Reflection",
+      "description": "Upon receiving physical damage, your aggressor takes half of the damage you received as Force damage."
+    },
+    {
+      "id": "war-caster",
+      "name": "War Caster",
+      "description": "Gain Advantage on Concentration based Saving Throws. Additionally, you can cast Shocking Grasp against an enemy who enters into melee range as a free Reaction, as well as Bind your Weapons. Furthermore, you may cast any ranged Spell or Cantrip as a melee Spell. This may be toggled at any time. (Binding your weapons is a bonus action that allows you to use your Spellcasting Ability for Attack Rolls and Damage. When multiclassing, your Spellcasting Ability is determined by the last class you added to your character. Once per turn, upon killing another creature or landing a Critical Hit with your Bound Weapon, you restore a level one Spell Slot.)",
+      "notes": "♡also available on a Scimitar found in Act 1 ♡"
+    },
+    {
+      "id": "yokebreaker",
+      "name": "Yokebreaker",
+      "description": "Pick another subclass from one of your core classes. You gain all abilities from the first 3 levels of that subclass."
+    }
+  ]
+}

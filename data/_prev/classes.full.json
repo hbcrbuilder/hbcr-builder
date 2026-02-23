@@ -1,0 +1,456 @@
+{
+  "classes": [
+    {
+      "id": "artificer",
+      "name": "Artificer",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "artificer_arcanist",
+          "name": "Arcanist",
+          "levels": {},
+          "icon": "./assets/icons/classes/artificer/arcanist.png"
+        },
+        {
+          "id": "artificer_artillerist",
+          "name": "Artillerist",
+          "levels": {},
+          "icon": "./assets/icons/classes/artificer/artillerist.png"
+        },
+        {
+          "id": "artificer_battle_synthetic",
+          "name": "Battle Synthetic",
+          "levels": {},
+          "icon": "./assets/icons/classes/artificer/battle-synthetic.png"
+        },
+        {
+          "id": "artificer_infused_arcsmith",
+          "name": "Infused Arcsmith",
+          "levels": {},
+          "icon": "./assets/icons/classes/artificer/infused-arcsmith.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/artificer/artificer.png"
+    },
+    {
+      "id": "barbarian",
+      "name": "Barbarian",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "barbarian_beastheart",
+          "name": "Beastheart",
+          "levels": {},
+          "icon": "./assets/icons/classes/barbarian/beastheart.png"
+        },
+        {
+          "id": "barbarian_berserker",
+          "name": "Berserker",
+          "levels": {},
+          "icon": "./assets/icons/classes/barbarian/berserker.png"
+        },
+        {
+          "id": "barbarian_frostbreaker",
+          "name": "Frostbreaker",
+          "levels": {},
+          "icon": "./assets/icons/classes/barbarian/frostbreaker.png"
+        },
+        {
+          "id": "barbarian_giant",
+          "name": "Giant",
+          "levels": {},
+          "icon": "./assets/icons/classes/barbarian/giants-blood.png"
+        },
+        {
+          "id": "barbarian_wild_soul",
+          "name": "Wild Soul",
+          "levels": {},
+          "icon": "./assets/icons/classes/barbarian/wild-soul.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/barbarian/barbarian.png"
+    },
+    {
+      "id": "bard",
+      "name": "Bard",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "bard_college_of_captivation",
+          "name": "College Of Captivation",
+          "levels": {},
+          "icon": "./assets/icons/classes/bard/college-of-captivation.png"
+        },
+        {
+          "id": "bard_college_of_lore",
+          "name": "College Of Lore",
+          "levels": {},
+          "icon": "./assets/icons/classes/bard/college-of-lore.png"
+        },
+        {
+          "id": "bard_college_of_steel",
+          "name": "College Of Steel",
+          "levels": {},
+          "icon": "./assets/icons/classes/bard/college-of-steel.png"
+        },
+        {
+          "id": "bard_college_of_valour",
+          "name": "College Of Valour",
+          "levels": {},
+          "icon": "./assets/icons/classes/bard/college-of-valour.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/bard/bard.png"
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "cleric_death_domain",
+          "name": "Death Domain",
+          "levels": {},
+          "icon": "./assets/icons/classes/cleric/death-domain.png"
+        },
+        {
+          "id": "cleric_life_domain",
+          "name": "Life Domain",
+          "levels": {},
+          "icon": "./assets/icons/classes/cleric/life-domain.png"
+        },
+        {
+          "id": "cleric_tempest_domain",
+          "name": "Tempest Domain",
+          "levels": {},
+          "icon": "./assets/icons/classes/cleric/tempest-domain.png"
+        },
+        {
+          "id": "cleric_war_domain",
+          "name": "War Domain",
+          "levels": {},
+          "icon": "./assets/icons/classes/cleric/war-domain.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/cleric/cleric.png"
+    },
+    {
+      "id": "druid",
+      "name": "Druid",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "druid_circle_of_the_elements",
+          "name": "Circle Of The Elements",
+          "levels": {},
+          "icon": "./assets/icons/classes/druid/circle-of-the-elements.png"
+        },
+        {
+          "id": "druid_circle_of_the_land",
+          "name": "Circle Of The Land",
+          "levels": {},
+          "icon": "./assets/icons/classes/druid/circle-of-the-land.png"
+        },
+        {
+          "id": "druid_circle_of_the_moon",
+          "name": "Circle Of The Moon",
+          "levels": {},
+          "icon": "./assets/icons/classes/druid/circle-of-the-moon.png"
+        },
+        {
+          "id": "druid_circle_of_the_spores",
+          "name": "Circle Of The Spores",
+          "levels": {},
+          "icon": "./assets/icons/classes/druid/circle-of-the-spores.png"
+        },
+        {
+          "id": "druid_circle_of_the_stars",
+          "name": "Circle Of The Stars",
+          "levels": {},
+          "icon": "./assets/icons/classes/druid/circle-of-the-stars.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/druid/druid.png"
+    },
+    {
+      "id": "fighter",
+      "name": "Fighter",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "fighter_arcane_archer",
+          "name": "Arcane Archer",
+          "levels": {},
+          "icon": "./assets/icons/classes/fighter/arcane-archer.png"
+        },
+        {
+          "id": "fighter_champion",
+          "name": "Champion",
+          "levels": {},
+          "icon": "./assets/icons/classes/fighter/champion.png"
+        },
+        {
+          "id": "fighter_eldritch_knight",
+          "name": "Eldritch Knight",
+          "levels": {},
+          "icon": "./assets/icons/classes/fighter/eldritch-knight.png"
+        },
+        {
+          "id": "fighter_frontier_knight",
+          "name": "Frontier Knight",
+          "levels": {},
+          "icon": "./assets/icons/classes/fighter/frontier-knight.png"
+        },
+        {
+          "id": "fighter_draconic_sentinel",
+          "name": "Draconic Sentinel",
+          "levels": {},
+          "icon": "./assets/icons/classes/fighter/draconic-sentinel.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/fighter/fighter.png"
+    },
+    {
+      "id": "monk",
+      "name": "Monk",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "monk_way_of_the_arcane",
+          "name": "Way Of The Arcane",
+          "levels": {},
+          "icon": "./assets/icons/classes/monk/way-of-the-arcane.png"
+        },
+        {
+          "id": "monk_way_of_the_drunken_fist",
+          "name": "Way Of The Drunken Fist",
+          "levels": {},
+          "icon": "./assets/icons/classes/monk/way-of-the-drunken-fist.png"
+        },
+        {
+          "id": "monk_way_of_the_open_hand",
+          "name": "Way Of The Open Hand",
+          "levels": {},
+          "icon": "./assets/icons/classes/monk/way-of-the-open-hand.png"
+        },
+        {
+          "id": "monk_way_of_the_shadow_arts",
+          "name": "Way Of The Shadow Arts",
+          "levels": {},
+          "icon": "./assets/icons/classes/monk/way-of-the-shadow-arts.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/monk/monk.png"
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "paladin_oath_of_the_ancients",
+          "name": "Oath Of The Ancients",
+          "levels": {},
+          "icon": "./assets/icons/classes/paladin/oath-of-the-ancients.png"
+        },
+        {
+          "id": "paladin_oath_of_the_crowned_phoenix",
+          "name": "Oath Of The Crowned Phoenix",
+          "levels": {},
+          "icon": "./assets/icons/classes/paladin/oath-of-the-crowned-phoenix.png"
+        },
+        {
+          "id": "paladin_oath_of_devotion",
+          "name": "Oath Of Devotion",
+          "levels": {},
+          "icon": "./assets/icons/classes/paladin/oath-of-devotion.png"
+        },
+        {
+          "id": "paladin_oath_of_vengeance",
+          "name": "Oath Of Vengeance",
+          "levels": {},
+          "icon": "./assets/icons/classes/paladin/oath-of-vengeance.png"
+        },
+        {
+          "id": "paladin_oathbreaker",
+          "name": "Oathbreaker",
+          "levels": {},
+          "icon": "./assets/icons/classes/paladin/oathbreaker.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/paladin/paladin.png"
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "ranger_beast_master",
+          "name": "Beast Master",
+          "levels": {},
+          "icon": "./assets/icons/classes/ranger/beast-master.png"
+        },
+        {
+          "id": "ranger_gloom_stalker",
+          "name": "Gloom Stalker",
+          "levels": {},
+          "icon": "./assets/icons/classes/ranger/gloom-stalker.png"
+        },
+        {
+          "id": "ranger_hunter",
+          "name": "Hunter",
+          "levels": {},
+          "icon": "./assets/icons/classes/ranger/hunter.png"
+        },
+        {
+          "id": "ranger_swarmkeeper",
+          "name": "Swarmkeeper",
+          "levels": {},
+          "icon": "./assets/icons/classes/ranger/swarmkeeper.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/ranger/ranger.png"
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "rogue_arcane_trickster",
+          "name": "Arcane Trickster",
+          "levels": {},
+          "icon": "./assets/icons/classes/rogue/arcane-trickster.png"
+        },
+        {
+          "id": "rogue_assassin",
+          "name": "Assassin",
+          "levels": {},
+          "icon": "./assets/icons/classes/rogue/assassin.png"
+        },
+        {
+          "id": "rogue_mercenary",
+          "name": "Mercenary",
+          "levels": {},
+          "icon": "./assets/icons/classes/rogue/mercenary.png"
+        },
+        {
+          "id": "rogue_thief",
+          "name": "Thief",
+          "levels": {},
+          "icon": "./assets/icons/classes/rogue/thief.png"
+        },
+        {
+          "id": "rogue_hidden_toxicant",
+          "name": "Hidden Toxicant",
+          "levels": {},
+          "icon": "./assets/icons/classes/rogue/hidden-toxicant.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/rogue/rogue.png"
+    },
+    {
+      "id": "sorcerer",
+      "name": "Sorcerer",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "sorcerer_draconic_bloodline",
+          "name": "Draconic Bloodline",
+          "levels": {},
+          "icon": "./assets/icons/classes/sorcerer/draconic-bloodline.png"
+        },
+        {
+          "id": "sorcerer_shade_walker",
+          "name": "Shade Walker",
+          "levels": {},
+          "icon": "./assets/icons/classes/sorcerer/shade-walker.png"
+        },
+        {
+          "id": "sorcerer_volcanist",
+          "name": "Volcanist",
+          "levels": {},
+          "icon": "./assets/icons/classes/sorcerer/volcanist.png"
+        },
+        {
+          "id": "sorcerer_wild_magic",
+          "name": "Wild Magic",
+          "levels": {},
+          "icon": "./assets/icons/classes/sorcerer/wild-magic.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/sorcerer/sorcerer.png"
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "warlock_pact_of_the_blade",
+          "name": "Pact Of The Blade",
+          "levels": {},
+          "icon": "./assets/icons/classes/warlock/pact-of-the-blade.png"
+        },
+        {
+          "id": "warlock_pact_of_the_chain",
+          "name": "Pact Of The Chain",
+          "levels": {},
+          "icon": "./assets/icons/classes/warlock/pact-of-the-chain.png"
+        },
+        {
+          "id": "warlock_pact_of_penumbra",
+          "name": "Pact Of Penumbra",
+          "levels": {},
+          "icon": "./assets/icons/classes/warlock/pact-of-penumbra.png"
+        },
+        {
+          "id": "warlock_pact_of_the_tome",
+          "name": "Pact Of The Tome",
+          "levels": {},
+          "icon": "./assets/icons/classes/warlock/pact-of-the-tome.png"
+        },
+        {
+          "id": "warlock_pact_of_the_primordial_demon",
+          "name": "Pact Of The Primordial Demon",
+          "levels": {},
+          "icon": "./assets/icons/classes/warlock/pact-of-the-primordial-demon.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/warlock/warlock.png"
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard",
+      "sourceFile": "sheet",
+      "subclasses": [
+        {
+          "id": "wizard_arcblade",
+          "name": "Arcblade",
+          "levels": {},
+          "icon": "./assets/icons/classes/wizard/arcblade.png"
+        },
+        {
+          "id": "wizard_arcane_warden",
+          "name": "Arcane Warden",
+          "levels": {},
+          "icon": "./assets/icons/classes/wizard/arcane-warden.png"
+        },
+        {
+          "id": "wizard_evoker",
+          "name": "Evoker",
+          "levels": {},
+          "icon": "./assets/icons/classes/wizard/evoker.png"
+        },
+        {
+          "id": "wizard_necromancer",
+          "name": "Necromancer",
+          "levels": {},
+          "icon": "./assets/icons/classes/wizard/necromancer.png"
+        }
+      ],
+      "icon": "./assets/icons/classes/wizard/wizard.png"
+    }
+  ]
+}

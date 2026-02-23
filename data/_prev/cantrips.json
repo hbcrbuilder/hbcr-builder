@@ -1,0 +1,402 @@
+[
+  {
+    "id": "acid-burst",
+    "name": "Acid Burst",
+    "text": "Action 1 turn Ranged 18m Deal 1d8 acid damage 1.5m/5ft AOE (18m range) and inflicts Acid (-2 AC) on targets Deal 2d8 acid damage Deal 3d8 acid damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blade-surge",
+    "name": "Blade Surge",
+    "text": "Action DEX Save Deal 1d12 force damage on all targets within 3m/10ft, potentially inflicting Bleeding. Deal 2d12 force damage Deal 3d12 force damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "blade-ward",
+    "name": "Blade Ward",
+    "text": "Bonus 3 turns Gain Resistance to your next instance of physical damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "bone-chill",
+    "name": "Bone Chill",
+    "text": "Action 1 turn Ranged 18m Deal 1d8 necrotic damage and prevent target from regaining HP. Undead creatures also have disadvantage on attack rolls Deal 2d8 necrotic damage Deal 3d8 necrotic damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "create-or-extinguish-flames",
+    "name": "Create or Extinguish Flames",
+    "text": "Action Create a 3m flame surface, or remove Burning from a creature/object",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "dancing-lights",
+    "name": "Dancing Lights",
+    "text": "Bonus Until Long Rest Create light 9m. Invisible and sneaking enemies are revealed.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "disguise-self",
+    "name": "Disguise Self",
+    "text": "Bonus Until Long Rest Disguise yourself. Invisible until end of your current turn.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "druidcraft",
+    "name": "Druidcraft",
+    "text": "Bonus 1 turn STR Save Entangle a creature if they fail a save, 18m range",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "fire-bolt",
+    "name": "Fire Bolt",
+    "text": "Action 1 turn Ranged 18m Deal 1d8 fire damage on hit and burn your target (no save) Deal 2d8 fire damage Deal 3d8 fire damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "friends",
+    "name": "Friends",
+    "text": "Bonus Until Long Rest Gain Advantage on Charisma checks. Might make targets hostile in Honor Mode when spell end",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "frostbite",
+    "name": "Frostbite",
+    "text": "Action 1 turn Melee Deal 1d12 cold damage if hit (melee range), target get disadvantage on their next attack roll Deal 2d12 cold damage Deal 3d12 cold damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "green-flame-blade",
+    "name": "Green Flame Blade",
+    "text": "Action Melee Weapon Strike with your melee weapon, dealing an additional +1d8 Fire damage to your target and 1d8 FIre damage to another enemy within 9m/30ft. Deal +2d8 / 2d8 fire damage Deal +3d8 / 3d8 fire damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "guidance",
+    "name": "Guidance",
+    "text": "Bonus Until Long Rest Grant +1d4 on ability checks",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "guiding-moonlight-light",
+    "name": "Guiding Moonlight (Light)",
+    "text": "Bonus Until Long Rest Infuse weapon with light 9m aoe and +1 bonus to attack rolls and damage.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "gust-bellow",
+    "name": "Gust Bellow",
+    "text": "Bonus STR Save Remove surfaces within a 9m radius, push back 9m creatures within 3m on failed save",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mage-hand",
+    "name": "Mage Hand",
+    "text": "Bonus Until Long Rest Mage Hand",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mind-sliver",
+    "name": "Mind Sliver",
+    "text": "Action 3 turns Ranged 18m Deal 1d8 psychic damage and inflict Mind Fracture (-1d4 on next save) on failed INT save Deal 2d8 psychic damage Deal 3d8 psychic damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "minor-illusion",
+    "name": "Minor Illusion",
+    "text": "Bonus Until Long Rest Distract targets",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "mud-mantle",
+    "name": "Mud Mantle",
+    "text": "Bonus 1 turn Gain +1 AC and become Resistant to Fire Damage and immune to Burning",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "poison-spray",
+    "name": "Poison Spray",
+    "text": "Action CON Save Deal 1d8 poison damage, 18m range, On Save: half damage. When you fire Poison Spray at an enemy, it will fire another shot at any other nearby enemies who are Poisoned. Deal 2d12 poison damage Deal 3d12 poison damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "prestidigitation",
+    "name": "Prestidigitation",
+    "text": "Bonus 3 turn The next attack roll against you is rolled with Disadvantage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "primal-savagery",
+    "name": "Primal Savagery",
+    "text": "Action 1 turn Melee Deal 1d12 poison damage and Poison target for 3 turn on failed CON save Deal 2d12 poison damage Deal 3d12 poison damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "produce-flame",
+    "name": "Produce Flame",
+    "text": "Bonus Until Long Rest CON Save Create a flame, provides light and can be used to inflict Burn (permanent) to a creature within 18m/60ft on a failed CON save.",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "ray-of-frost",
+    "name": "Ray of Frost",
+    "text": "Action 1 turn Ranged 18m Deal 1d8 cold damage on hit (18m range) and Halve movement speed (no save) Deal 2d8 cold damage Deal 3d8 cold damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "resistance",
+    "name": "Resistance",
+    "text": "Bonus Until Long Rest Grant your target +1d4 to Saving Throws",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "sacred-flame",
+    "name": "Sacred Flame",
+    "text": "Action Ranged 18m Deals 1d8 radiant damage to a target. Deals double damage to Aberrations, Fey, Fiends, and Undead. Deal 2d8 radiant damage Deal 3d8 radiant damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "shocking-grasp",
+    "name": "Shocking Grasp",
+    "text": "Action 1 turn Melee Deal 1d12 lightning damageand target can't use reaction (no save). This spell has advantage on creatures with metal armour Deal 2d12 lightning damage Deal 3d12 lightning damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spare-the-dying",
+    "name": "Spare the Dying",
+    "text": "Action Help ally, 18m range",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spark-surge",
+    "name": "Spark Surge",
+    "text": "Action 1 turn Ranged 18m Deal 1d8 lightning damage, inflicts Shocked (no reactions, disadvantage on DEX saving throws/ability checks) on failed DEX save. Deal 2d8 lightning damage Deal 3d8 lightning damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "spellbound-empowerment",
+    "name": "Spellbound Empowerment",
+    "text": "Bonus Until Long Rest Your melee or ranged weapon(s) use your spellcasting ability for attack and damge",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "titan-s-boon",
+    "name": "Titan's Boon",
+    "text": "Action (C) Until Long Rest Increase size causing melee and unarmed attacks do +1d4 dmg",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "thorn-whip",
+    "name": "Thorn Whip",
+    "text": "Action Ranged 18m Deal 1d8 piercing damage and pull Large or smaller target 9m/30ft closer on failed STR save. Deal 2d8 piercing damage Deal 3d8 piercing damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "thunderclap",
+    "name": "Thunderclap",
+    "text": "Action CON Save Deal 1d12 thunder damage on a 3m AOE around you and potentially applies Reverberation. On Save: half damage Deal 2d12 thunder damage Deal 3d12 thunder damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "thunderous-strike",
+    "name": "Thunderous Strike",
+    "text": "Action 1 turn Melee Weapon Strike with your melee weapon, dealing an additional +1d8 thunder damage to your target and an additional 1d8 thunder damage should they choose to move before the end of their next turn. Deal +2d8 / 2d8 thunder damage Deal +3d8 / 3d8 thunder damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "toll-the-dead",
+    "name": "Toll the Dead",
+    "text": "Action WIS Save Deal 1d8 necrotic damage (18m range). If target is below half HP, deal double dmg. Deal 2d8 necrotic damage Deal 3d8 necrotic damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "torrent",
+    "name": "Torrent",
+    "text": "Bonus 3 turn Target creature (18m range) become Wet (no save)",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "true-strike",
+    "name": "True Strike",
+    "text": "Bonus 1 turn Your target ignore all resistances for a turn. This includes damage reduction by armor",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "vicious-mockery",
+    "name": "Vicious Mockery",
+    "text": "Bonus 3 turns WIS Save Target creature within 18m/60ft. On failed save, target has disadvantage on its next attack roll",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "warpstone",
+    "name": "Warpstone",
+    "text": "Action While not Threatened, throw a stone, immediatly warping to wherever it lands (9m range)",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  },
+  {
+    "id": "word-of-radiance",
+    "name": "Word of Radiance",
+    "text": "Action CON Save Deal 1d12 damage to ALL targets in a 3m/10ft AOE around you. Double damage to aberrations, fey, fiends and undead. On Save: half damage. Deal 2d12 radiant damage Deal 3d12 radiant damage",
+    "tags": {
+      "roles": [],
+      "mechanics": [],
+      "damageTypes": []
+    }
+  }
+]

@@ -1,0 +1,154 @@
+{
+  "illithidPowers": [
+    {
+      "id": "psionic-overload",
+      "name": "Psionic Overload",
+      "usage": "passive",
+      "description": "When dealing damage with a weapon or while unarmed, deal an additional 1d4 Psychic Damage."
+    },
+    {
+      "id": "favourable-outcomes",
+      "name": "Favourable Outcomes",
+      "usage": "passive",
+      "description": "Gain a +2 bonus to all Ability Checks, Attack Rolls and Saving Throws that you make."
+    },
+    {
+      "id": "force-tunnel",
+      "name": "Force Tunnel",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to charge forward, pushing all objects and creatures in your path 9m away from you. This does not provoke Opportunity Attacks."
+    },
+    {
+      "id": "flay-mind",
+      "name": "Flay Mind",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to force a creature to undergo a searing pain which threatens to tear their mind asunder, dealing 1d12 Psychic Damage and driving them Mad for three turns."
+    },
+    {
+      "id": "infuse-health",
+      "name": "Infuse Health",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to restore another creature’s Hit Points by the amount that you currently have."
+    },
+    {
+      "id": "luck-of-the-far-realms",
+      "name": "Luck of the Far Realms",
+      "usage": "short_rest",
+      "description": "Once per Short Rest, you may change a successful Attack Roll against a foe into a Critical Hit."
+    },
+    {
+      "id": "ability-drain",
+      "name": "Ability Drain",
+      "usage": "passive",
+      "description": "When you make an Attack Roll against a non-allied creature, the attack reduces your target's corresponding ability to successfully roll Saving Throws."
+    },
+    {
+      "id": "stage-fright",
+      "name": "Stage Fright",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to force a group of creatures to make Attack Rolls with Disadvantage for three turns. Each time they miss, they will take 1d12 Psychic Damage. Targets overcome their Stage Fright early when succeeding on an Attack Roll."
+    },
+    {
+      "id": "perilous-stakes",
+      "name": "Perilous Stakes",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to make a creature vulnerable to all damage for 1 turn. If not killed before the status is resolved, the target will immediately restore all of their Hit Points."
+    },
+    {
+      "id": "perilous-stakes-2",
+      "name": "Perilous Stakes",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to conjure a volatile shield around yourself or an ally, granting the target 24 Temporary Hit Points. Upon losing them, the shield burst, Stunning enemies within 3m."
+    },
+    {
+      "id": "psionic-backlash",
+      "name": "Psionic Backlash",
+      "usage": "reaction",
+      "description": "When an enemy within 18m casts a spell, you may use a free reaction to deal 1d6 Psychic Damage to the caster multiplied by the level of the spell cast."
+    },
+    {
+      "id": "cull-of-the-weak",
+      "name": "Cull of the Weak",
+      "usage": "passive",
+      "description": "When you bring a creature down to fewer Hit Points than your number of Illithid Powers, it instantly dies."
+    },
+    {
+      "id": "repulsor",
+      "name": "Repulsor",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to push everything back by 9m with a psionic shockwave, dealing 1d12 Psychic Damage."
+    },
+    {
+      "id": "displace",
+      "name": "Displace",
+      "usage": "passive",
+      "description": "Creatures suffering falling damage because of your actions take an additional 1d12 Psychic Damage."
+    },
+    {
+      "id": "illithid-influence",
+      "name": "Illithid Influence",
+      "usage": "passive",
+      "description": "You may channel the dark allure of the tadpole to Charm an enemy that attacks you, preventing them from attacking you until their next turn."
+    },
+    {
+      "id": "freecast",
+      "name": "Freecast",
+      "usage": "short_rest",
+      "description": "Once per Short Rest, your next action won’t consume spell slots or class resources."
+    },
+    {
+      "id": "fracture-psyche",
+      "name": "Fracture Psyche",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to reduce an enemy’s Armour Class by 4."
+    },
+    {
+      "id": "hive-mind",
+      "name": "Hive Mind",
+      "usage": "passive",
+      "description": "Gain +2 to Initiative, Armour Class and gain Superior Darkvision."
+    },
+    {
+      "id": "devour",
+      "name": "Devour",
+      "usage": "passive",
+      "description": "When you kill a creature, restore 1d12 Hit Points."
+    },
+    {
+      "id": "absorb-intellect",
+      "name": "Absorb Intellect",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to reduce your target’s Saving Throws by 2. This condition worsens each turn, restoring Hit Points to you in the process."
+    },
+    {
+      "id": "psionic-dominance",
+      "name": "Psionic Dominance",
+      "usage": "short_rest",
+      "description": "Once per short rest, when a spell targets you within 18m, use a free reaction to nullify the spell."
+    },
+    {
+      "id": "levitate",
+      "name": "Levitate",
+      "usage": "passive",
+      "description": "Float effortlessly to a location of your choosing."
+    },
+    {
+      "id": "mind-blast",
+      "name": "Mind Blast",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to unleash a cone of psychic energy, stunning enemies."
+    },
+    {
+      "id": "mind-sanctuary",
+      "name": "Mind Sanctuary",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to create a magical nexus to hasten allied creatures within it."
+    },
+    {
+      "id": "black-hole",
+      "name": "Black Hole",
+      "usage": "long_rest",
+      "description": "Once per long rest, use your action to create a gravity well that pulls nearby enemies and objects."
+    }
+  ]
+}

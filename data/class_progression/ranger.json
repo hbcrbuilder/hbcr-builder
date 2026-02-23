@@ -1,0 +1,218 @@
+{
+  "classId": "ranger",
+  "displayName": "Ranger",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "ranger.conjure_rangers_companion",
+        "name": "Conjure Rangers Companion"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.frontier_ballistics",
+        "name": "Frontier Ballistics"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.natural_movement",
+        "name": "Natural Movement"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.cantrips",
+        "name": "Cantrips"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.spear_of_the_wildfront",
+        "name": "Spear of the Wildfront"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "ranger.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "ranger.woodland_synergy",
+        "name": "Woodland Synergy"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "ranger.extra_attack",
+        "name": "Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.bestial_fury",
+        "name": "Bestial Fury"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "ranger.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "ranger.critical_bonds",
+        "name": "Critical Bonds"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "ranger.improved_extra_attack",
+        "name": "Improved Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "ranger.bestial_rampage",
+        "name": "Bestial Rampage"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "ranger.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "ranger.leader_of_the_pack",
+        "name": "Leader of the Pack"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "unknown",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0
+      ],
+      "2": [
+        2,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        2,
+        0
+      ],
+      "6": [
+        4,
+        2,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        2
+      ],
+      "10": [
+        4,
+        4,
+        2
+      ],
+      "11": [
+        4,
+        4,
+        4
+      ],
+      "12": [
+        4,
+        4,
+        4
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "ability": "wis"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "default": [],
+  "subclasses": {
+    "artificer:arcanist": [],
+    "artificer:rtillerist": [],
+    "artificer:battle-synthetic": [],
+    "artificer:infused-arcsmith": [
+      "optimizationMatrix",
+      "sabotageMatrix"
+    ],
+    "barbarian:bestial-heart": [],
+    "barbarian:frenzy": [],
+    "barbarian:frostbreaker": [],
+    "barbarian:giants-blood": [],
+    "barbarian:wild-magic": [],
+    "bard:ollege-captivation": [],
+    "bard:ollege-lore": [],
+    "bard:ollege-steel": [
+      "steelforgedFlourishes"
+    ],
+    "bard:ollege-alour": [],
+    "cleric:death-omain": [],
+    "cleric:life-omain": [],
+    "cleric:empest-omain": [],
+    "cleric:war-omain": [],
+    "druid:circle-of-the-elements": [
+      "wildshapes"
+    ],
+    "druid:circle-of-the-land": [
+      "wildshapes"
+    ],
+    "druid:circle-of-the-moon": [],
+    "druid:circle-of-the-spores": [
+      "wildshapes"
+    ],
+    "druid:circle-of-the-stars": [
+      "wildshapes"
+    ],
+    "fighter:arcane-archer": [
+      "manoeuvres",
+      "elementalFletchings"
+    ],
+    "fighter:champion": [
+      "manoeuvres"
+    ],
+    "fighter:eldritch-knight": [
+      "manoeuvres"
+    ],
+    "fighter:frontier-knight": [
+      "manoeuvres",
+      "combatTechniques"
+    ],
+    "monk:may-the-rcane": [],
+    "monk:may-the-drunken-fist": [],
+    "monk:may-the-pen-and": [],
+    "monk:may-the-shadow-arts": [],
+    "paladin:eath-of-the-ncients": [
+      "smites"
+    ],
+    "paladin:eath-of-the-crowned-phoenix": [
+      "smites"
+    ],
+    "paladin:eath-of-evotion": [
+      "smites"
+    ],
+    "paladin:eath-of-vengeance": [
+      "smites"
+    ],
+    "paladin:oathbreaker": [
+      "smites"
+    ],
+    "ranger:beast-aster": [
+      "frontierBallistics"
+    ],
+    "ranger:bloom-stalker": [
+      "frontierBallistics"
+    ],
+    "ranger:hunter": [
+      "frontierBallistics"
+    ],
+    "ranger:warmkeeper": [
+      "gatheredSwarm",
+      "frontierBallistics"
+    ],
+    "rogue:arcane-trickster": [],
+    "rogue:assassin": [],
+    "rogue:mercenary": [],
+    "rogue:hief": [],
+    "sorcerer:draconic-loodline": [
+      "dragonAncestor",
+      "metamagic"
+    ],
+    "sorcerer:hade-alker": [
+      "metamagic"
+    ],
+    "sorcerer:olcanist": [
+      "metamagic"
+    ],
+    "sorcerer:wild-magic": [
+      "metamagic"
+    ],
+    "warlock:act-the-blade": [
+      "pactBinding"
+    ],
+    "warlock:act-the-chain": [
+      "pactBinding"
+    ],
+    "warlock:act-penumbra": [
+      "pactBinding"
+    ],
+    "warlock:act-the-ome": [
+      "pactBinding"
+    ],
+    "wizard:arcblade": [],
+    "wizard:arcane-warden": [],
+    "wizard:evoker": [],
+    "wizard:necromancer": []
+  }
+}

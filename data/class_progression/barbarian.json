@@ -1,0 +1,133 @@
+{
+  "classId": "barbarian",
+  "displayName": "Barbarian",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "barbarian.reckless_attack",
+        "name": "Reckless Attack"
+      },
+      {
+        "type": "feature",
+        "id": "barbarian.rage_bestial_heart",
+        "name": "Rage: Bestial Heart"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "barbarian.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "barbarian.bestial_dominance",
+        "name": "Bestial Dominance"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "barbarian.extra_attack",
+        "name": "Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "barbarian.reckless_assault",
+        "name": "Reckless Assault"
+      },
+      {
+        "type": "feature",
+        "id": "barbarian.call_of_the_wild",
+        "name": "Call of the Wild"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "barbarian.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "barbarian.bestial_instinct",
+        "name": "Bestial Instinct"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "barbarian.improved_extra_attack",
+        "name": "Improved Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "barbarian.reckless_rampage",
+        "name": "Reckless Rampage"
+      },
+      {
+        "type": "feature",
+        "id": "barbarian.howl_of_the_wild",
+        "name": "Howl of the Wild"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "barbarian.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "barbarian.barbarous_elements",
+        "name": "Barbarous Elements"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  }
+}

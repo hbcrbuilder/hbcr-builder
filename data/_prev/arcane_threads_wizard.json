@@ -1,0 +1,104 @@
+{
+  "threads": [
+    {
+      "id": "arcane-interruption",
+      "name": "Arcane Interruption",
+      "description": "Gain the ability to interrupt any Spell by utilizing your Reaction. Upon doing so, your maximum Arcane Recovery charges are reduced by 1 until your next Long Rest."
+    },
+    {
+      "id": "arcane-reverb",
+      "name": "Arcane Reverb",
+      "description": "When damaged by a melee based Attack Roll, release a shockwave which forces nearby enemies back by 9m/30ft."
+    },
+    {
+      "id": "arcane-shield",
+      "name": "Arcane Shield",
+      "description": "While Concentrating, gain Resistance to Bludgeoning, Piercing, and Slashing damage."
+    },
+    {
+      "id": "boon-of-plumes",
+      "name": "Boon Of Plumes",
+      "description": "Emit an Aura across 9m/30ft granting both you and allies the effects of Featherfall. If any ally moves out of range of the aura, the effects will persist for one turn."
+    },
+    {
+      "id": "edict-of-divinity",
+      "name": "Edict Of Divinity",
+      "description": "After each Long Rest, gain three random Portent Dice. During the day, you can use your Reaction and a charge of your Arcane Recovery to change the die of any Attack Roll or Saving Throw rolled near you to that of one of your Portent Dice. Each Portent Die can only be used once, and you lose your unused Potent Dice at the end of the day. Upon taking a Short Rest you will receive Prophecies for any spent Portent Dice. Complete these Prophecies to regain them."
+    },
+    {
+      "id": "elemental-countercharge",
+      "name": "Elemental Countercharge",
+      "description": "When an enemy fails a Melee Weapon Attack against you, use your Reaction in order to retaliate with Shocking Grasp."
+    },
+    {
+      "id": "enchanted-safeguard",
+      "name": "Enchanted Safeguard",
+      "description": "Gain the ability to cast the Shield spell (Reaction, +4 AC for a round) by expending a charge of your Arcane Recovery."
+    },
+    {
+      "id": "flames-riposte",
+      "name": "Flames Riposte",
+      "description": "When an enemy fails an Attack Roll against you, use your Reaction in order to retaliate with Firebolt."
+    },
+    {
+      "id": "illusory-phantasm",
+      "name": "Illusory Phantasm",
+      "description": "On your first turn of any combat encounter, immediately receive the effects of Mirror Image."
+    },
+    {
+      "id": "magical-insight",
+      "name": "Magical Insight",
+      "description": "Gain Advantage on Intelligence based Ability Checks and Saving Throws. Additionally, you add your Intelligence Modifier to all Charisma based Skill Checks."
+    },
+    {
+      "id": "mystic-override",
+      "name": "Mystic Override",
+      "description": "You ignore elemental Resistances when dealing damage."
+    },
+    {
+      "id": "potent-cantrips",
+      "name": "Potent Cantrips",
+      "description": "When dealing damage with a Cantrip, deal additional damage equal to your Proficiency Bonus multiplied by two."
+    },
+    {
+      "id": "potent-spells",
+      "name": "Potent Spells",
+      "description": "Spells you cast gain a damage bonus equal to 4 multiplied by the level of Spell Slot used."
+    },
+    {
+      "id": "spellblade",
+      "name": "Spellblade",
+      "description": "Gain the ability to create an Arcane Bond between you and your weapons, allowing you to use your Spellcasting Ability Modifier for Attack Rolls and damage, as well as restoring one charge of Arcane Recovery when you deal a killing blow or Critical Hit with the weapon."
+    },
+    {
+      "id": "spellbound-rebirth",
+      "name": "Spellbound Rebirth",
+      "description": "Upon landing a killing blow or Critical Hit on an enemy, restore one charge of Arcane Recovery. This effect can trigger once per turn."
+    },
+    {
+      "id": "spell-surge",
+      "name": "Spell Surge",
+      "description": "While in combat, regenerate one charge of Arcane Recovery every three turns."
+    },
+    {
+      "id": "telekinetic-command",
+      "name": "Telekinetic Command",
+      "description": "Gain Telekinetic Push and Telekinetic Pull. Once per turn, you may use either of these as a free action. (Both abilities have a range of 18m/60ft and move a target 9m/30ft on a failed strength save.)"
+    },
+    {
+      "id": "war-magic",
+      "name": "War Magic",
+      "description": "After making a melee based Attack Roll or casting a Spell, you may cast a single Cantrip as a Bonus Action. This may be toggled at any time."
+    },
+    {
+      "id": "wizards-clarity",
+      "name": "Wizard’s Clarity",
+      "description": "Upon spending Arcane Recovery charges to recover Spell Slots, you gain Advantage on all damage rolls with Spells and Cantrips. The duration that you retain Advantage is equal to the level of Spell Slot recovered."
+    },
+    {
+      "id": "woven-precision",
+      "name": "Woven Precision",
+      "description": "Reduce the number needed to roll a Critical Hit with Spells and Cantrips by 1."
+    }
+  ]
+}

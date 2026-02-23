@@ -1,0 +1,233 @@
+{
+  "classId": "monk",
+  "displayName": "Monk",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "monk.ki_points",
+        "name": "Ki Points"
+      },
+      {
+        "type": "feature",
+        "id": "monk.martial_arts",
+        "name": "Martial Arts"
+      },
+      {
+        "type": "feature",
+        "id": "monk.flurry_of_blows",
+        "name": "Flurry of Blows"
+      },
+      {
+        "type": "feature",
+        "id": "monk.cantrips",
+        "name": "Cantrips"
+      },
+      {
+        "type": "feature",
+        "id": "monk.flow_state_1d4",
+        "name": "Flow State 1d4"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "monk.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      },
+      {
+        "type": "feature",
+        "id": "monk.fist_of_unbroken_air",
+        "name": "Fist of Unbroken Air"
+      },
+      {
+        "type": "feature",
+        "id": "monk.ice_block",
+        "name": "Ice Block"
+      },
+      {
+        "type": "feature",
+        "id": "monk.water",
+        "name": "Water"
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "monk.1d4_whip",
+        "name": "1d4 Whip"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "monk.martial_flux",
+        "name": "Martial Flux"
+      },
+      {
+        "type": "feature",
+        "id": "monk.martial_elements_1d6",
+        "name": "Martial Elements 1d6"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "monk.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "monk.elemental_overdrive_1d6",
+        "name": "Elemental Overdrive 1d6"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "monk.martial_mastery",
+        "name": "Martial Mastery"
+      },
+      {
+        "type": "feature",
+        "id": "monk.elemental_recovery_1d8",
+        "name": "Elemental Recovery 1d8"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "monk.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "monk.protective_casting_1d8",
+        "name": "Protective Casting 1d8"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "unknown",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0
+      ],
+      "2": [
+        2,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        2,
+        0
+      ],
+      "6": [
+        4,
+        2,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        2
+      ],
+      "10": [
+        4,
+        4,
+        2
+      ],
+      "11": [
+        4,
+        4,
+        4
+      ],
+      "12": [
+        4,
+        4,
+        4
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "ability": "wis"
+  }
+}

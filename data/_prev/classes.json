@@ -1,0 +1,69 @@
+{
+  "classes": [
+    {
+      "id": "artificer",
+      "name": "Artificer",
+      "icon": "./assets/icons/classes/artificer/artificer.png"
+    },
+    {
+      "id": "barbarian",
+      "name": "Barbarian",
+      "icon": "./assets/icons/classes/barbarian/barbarian.png"
+    },
+    {
+      "id": "bard",
+      "name": "Bard",
+      "icon": "./assets/icons/classes/bard/bard.png"
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "icon": "./assets/icons/classes/cleric/cleric.png"
+    },
+    {
+      "id": "druid",
+      "name": "Druid",
+      "icon": "./assets/icons/classes/druid/druid.png"
+    },
+    {
+      "id": "fighter",
+      "name": "Fighter",
+      "icon": "./assets/icons/classes/fighter/fighter.png"
+    },
+    {
+      "id": "monk",
+      "name": "Monk",
+      "icon": "./assets/icons/classes/monk/monk.png"
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "icon": "./assets/icons/classes/paladin/paladin.png"
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "icon": "./assets/icons/classes/ranger/ranger.png"
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "icon": "./assets/icons/classes/rogue/rogue.png"
+    },
+    {
+      "id": "sorcerer",
+      "name": "Sorcerer",
+      "icon": "./assets/icons/classes/sorcerer/sorcerer.png"
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "icon": "./assets/icons/classes/warlock/warlock.png"
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard",
+      "icon": "./assets/icons/classes/wizard/wizard.png"
+    }
+  ]
+}

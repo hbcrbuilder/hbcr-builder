@@ -1,0 +1,233 @@
+{
+  "classId": "rogue",
+  "displayName": "Rogue",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "rogue.luck_points",
+        "name": "Luck Points"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.nimble_movement",
+        "name": "Nimble Movement"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.arcane_sneak_attack",
+        "name": "Arcane Sneak Attack"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.1d6_cantrips",
+        "name": "1d6 Cantrips"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "rogue.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "rogue.blessing_of_the_trickster_2d6",
+        "name": "Blessing of the Trickster 2d6"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      },
+      {
+        "type": "feature",
+        "id": "rogue.lucky_toss",
+        "name": "Lucky Toss"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.greater_sneak_attack",
+        "name": "Greater Sneak Attack"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.trick_of_the",
+        "name": "Trick of the"
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "rogue.3d6_light",
+        "name": "3d6 Light"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "rogue.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "rogue.ethereal_caster_4d6",
+        "name": "Ethereal Caster 4d6"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      },
+      {
+        "type": "feature",
+        "id": "rogue.uncanny_dodge",
+        "name": "Uncanny Dodge"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.superior_sneak",
+        "name": "Superior Sneak"
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "rogue.5d6_attack",
+        "name": "5d6 Attack"
+      },
+      {
+        "type": "feature",
+        "id": "rogue.magical_ambush",
+        "name": "Magical Ambush"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "rogue.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "rogue.elusive_casting_6d6",
+        "name": "Elusive Casting 6d6"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "unknown",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0
+      ],
+      "2": [
+        2,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        2,
+        0
+      ],
+      "6": [
+        4,
+        2,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        2
+      ],
+      "10": [
+        4,
+        4,
+        2
+      ],
+      "11": [
+        4,
+        4,
+        4
+      ],
+      "12": [
+        4,
+        4,
+        4
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "ability": "int"
+  }
+}

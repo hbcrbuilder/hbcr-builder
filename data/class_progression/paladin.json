@@ -1,0 +1,223 @@
+{
+  "classId": "paladin",
+  "displayName": "Paladin",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "paladin.cantrips",
+        "name": "Cantrips"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.smites",
+        "name": "Smites"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.healing_radiance",
+        "name": "Healing Radiance"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.binding_radiance",
+        "name": "Binding Radiance"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.1d12_ancient_judgement",
+        "name": "1d12 Ancient Judgement"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "paladin.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "paladin.soothing_radiance_2d12",
+        "name": "Soothing Radiance 2d12"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "paladin.extra_attack",
+        "name": "Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.turn_the_faithless_3d12",
+        "name": "Turn the Faithless 3d12"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "paladin.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "paladin.extended_oath_4d12",
+        "name": "Extended Oath 4d12"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "paladin.extra_attack_martial_surge",
+        "name": "Extra Attack: Martial Surge"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.smitten",
+        "name": "Smitten"
+      },
+      {
+        "type": "feature",
+        "id": "paladin.aura_of_protection_5d12",
+        "name": "Aura of Protection 5d12"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "paladin.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "paladin.oathbound_defender_6d12",
+        "name": "Oathbound Defender 6d12"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  },
+  "spellcasting": {
+    "kind": "unknown",
+    "slotsByLevel": {
+      "1": [
+        2,
+        0,
+        0
+      ],
+      "2": [
+        2,
+        0,
+        0
+      ],
+      "3": [
+        4,
+        0,
+        0
+      ],
+      "4": [
+        4,
+        0,
+        0
+      ],
+      "5": [
+        4,
+        2,
+        0
+      ],
+      "6": [
+        4,
+        2,
+        0
+      ],
+      "7": [
+        4,
+        4,
+        0
+      ],
+      "8": [
+        4,
+        4,
+        0
+      ],
+      "9": [
+        4,
+        4,
+        2
+      ],
+      "10": [
+        4,
+        4,
+        2
+      ],
+      "11": [
+        4,
+        4,
+        4
+      ],
+      "12": [
+        4,
+        4,
+        4
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4
+    },
+    "ability": "cha"
+  }
+}

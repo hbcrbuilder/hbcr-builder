@@ -1,0 +1,138 @@
+{
+  "classId": "fighter",
+  "displayName": "Fighter",
+  "levels": {
+    "1": [
+      {
+        "type": "feature",
+        "id": "fighter.manoeuvres",
+        "name": "Manoeuvres"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.second_wind",
+        "name": "Second Wind"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.focused_weave_1d6",
+        "name": "Focused Weave 1d6"
+      }
+    ],
+    "2": [
+      {
+        "type": "choice",
+        "id": "fighter.passives.l2",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "3": [
+      {
+        "type": "feature",
+        "id": "fighter.elemental_fletchings_2d6",
+        "name": "Elemental Fletchings 2d6"
+      }
+    ],
+    "4": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 4
+      }
+    ],
+    "5": [
+      {
+        "type": "feature",
+        "id": "fighter.extra_attack",
+        "name": "Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.action_surge",
+        "name": "Action Surge"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.arcane_finesse_3d6",
+        "name": "Arcane Finesse 3d6"
+      }
+    ],
+    "6": [
+      {
+        "type": "choice",
+        "id": "fighter.passives.l6",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "7": [
+      {
+        "type": "feature",
+        "id": "fighter.improved_fletchings_4d6",
+        "name": "Improved Fletchings 4d6"
+      }
+    ],
+    "8": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 8
+      }
+    ],
+    "9": [
+      {
+        "type": "feature",
+        "id": "fighter.improved_extra_attack",
+        "name": "Improved Extra Attack"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.indomitable",
+        "name": "Indomitable"
+      },
+      {
+        "type": "feature",
+        "id": "fighter.greater_focus_5d6",
+        "name": "Greater Focus 5d6"
+      }
+    ],
+    "10": [
+      {
+        "type": "choice",
+        "id": "fighter.passives.l10",
+        "prompt": "Passive Selection",
+        "count": 2,
+        "options": [
+          {
+            "kind": "passive_pool",
+            "pool": "class_passives"
+          }
+        ]
+      }
+    ],
+    "11": [
+      {
+        "type": "feature",
+        "id": "fighter.eye_of_the_arcana_6d6",
+        "name": "Eye of the Arcana 6d6"
+      }
+    ],
+    "12": [
+      {
+        "type": "asi_or_feat_gate",
+        "level": 12
+      }
+    ]
+  }
+}

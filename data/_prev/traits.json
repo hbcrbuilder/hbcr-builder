@@ -1,0 +1,204 @@
+{
+  "traits": [
+    {
+      "id": "adrenaline-surge",
+      "name": "Adrenaline Surge",
+      "description": "While below 50% of your maximum Hit Points, you gain a +2 bonus to all damage dealt. However, while above 50% of your maximum Hit Points, you receive a -2 penalty instead."
+    },
+    {
+      "id": "blind-emotions",
+      "name": "Blind Emotions",
+      "description": "You permanently benefit from the effects of being Calmed. However, your targeting range is limited to 3m/10ft."
+    },
+    {
+      "id": "bloody-results",
+      "name": "Bloody Results",
+      "description": "Gain a bonus to damage dealt equal to your Proficiency Bonus. However, when dealing damage, you also damage yourself for the same amount."
+    },
+    {
+      "id": "borrowed-time",
+      "name": "Borrowed Time",
+      "description": "At the beginning of any combat encounter, you receive Temporary Hit Points equal to your level multiplied by two. Upon ending combat, you lose the temporary HP and you take damage equal to your level multiplied by four."
+    },
+    {
+      "id": "breathe-deep",
+      "name": "Breathe Deep",
+      "description": "Gain the ability to center yourself with a deep breath, restoring both your Action and Bonus Action. At the end of your turn, you immediately fall Unconscious, causing you to lose your next turn."
+    },
+    {
+      "id": "confidently-incorrect",
+      "name": "Confidently Incorrect",
+      "description": "Upon casting a Spell, there is a 10% chance that it will erupt in a violent explosion, damaging everything within 3m/10ft of your target."
+    },
+    {
+      "id": "critical-loss",
+      "name": "Critical Loss",
+      "description": "Reduce the number needed to roll a Critical Hit by 2. However, your Critical Hits deal half of their normal damage."
+    },
+    {
+      "id": "crybaby",
+      "name": "Crybaby",
+      "description": "Upon being damaged while not enraged, you immediately fall Prone and begin to cry. Upon starting your next turn, you become enraged for three turns."
+    },
+    {
+      "id": "delusions-in-the-dark",
+      "name": "Delusions in the Dark",
+      "description": "Gain Resistance to Necrotic damage and status immunity to Fear-based effects. However, you also become Vulnerable to Radiant damage."
+    },
+    {
+      "id": "gambler",
+      "name": "Gambler",
+      "description": "Upon starting your turn in combat, you have a 10% chance to only roll Critical Hits. However, you also have a 10% chance to lose your turn entirely."
+    },
+    {
+      "id": "gentle-giant",
+      "name": "Gentle Giant",
+      "description": "Upon dealing damage with melee-based Attack Rolls, you deal an additional 1d4 damage. However, when dealing damage, there is a 5% chance you will immediately die."
+    },
+    {
+      "id": "gilded-pilfer",
+      "name": "Gilded Pilfer",
+      "description": "When dealing damage, you deal an additional point of damage for every ten gold pieces your target has in their inventory, consuming it in the process."
+    },
+    {
+      "id": "glass-cannon",
+      "name": "Glass Cannon",
+      "description": "Gain an additional Action and Bonus Action. However, you also receive a -10 penalty to your Armour Class, and your maximum Hit Points are halved."
+    },
+    {
+      "id": "hands-of-calamity",
+      "name": "Hands of Calamity",
+      "description": "Upon killing an enemy with a melee-based Attack Roll, all creatures within 3m/10ft of them receive 1d12 Force damage, including you."
+    },
+    {
+      "id": "hasty-reflexes",
+      "name": "Hasty Reflexes",
+      "description": "Gain an additional Reaction. When making an Attack Roll which uses a Reaction, you roll with Disadvantage."
+    },
+    {
+      "id": "haymaker",
+      "name": "Haymaker",
+      "description": "Gain a +5 bonus to all Attack Rolls. However, you are unable to roll Critical Hits."
+    },
+    {
+      "id": "healthy-chills",
+      "name": "Healthy Chills",
+      "description": "When being healed, you always recover the maximum amount of Hit Points possible. However, upon being healed, you also become Bone Chilled for three turns."
+    },
+    {
+      "id": "heavy-handed",
+      "name": "Heavy Handed",
+      "description": "Melee-based Critical Hits will Daze your target for three turns. However, your melee-based Attack Rolls also push your target back by 3m/10ft."
+    },
+    {
+      "id": "hyperfixation",
+      "name": "Hyperfixation",
+      "description": "You have Advantage on all Concentration based Saving Throws. However, upon starting your turn while not Concentrating, you have a 10% chance to become Stunned and lose your turn."
+    },
+    {
+      "id": "ironborne",
+      "name": "Ironborne",
+      "description": "You are considered to be a Construct, and as such, gain status based immunity to a number of conditions. However, during combat, you cannot be healed."
+    },
+    {
+      "id": "immovable-boulder",
+      "name": "Immovable Boulder",
+      "description": "You are unable to be forcibly moved or fall Prone. However, you have a -10 penalty to your Initiative."
+    },
+    {
+      "id": "lefty",
+      "name": "Lefty",
+      "description": "Gain the ability to make an off-hand weapon attack as a Bonus Action, and all off-hand based Attack Rolls are rolled with Advantage. However, all Attack Rolls made with your main-hand are rolled with Disadvantage."
+    },
+    {
+      "id": "let-me-solo-them",
+      "name": "Let Me Solo Them",
+      "description": "You will always roll Critical Hits, and your Hit Points are doubled. However, you are unable to utilize Attunement. Warning: Taking this trait will drastically impact intended game balance."
+    },
+    {
+      "id": "lone-wolf",
+      "name": "Lone Wolf",
+      "description": "As long as you do not have more than 2 party members, gain an additional Action, Bonus Action, Reaction, and your maximum Hit Points are doubled. If you are the only one in your party, double these positive effects. Warning: Taking this trait will drastically impact intended game balance, and is made for solo or dual runs."
+    },
+    {
+      "id": "narcoleptic",
+      "name": "Narcoleptic",
+      "description": "Upon starting your turn, you have a 33% chance to fall Asleep. Upon waking from a sleep-based Condition, you receive Temporary Hit Points equal to your level multiplied by 4."
+    },
+    {
+      "id": "natural-medium",
+      "name": "Natural Medium",
+      "description": "Permanently gain the effects of Detect Thoughts, Speak with Animals, and Speak with Dead. However, you make all Charisma based Skill Checks with a -2 penalty."
+    },
+    {
+      "id": "overcharged",
+      "name": "Overcharged",
+      "description": "When dealing damage with Spells, you deal additional damage equal to your Proficiency Bonus. However, you also have Disadvantage on all Constitution-based Saving Throws."
+    },
+    {
+      "id": "overly-difficult",
+      "name": "Overly Difficult",
+      "description": "Spells you cast increase their Difficulty Class by two. However, you make all Saving Throws with Disadvantage."
+    },
+    {
+      "id": "packing",
+      "name": "Packing",
+      "description": "Double your Carrying Capacity. However, your Movement Speed is reduced by 3m/10ft."
+    },
+    {
+      "id": "planar-skipping",
+      "name": "Planar Skipping",
+      "description": "Each turn, you may teleport up to 18m/60ft as a free action. However, you also have a 33% chance upon doing so to be suddenly Banished."
+    },
+    {
+      "id": "reactive-loss",
+      "name": "Reactive Loss",
+      "description": "You no longer provoke Opportunity Attacks. However, you are unable to utilize your Reactions during combat."
+    },
+    {
+      "id": "reckless",
+      "name": "Reckless",
+      "description": "Gain Advantage on all Attack Rolls and damage rolls. However, you also become Vulnerable to Bludgeoning, Piercing, and Slashing damage."
+    },
+    {
+      "id": "slow-roller",
+      "name": "Slow Roller",
+      "description": "Your Movement Speed is halved. However, upon damaging an enemy with a melee-based Attack Roll, you halve their Movement Speed as well."
+    },
+    {
+      "id": "stinky",
+      "name": "Stinky",
+      "description": "You gain status-based immunity to Noxious Fumes, and upon starting your turn, you create a 3m/10ft cloud of Noxious Gas. However, you make all Charisma-based Ability Checks with Disadvantage."
+    },
+    {
+      "id": "split-focus",
+      "name": "Split Focus",
+      "description": "Gain the ability to target two enemies at once with your weapon-based Attack Rolls. However, all weapon-based Attack Rolls also deal half damage."
+    },
+    {
+      "id": "sunlight-aversion",
+      "name": "Sunlight Aversion",
+      "description": "While in an obscured area, you gain Advantage on all Attack Rolls. However, while unobscured, you roll with Disadvantage instead."
+    },
+    {
+      "id": "unhinged",
+      "name": "Unhinged",
+      "description": "While in combat, killing another creature will immediately restore 1d12 Hit Points. However, if you fail to kill a creature within three turns, you become permanently Mad until you do."
+    },
+    {
+      "id": "unstable-source",
+      "name": "Unstable Source",
+      "description": "Each turn in combat, you have a 10% chance to experience a positive surge of Wild Magic. However, upon recovering from being Downed, you have a 100% chance to experience a negative surge."
+    },
+    {
+      "id": "waning-immortality",
+      "name": "Waning Immortality",
+      "description": "Your maximum Hit Points are tripled. However, each time that you go down, your maximum Hit Points are permanently reduced by 4. This reduction in Hit Points cannot be undone."
+    },
+    {
+      "id": "wretch",
+      "name": "Wretch",
+      "description": "You make all Attack Rolls, Ability Checks, and Saving Throws with Disadvantage. Warning: Taking this trait will drastically impact intended game balance."
+    }
+  ]
+}
