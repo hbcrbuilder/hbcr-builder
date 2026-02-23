@@ -572,13 +572,6 @@ export async function RadialScreen({ state }) {
   const ch = state.character;
   const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
   let stage = ui.stage || "race";
-
-  // Skip empty subrace stages (e.g. Half-Orc, Human): go straight to Class.
-  if (stage === "subrace") {
-    const _raceObj = raceMap.get(ch.race);
-    const _subs = _raceObj?.subraces ?? [];
-    if (!Array.isArray(_subs) || _subs.length === 0) stage = "class";
-  }
   const buildLevel = Number(ui.buildLevel ?? 1);
 
   // Load only the class progression files currently used in the multiclass timeline.
@@ -589,7 +582,14 @@ export async function RadialScreen({ state }) {
     const raceMap = new Map(races.map((r) => [r.id, r]));
   const classMap = new Map(classes.map((c) => [c.id, c]));
 
-    const currentRace = raceMap.get(ch.race);
+    
+// Skip empty subrace stages (e.g. Half-Orc, Human): go straight to Class.
+if (stage === "subrace") {
+  const _raceObj = raceMap.get(ch.race);
+  const _subs = _raceObj?.subraces ?? [];
+  if (!Array.isArray(_subs) || _subs.length === 0) stage = "class";
+}
+const currentRace = raceMap.get(ch.race);
   const currentSubrace = currentRace?.subraces?.find((s) => s.id === ch.subrace) ?? null;
 
 

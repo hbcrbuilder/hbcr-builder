@@ -45,16 +45,8 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
-  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
-  const s = String(key || '').trim();
-  if (!s) return '';
-
-  // Insert underscores between camel-case boundaries.
-  const camelSplit = s
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
-
-  return camelSplit
+  return String(key)
+    .trim()
     .replace(/\s+/g, '_')
     .replace(/-+/g, '_')
     .replace(/__+/g, '_')
@@ -205,40 +197,53 @@ function buildRacesJson(racesRows, subracesRows) {
   };
 
   const subraceIcon = (raceId, subIdRaw) => {
-    const ridNorm = normalizeRaceIdForAssets(raceId);
-    if (!ridNorm) return null;
+  const ridNorm = normalizeRaceIdForAssets(raceId);
+  if (!ridNorm) return null;
 
-    let token = String(subIdRaw || '').trim();
-    const raceIdHyphen = String(raceId || '').replace(/_/g, '-');
-    const prefixes = [
-      `${raceId}_`, `${raceId}-`,
-      `${ridNorm}_`, `${ridNorm}-`,
-      `${raceIdHyphen}_`, `${raceIdHyphen}-`
-    ];
-    for (const p of prefixes) {
-      if (token.startsWith(p)) { token = token.slice(p.length); break; }
-    }
+  let token = String(subIdRaw || '').trim().toLowerCase();
+  if (!token) return null;
 
-    
+  const raceRaw = String(raceId || '').trim().toLowerCase();
+  const raceHyphen = raceRaw.replace(/_/g, '-');
+  const raceUnder = raceHyphen.replace(/-/g, '_');
 
-// Remove race suffix for rows like: amethyst_dragonborn
-const suffixes = [
-  `_${raceId}`, `-${raceId}`,
-  `_${ridNorm}`, `-${ridNorm}`,
-  `_${raceIdHyphen}`, `-${raceIdHyphen}`
-];
-for (const sfx of suffixes) {
-  if (token.endsWith(sfx)) { token = token.slice(0, -sfx.length); break; }
-}
-const t = normalizeSubraceTokenForAssets(ridNorm, token);
-    if (!t) return null;
+  // Keep underscores/hyphens for detection, but normalize spaces.
+  token = token.replace(/\s+/g, '_');
 
-    if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${t}.png`;
-    if (ridNorm === 'drow' && t === 'lolthsworn') return './assets/icons/races/drow/drow-lolthsworn.png';
-    if (ridNorm === 'dwarf' && t === 'duergar') return './assets/icons/races/dwarf/dwarf-duergar.png';
+  // Strip prefix (dragonborn_black / dragonborn-black / half_elf_high etc.)
+  const prefixes = [
+    `${raceRaw}_`, `${raceRaw}-`,
+    `${ridNorm}_`, `${ridNorm}-`,
+    `${raceHyphen}_`, `${raceHyphen}-`,
+    `${raceUnder}_`, `${raceUnder}-`
+  ];
+  for (const p of prefixes) {
+    if (token.startsWith(p)) { token = token.slice(p.length); break; }
+  }
 
-    return `./assets/icons/races/${ridNorm}/${ridNorm}-${t}.png`;
-  };
+  // Strip suffix (amethyst_dragonborn / amethyst-dragonborn etc.)
+  const suffixes = [
+    `_${raceRaw}`, `-${raceRaw}`,
+    `_${ridNorm}`, `-${ridNorm}`,
+    `_${raceHyphen}`, `-${raceHyphen}`,
+    `_${raceUnder}`, `-${raceUnder}`
+  ];
+  for (const sfx of suffixes) {
+    if (token.endsWith(sfx)) { token = token.slice(0, -sfx.length); break; }
+  }
+
+  // Normalize to hyphen tokens for filenames.
+  token = token.replace(/_/g, '-');
+
+  const t = normalizeSubraceTokenForAssets(ridNorm, token);
+  if (!t) return null;
+
+  if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${t}.png`;
+  if (ridNorm === 'drow' && t === 'lolthsworn') return './assets/icons/races/drow/drow-lolthsworn.png';
+  if (ridNorm === 'dwarf' && t === 'duergar') return './assets/icons/races/dwarf/dwarf-duergar.png';
+
+  return `./assets/icons/races/${ridNorm}/${ridNorm}-${t}.png`;
+};
 
   for (const r of racesRows) {
     const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
@@ -274,6 +279,12 @@ const t = normalizeSubraceTokenForAssets(ridNorm, token);
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
   }
+
+  return {
+    meta: { source: 'live-sheet' },
+    races: Array.from(byRace.values())
+  };
+}
 
   return {
     meta: { source: 'live-sheet' },
