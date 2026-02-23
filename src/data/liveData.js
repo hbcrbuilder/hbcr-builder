@@ -45,17 +45,8 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
-  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
-  const s = String(key || '').trim();
-  if (!s) return '';
-
-  // Insert underscores between camel-case boundaries.
-  // e.g. RaceId -> Race_Id, SpellListId -> Spell_List_Id
-  const camelSplit = s
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
-
-  return camelSplit
+  return String(key)
+    .trim()
     .replace(/\s+/g, '_')
     .replace(/-+/g, '_')
     .replace(/__+/g, '_')
@@ -91,77 +82,19 @@ function normalizeRow(row) {
     if (!(lower in out)) out[lower] = parsed;
   }
 
-    const titleCaseFromId = (raw) => {
-    const s = String(raw ?? '').trim();
-    if (!s) return '';
-    const words = s
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .split(' ')
-      .filter(Boolean);
-    return words.map(w => (w ? (w[0].toUpperCase() + w.slice(1)) : '')).join(' ');
-  };
-
   // Common field harmonization across sheet tabs.
   // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
   if (out.name == null || String(out.name).trim() === '') {
-    out.name = out.title
-      ?? out.trait
-      ?? out.traitName
-      ?? out.spell
-      ?? out.spellName
-      ?? out.cantrip
-      ?? out.cantripName
-      ?? out.feature
-      ?? out.featureName
-      ?? out.race
-      ?? out.raceName
-      ?? out.subrace
-      ?? out.subraceName
-      ?? out.class
-      ?? out.className
-      ?? out.subclass
-      ?? out.subclassName
-      ?? out.passive
-      ?? out.passiveName
-      ?? out.feat
-      ?? out.featName
-      ?? out.choice
-      ?? out.choiceName
-      ?? out.name;
+    out.name = out.title ?? out.trait ?? out.spell ?? out.feature ?? out.race ?? out.class ?? out.subclass ?? out.passive ?? out.feat ?? out.choice ?? out.name;
   }
   if (out.description == null || String(out.description).trim() === '') {
     out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
   }
-  // Some tabs use "Text" for spells/cantrips and choice entries.
-  if (out.text == null || String(out.text).trim() === '') {
-    out.text = out.description ?? out.effect ?? out.details ?? out.tooltip ?? out.text;
-  }
   if (out.id == null || String(out.id).trim() === '') {
-    out.id = out.uuid
-      ?? out.guid
-      ?? out.key
-      ?? out.raceId
-      ?? out.subraceId
-      ?? out.classId
-      ?? out.subclassId
-      ?? out.spellId
-      ?? out.cantripId
-      ?? out.featId
-      ?? out.traitId
-      ?? out.featureId
-      ?? out.choiceId
-      ?? out.passiveId
-      ?? out.id;
+    out.id = out.uuid ?? out.guid ?? out.key ?? out.id;
   }
 
-  // Friendly fallback label if the sheet row only has an id.
-  if ((out.name == null || String(out.name).trim() === '') && out.id != null) {
-    out.name = titleCaseFromId(out.id);
-  }
-
-return out;
+  return out;
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
@@ -187,124 +120,68 @@ function ensureId(s) {
 }
 
 function buildRacesJson(racesRows, subracesRows) {
-  const normalizeRaceId = (rid) => {
-    const s = String(rid || '').trim();
-    if (!s) return '';
-    if (s.startsWith('half_')) return s.replace(/_/g, '-');
-    return s;
-  };
-
-  const baseRaceIcon = (raceId) => {
-    const rid = normalizeRaceId(raceId);
-    if (!rid) return null;
-    if (rid === 'half-elf') return './assets/icons/races/half-elf/halfelf.png';
-    if (rid === 'half-orc') return './assets/icons/races/half-orc/halforc.png';
-    return `./assets/icons/races/${rid}/${rid}.png`;
-  };
-
-  
-  const normalizeSubraceTokenForAsset = (rid, sid) => {
-    // sid is expected hyphenated already.
-    const s = String(sid || '').trim();
-    if (!rid || !s) return '';
-
-    // Common BG3 filename tokens in this repo (no extra hyphens)
-    const map = {
-      elf: { 'high-elf': 'highelf', 'wood-elf': 'woodelf' },
-      drow: { 'lolth-sworn': 'lolthsworn' },
-      dwarf: { 'gold-dwarf': 'golddwarf', 'shield-dwarf': 'shielddwarf' },
-      gnome: { 'deep-gnome': 'deepgnome', 'forest-gnome': 'forestgnome', 'rock-gnome': 'rockgnome' },
-      tiefling: { 'mephistopheles': 'mephistopeles' }
-    };
-
-    if (map[rid] && map[rid][s]) return map[rid][s];
-
-    // Half-elf icons are in /half-elf and use halfelf-<token>.png
-    if (rid === 'half-elf') {
-      // Sheet might provide high_elf / wood_elf / drow
-      if (s === 'high-elf' || s === 'high') return 'high';
-      if (s === 'wood-elf' || s === 'wood') return 'wood';
-      if (s === 'drow') return 'drow';
-      // If it comes as something like "half-elf-high", caller may not have stripped prefix:
-      const stripped = s.replace(/^half-elf-/, '');
-      return stripped;
-    }
-
-    // Otherwise, assume token already matches file naming.
-    return s;
-  };
-
-  const subraceIcon = (raceId, subId) => {
-    const rid = normalizeRaceId(raceId);
-    const sid = String(subId || '').trim();
-    if (!rid || !sid) return null;
-
-    const token = normalizeSubraceTokenForAsset(rid, sid);
-    if (!token) return null;
-
-    if (rid === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${token}.png`;
-
-    // Default pattern used in this repo: <race>/<race>-<token>.png
-    return `./assets/icons/races/${rid}/${rid}-${token}.png`;
-  };
-
   const byRace = new Map();
 
   for (const r of racesRows) {
-    const idRaw = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
-    const id = normalizeRaceId(idRaw);
+    const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
     if (!id) continue;
     byRace.set(id, {
       id,
       name: pick(r, ['name', 'race', 'raceName', 'race_name'], id),
-      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null) ?? baseRaceIcon(id),
+      icon: pick(r, ['icon', 'iconPath', 'icon_path'], null),
       description: pick(r, ['description', 'desc'], ''),
       subraces: []
     });
   }
 
   for (const sr of subracesRows) {
-    const raceIdRaw = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
-    const raceId = normalizeRaceId(raceIdRaw);
-    const rawId = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
-    if (!raceId || !rawId) continue;
+    const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
+    const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
+    if (!raceId || !id) continue;
     const race = byRace.get(raceId) || {
       id: raceId,
       name: raceId,
-      icon: baseRaceIcon(raceId),
+      icon: null,
       subraces: []
     };
 
     // If the base race didn't exist, add it now.
     if (!byRace.has(raceId)) byRace.set(raceId, race);
 
-    let subId = rawId;
+    // Compute an icon path that matches the repo's assets naming.
+    const ridNorm = String(raceId).replace(/_/g, '-');
 
-// Strip "<race>_" prefixes from sheet IDs.
-// Handles both hyphen and underscore race ids (e.g. "half-elf_" and "half_elf_").
-const prefixes = [
-  `${raceId}_`,
-  `${raceId.replace(/-/g, "_")}_`
-];
-for (const pre of prefixes) {
-  if (subId.startsWith(pre)) {
-    subId = subId.slice(pre.length);
-    break;
-  }
-}
+    // Sheet subrace ids are often like: dragonborn_black, elf_high, half_elf_high, etc.
+    // We need just the subrace token for the filename (black/high/etc).
+    let subToken = String(id);
+    const prefixes = [
+      `${raceId}_`, `${raceId}-`,
+      `${ridNorm}_`, `${ridNorm}-`
+    ];
+    for (const p of prefixes) {
+      if (subToken.startsWith(p)) { subToken = subToken.slice(p.length); break; }
+    }
+    subToken = subToken.replace(/_/g, '-');
 
-// Normalize to hyphen form for internal ids.
-subId = subId.replace(/_/g, '-');
+    const computedIcon = (() => {
+      // Half-elf files use "halfelf-<token>.png"
+      if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${subToken}.png`;
+
+      // Drow Lolth-Sworn filename uses no hyphen: drow-lolthsworn.png
+      if (ridNorm === 'drow' && subToken === 'lolth-sworn') return './assets/icons/races/drow/drow-lolthsworn.png';
+
+      return `./assets/icons/races/${ridNorm}/${ridNorm}-${subToken}.png`;
+    })();
 
     race.subraces.push({
-      id: subId,
-      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], subId),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, subId),
+      id,
+      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], id),
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || computedIcon,
       description: pick(sr, ['description', 'desc'], ''),
       // Pass through any extra fields (keeps things flexible for mod updates)
       ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
-  }
+}
 
   return {
     meta: { source: 'live-sheet' },
@@ -321,7 +198,7 @@ function buildClassesJson(classesRows) {
         return {
           id,
           name: pick(r, ['name', 'class', 'className', 'class_name'], id),
-          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null) ?? `./assets/icons/classes/${id}/${id}.png`
+          icon: pick(r, ['icon', 'iconPath', 'icon_path'], null)
         };
       })
       .filter(Boolean)
