@@ -45,12 +45,9 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
-  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
   const s = String(key || '').trim();
   if (!s) return '';
 
-  // Insert underscores between camel-case boundaries.
-  // e.g. RaceId -> Race_Id, SpellListId -> Spell_List_Id
   const camelSplit = s
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
@@ -70,28 +67,12 @@ function toCamelKey(snake) {
 function normalizeRow(row) {
   const out = {};
   for (const [k, v] of Object.entries(row || {})) {
-    const key = String(k || '').trim();
-    if (!key) continue;
-
-    const parsed = tryParseCell(v);
-
-    // Preserve original key (for debugging / unexpected columns)
-    out[key] = parsed;
-
-    // Add stable aliases so the UI can be case/space-insensitive.
-    // e.g. "ID" -> "id"; "Race Id" -> "race_id" and "raceId".
-    const snake = toSnakeKey(key);
-    if (!(snake in out)) out[snake] = parsed;
-
-    const camel = toCamelKey(snake);
-    if (!(camel in out)) out[camel] = parsed;
-
-    // Also add a pure-lowercase alias (some sheets use headers like "Name")
-    const lower = String(key).trim().toLowerCase();
-    if (!(lower in out)) out[lower] = parsed;
+    const nk = toSnakeKey(k);
+    if (!nk) continue;
+    out[nk] = v;
   }
 
-    const titleCaseFromId = (raw) => {
+  const titleCaseFromId = (raw) => {
     const s = String(raw ?? '').trim();
     if (!s) return '';
     const words = s
@@ -103,65 +84,64 @@ function normalizeRow(row) {
     return words.map(w => (w ? (w[0].toUpperCase() + w.slice(1)) : '')).join(' ');
   };
 
-  // Common field harmonization across sheet tabs.
-  // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
+  // Harmonize common fields
   if (out.name == null || String(out.name).trim() === '') {
-    out.name = out.title
-      ?? out.trait
-      ?? out.traitName
-      ?? out.spell
-      ?? out.spellName
-      ?? out.cantrip
-      ?? out.cantripName
-      ?? out.feature
-      ?? out.featureName
-      ?? out.race
-      ?? out.raceName
-      ?? out.subrace
-      ?? out.subraceName
-      ?? out.class
-      ?? out.className
-      ?? out.subclass
-      ?? out.subclassName
-      ?? out.passive
-      ?? out.passiveName
-      ?? out.feat
-      ?? out.featName
-      ?? out.choice
-      ?? out.choiceName
-      ?? out.name;
+    out.name =
+      out.title ??
+      out.trait ??
+      out.trait_name ??
+      out.race_name ??
+      out.subrace_name ??
+      out.class_name ??
+      out.subclass_name ??
+      out.spell_name ??
+      out.cantrip_name ??
+      out.feature_name ??
+      out.passive_name ??
+      out.feat_name ??
+      out.choice_name ??
+      out.name;
   }
+
   if (out.description == null || String(out.description).trim() === '') {
-    out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
+    out.description =
+      out.desc ??
+      out.effect ??
+      out.details ??
+      out.text ??
+      out.tooltip ??
+      out.description;
   }
-  // Some tabs use "Text" for spells/cantrips and choice entries.
+
   if (out.text == null || String(out.text).trim() === '') {
     out.text = out.description ?? out.effect ?? out.details ?? out.tooltip ?? out.text;
   }
+
   if (out.id == null || String(out.id).trim() === '') {
-    out.id = out.uuid
-      ?? out.guid
-      ?? out.key
-      ?? out.raceId
-      ?? out.subraceId
-      ?? out.classId
-      ?? out.subclassId
-      ?? out.spellId
-      ?? out.cantripId
-      ?? out.featId
-      ?? out.traitId
-      ?? out.featureId
-      ?? out.choiceId
-      ?? out.passiveId
-      ?? out.id;
+    out.id =
+      out.uuid ??
+      out.guid ??
+      out.key ??
+      out.race_id ??
+      out.subrace_id ??
+      out.class_id ??
+      out.subclass_id ??
+      out.spell_id ??
+      out.cantrip_id ??
+      out.feat_id ??
+      out.trait_id ??
+      out.feature_id ??
+      out.choice_id ??
+      out.passive_id ??
+      out.id;
   }
 
-  // Friendly fallback label if the sheet row only has an id.
+  // Friendly label fallback
   if ((out.name == null || String(out.name).trim() === '') && out.id != null) {
     out.name = titleCaseFromId(out.id);
   }
 
-return out;
+  return out;
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
@@ -190,8 +170,44 @@ function buildRacesJson(racesRows, subracesRows) {
   const normalizeRaceId = (rid) => {
     const s = String(rid || '').trim();
     if (!s) return '';
+    // Assets + local JSON use hyphens for these
     if (s.startsWith('half_')) return s.replace(/_/g, '-');
     return s;
+  };
+
+  const normalizeSubraceToken = (raceId, rawSubId) => {
+    let sid = String(rawSubId || '').trim();
+    if (!sid) return '';
+
+    // Strip "<race>_" prefix in BOTH half-elf styles:
+    // raceId might be "half-elf" but sheet IDs might be "half_elf_high_elf"
+    const ridHyphen = normalizeRaceId(raceId);
+    const ridUnderscore = ridHyphen.replace(/-/g, '_');
+
+    const p1 = `${ridHyphen}_`;
+    const p2 = `${ridUnderscore}_`;
+
+    if (sid.startsWith(p1)) sid = sid.slice(p1.length);
+    if (sid.startsWith(p2)) sid = sid.slice(p2.length);
+
+    // Normalize separators
+    sid = sid.replace(/_/g, '-');
+
+    // Normalize common BG3 subrace tokens -> filename tokens
+    const map = {
+      'high-elf': 'highelf',
+      'wood-elf': 'woodelf',
+      'gold-dwarf': 'golddwarf',
+      'shield-dwarf': 'shielddwarf',
+      'deep-gnome': 'deepgnome',
+      'forest-gnome': 'forestgnome',
+      'rock-gnome': 'rockgnome',
+      'lolth-sworn': 'lolthsworn',
+      // asset typo:
+      'mephistopheles': 'mephistopeles'
+    };
+
+    return map[sid] ?? sid;
   };
 
   const baseRaceIcon = (raceId) => {
@@ -202,44 +218,24 @@ function buildRacesJson(racesRows, subracesRows) {
     return `./assets/icons/races/${rid}/${rid}.png`;
   };
 
-  const subraceIcon = (raceId, subId) => {
+  const subraceIcon = (raceId, rawSubId) => {
     const rid = normalizeRaceId(raceId);
-    const sid0 = String(subId || '').trim();
-    if (!rid || !sid0) return null;
+    const token = normalizeSubraceToken(raceId, rawSubId);
+    if (!rid || !token) return null;
 
-    // Normalize subrace token to match the filenames in ./assets/icons/races/*
-    const normalizeToken = (ridInner, sidInner) => {
-      let sid = String(sidInner || '').trim().toLowerCase();
-      if (!sid) return '';
-
-      // Common: remove race prefix if it accidentally leaked in (e.g. "elf_high_elf")
-      sid = sid.replace(/^[a-z-]+[_-]/, '');
-
-      // Fix known filename quirks
-      if (ridInner === 'drow' && (sid === 'lolth-sworn' || sid === 'lolth_sworn')) return 'lolthsworn';
-      if (ridInner === 'tiefling' && sid === 'mephistopheles') return 'mephistopeles';
-
-      // Generic: files often drop the hyphen before the race word (highelf, deepgnome, golddwarf, etc.)
-      sid = sid
-        .replace(/_+/g, '-')
-        .replace(/-elf$/, 'elf')
-        .replace(/-gnome$/, 'gnome')
-        .replace(/-dwarf$/, 'dwarf');
-
-      return sid;
-    };
-
-    // Half-elf assets are named halfelf-<token>.png (high/wood/drow)
     if (rid === 'half-elf') {
-      const token = String(sid0).trim().toLowerCase().replace(/_+/g, '-');
-      // Accept "high-elf" / "wood-elf" as input and compress to the asset token.
-      const t = token === 'high-elf' ? 'high' : token === 'wood-elf' ? 'wood' : token;
-      return `./assets/icons/races/half-elf/halfelf-${t}.png`;
+      // Half-elf filenames: halfelf-high.png / halfelf-wood.png / halfelf-drow.png
+      const map = {
+        highelf: 'high',
+        woodelf: 'wood',
+        drow: 'drow'
+      };
+      const suffix = map[token] ?? token;
+      return `./assets/icons/races/half-elf/halfelf-${suffix}.png`;
     }
 
-    const token = normalizeToken(rid, sid0);
-    if (!token) return null;
-
+    // Many races have BOTH forms (e.g. dwarf-gold.png and dwarf-golddwarf.png).
+    // Prefer the longer token (more specific) when we normalized it.
     return `./assets/icons/races/${rid}/${rid}-${token}.png`;
   };
 
@@ -259,10 +255,13 @@ function buildRacesJson(racesRows, subracesRows) {
   }
 
   for (const sr of subracesRows) {
-    const raceIdRaw = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
+    const raceIdRaw = ensureId(
+      pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid'])
+    );
     const raceId = normalizeRaceId(raceIdRaw);
     const rawId = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
     if (!raceId || !rawId) continue;
+
     const race = byRace.get(raceId) || {
       id: raceId,
       name: raceId,
@@ -270,24 +269,20 @@ function buildRacesJson(racesRows, subracesRows) {
       subraces: []
     };
 
-    // If the base race didn't exist, add it now.
     if (!byRace.has(raceId)) byRace.set(raceId, race);
 
-    let subId = rawId;
-
-    const prefixA = `${raceId}_`;
-    const prefixB = `${raceId.replace(/-/g, '_')}_`;
-    if (subId.startsWith(prefixA)) subId = subId.slice(prefixA.length);
-    if (subId.startsWith(prefixB)) subId = subId.slice(prefixB.length);
-    subId = subId.replace(/_/g, '-');
+    const subId = normalizeSubraceToken(raceId, rawId);
 
     race.subraces.push({
       id: subId,
       name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], subId),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, subId),
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, rawId),
       description: pick(sr, ['description', 'desc'], ''),
-      // Pass through any extra fields (keeps things flexible for mod updates)
-      ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
+      ...Object.fromEntries(
+        Object.entries(sr).filter(
+          ([k]) => !['raceId', 'race', 'parentId', 'parent', 'id', 'name', 'icon', 'description'].includes(k)
+        )
+      )
     });
   }
 
