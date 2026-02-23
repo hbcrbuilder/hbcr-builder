@@ -204,11 +204,43 @@ function buildRacesJson(racesRows, subracesRows) {
 
   const subraceIcon = (raceId, subId) => {
     const rid = normalizeRaceId(raceId);
-    const sid = String(subId || '').trim();
-    if (!rid || !sid) return null;
-    if (rid === 'drow' && sid === 'lolth-sworn') return './assets/icons/races/drow/drow-lolthsworn.png';
-    if (rid === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${sid}.png`;
-    return `./assets/icons/races/${rid}/${rid}-${sid}.png`;
+    const sid0 = String(subId || '').trim();
+    if (!rid || !sid0) return null;
+
+    // Normalize subrace token to match the filenames in ./assets/icons/races/*
+    const normalizeToken = (ridInner, sidInner) => {
+      let sid = String(sidInner || '').trim().toLowerCase();
+      if (!sid) return '';
+
+      // Common: remove race prefix if it accidentally leaked in (e.g. "elf_high_elf")
+      sid = sid.replace(/^[a-z-]+[_-]/, '');
+
+      // Fix known filename quirks
+      if (ridInner === 'drow' && (sid === 'lolth-sworn' || sid === 'lolth_sworn')) return 'lolthsworn';
+      if (ridInner === 'tiefling' && sid === 'mephistopheles') return 'mephistopeles';
+
+      // Generic: files often drop the hyphen before the race word (highelf, deepgnome, golddwarf, etc.)
+      sid = sid
+        .replace(/_+/g, '-')
+        .replace(/-elf$/, 'elf')
+        .replace(/-gnome$/, 'gnome')
+        .replace(/-dwarf$/, 'dwarf');
+
+      return sid;
+    };
+
+    // Half-elf assets are named halfelf-<token>.png (high/wood/drow)
+    if (rid === 'half-elf') {
+      const token = String(sid0).trim().toLowerCase().replace(/_+/g, '-');
+      // Accept "high-elf" / "wood-elf" as input and compress to the asset token.
+      const t = token === 'high-elf' ? 'high' : token === 'wood-elf' ? 'wood' : token;
+      return `./assets/icons/races/half-elf/halfelf-${t}.png`;
+    }
+
+    const token = normalizeToken(rid, sid0);
+    if (!token) return null;
+
+    return `./assets/icons/races/${rid}/${rid}-${token}.png`;
   };
 
   const byRace = new Map();
@@ -243,8 +275,10 @@ function buildRacesJson(racesRows, subracesRows) {
 
     let subId = rawId;
 
-    const prefix = `${raceId}_`;
-    if (subId.startsWith(prefix)) subId = subId.slice(prefix.length);
+    const prefixA = `${raceId}_`;
+    const prefixB = `${raceId.replace(/-/g, '_')}_`;
+    if (subId.startsWith(prefixA)) subId = subId.slice(prefixA.length);
+    if (subId.startsWith(prefixB)) subId = subId.slice(prefixB.length);
     subId = subId.replace(/_/g, '-');
 
     race.subraces.push({
