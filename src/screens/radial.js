@@ -87,12 +87,37 @@ async function loadRaceFeatures() {
 
 async function loadChoices() {
   if (!choicesCachePromise) {
-    choicesCachePromise = loadData("./data/choices.json", "Choices", (rows) => rows)
-      .then((json) => (Array.isArray(json) ? json : (json?.choices || json?.rows || json?.data || [])))
+    const normalize = (row) => {
+      if (!row || typeof row !== "object") return row;
+      // Support both local JSON (camelCase) and live sheet normalized keys (snake_case / PascalCase)
+      const ownerType = row.ownerType ?? row.OwnerType ?? row.owner_type ?? row.ownertype ?? "";
+      const ownerId = row.ownerId ?? row.OwnerId ?? row.owner_id ?? row.ownerid ?? "";
+      const level = row.level ?? row.Level ?? row.lvl ?? row.Lvl ?? row.level_number ?? row.levelnumber;
+      const pickType = row.pickType ?? row.PickType ?? row.pick_type ?? row.picktype ?? "";
+      const count = row.count ?? row.Count ?? row.pickCount ?? row.pick_count ?? row.pickcount ?? 0;
+      const listOverride = row.listOverride ?? row.ListOverride ?? row.list_override ?? row.listoverride ?? null;
+
+      return {
+        ...row,
+        ownerType,
+        ownerId,
+        level,
+        pickType,
+        count,
+        listOverride
+      };
+    };
+
+    choicesCachePromise = loadData("./data/choices.json", "Choices", (rows) => (rows || []).map(normalize))
+      .then((json) => {
+        const arr = Array.isArray(json) ? json : (json?.choices || json?.rows || json?.data || []);
+        return (arr || []).map(normalize);
+      })
       .catch(() => []);
   }
   return await choicesCachePromise;
 }
+
 
 async function loadTraits() {
   if (!traitsCachePromise) {
