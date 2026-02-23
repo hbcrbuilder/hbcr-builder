@@ -1,10 +1,9 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
+import { loadData } from "../data/liveData.js";
 async function loadSpells(){
   try{
-    const res = await fetch("./data/spells.json", { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await loadData("./data/spells.json", "Spells", (rows) => rows);
     return Array.isArray(data) ? data : (data?.spells || []);
   }catch(e){
     return [];

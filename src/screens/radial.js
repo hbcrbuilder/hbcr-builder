@@ -19,6 +19,12 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
+import {
+  loadRacesJson,
+  loadClassesJson,
+  loadData
+} from "../data/liveData.js";
+
 // --- Hot-path caches ---
 // The UI re-renders on every click; re-fetching big JSON files can bog down the browser.
 let racesCachePromise = null;
@@ -30,45 +36,24 @@ let featsCachePromise = null;
 let classFeaturesCachePromise = null;
 let raceFeaturesCachePromise = null;
 let choicesCachePromise = null;
-let pickersCachePromise = null;
-let pickersConfig = null;
-
-async function loadPickersConfig(){
-  if(pickersConfig) return pickersConfig;
-  if(!pickersCachePromise){
-    pickersCachePromise = (async () => {
-      try{
-        const res = await fetch("./data/pickers.json", { cache: "no-store" });
-        if(!res.ok) return null;
-        const data = await res.json();
-        if(data && typeof data === 'object') pickersConfig = data;
-      }catch(e){
-        pickersConfig = null;
-      }
-      return pickersConfig;
-    })();
-  }
-  return await pickersCachePromise;
-}
-
 
 async function loadRaces() {
   if (!racesCachePromise) {
-    racesCachePromise = fetch("./data/races.json").then((r) => r.json());
+    racesCachePromise = loadRacesJson();
   }
   return await racesCachePromise;
 }
 
 async function loadClasses() {
   if (!classesCachePromise) {
-    classesCachePromise = fetch("./data/classes.json").then((r) => r.json());
+    classesCachePromise = loadClassesJson();
   }
   return await classesCachePromise;
 }
 
 async function loadSpells() {
   if (!spellsCachePromise) {
-    spellsCachePromise = fetch("./data/spells.json").then((r) => r.json());
+    spellsCachePromise = loadData("./data/spells.json", "Spells", (rows) => rows);
   }
   return await spellsCachePromise;
 }
@@ -76,7 +61,7 @@ async function loadSpells() {
 
 async function loadLevelFlows() {
   if (!levelFlowsCachePromise) {
-    levelFlowsCachePromise = fetch("./data/levelFlows.json").then((r) => r.json());
+    levelFlowsCachePromise = loadData("./data/levelFlows.json", "LevelFlows", (rows) => rows);
   }
   return await levelFlowsCachePromise;
 }
@@ -84,13 +69,8 @@ async function loadLevelFlows() {
 
 async function loadClassFeatures() {
   if (!classFeaturesCachePromise) {
-    classFeaturesCachePromise = fetch("./data/class_features.json")
-      .then(async (r) => {
-        if (!r.ok) return [];
-        const json = await r.json();
-        if (Array.isArray(json)) return json;
-        return (json?.features || json?.classFeatures || json?.rows || json?.data || []);
-      })
+    classFeaturesCachePromise = loadData("./data/class_features.json", "ClassFeatures", (rows) => rows)
+      .then((json) => (Array.isArray(json) ? json : (json?.features || json?.classFeatures || json?.rows || json?.data || [])))
       .catch(() => []);
   }
   return await classFeaturesCachePromise;
@@ -98,13 +78,8 @@ async function loadClassFeatures() {
 
 async function loadRaceFeatures() {
   if (!raceFeaturesCachePromise) {
-    raceFeaturesCachePromise = fetch("./data/race_features.json")
-      .then(async (r) => {
-        if (!r.ok) return [];
-        const json = await r.json();
-        if (Array.isArray(json)) return json;
-        return (json?.features || json?.raceFeatures || json?.rows || json?.data || []);
-      })
+    raceFeaturesCachePromise = loadData("./data/race_features.json", "RaceFeatures", (rows) => rows)
+      .then((json) => (Array.isArray(json) ? json : (json?.features || json?.raceFeatures || json?.rows || json?.data || [])))
       .catch(() => []);
   }
   return await raceFeaturesCachePromise;
@@ -112,13 +87,8 @@ async function loadRaceFeatures() {
 
 async function loadChoices() {
   if (!choicesCachePromise) {
-    choicesCachePromise = fetch("./data/choices.json")
-      .then(async (r) => {
-        if (!r.ok) return [];
-        const json = await r.json();
-        if (Array.isArray(json)) return json;
-        return (json?.choices || json?.rows || json?.data || []);
-      })
+    choicesCachePromise = loadData("./data/choices.json", "Choices", (rows) => rows)
+      .then((json) => (Array.isArray(json) ? json : (json?.choices || json?.rows || json?.data || [])))
       .catch(() => []);
   }
   return await choicesCachePromise;
@@ -126,17 +96,17 @@ async function loadChoices() {
 
 async function loadTraits() {
   if (!traitsCachePromise) {
-    traitsCachePromise = fetch("./data/traits.json")
-      .then((r) => (r.ok ? r.json() : []))
-      .catch(() => []);
+    traitsCachePromise = loadData("./data/traits.json", "Traits", (rows) => ({ traits: rows }))
+      .then((json) => (json?.traits ? json : { traits: [] }))
+      .catch(() => ({ traits: [] }));
   }
   return await traitsCachePromise;
 }
 
 async function loadFeats() {
   if (!featsCachePromise) {
-    featsCachePromise = fetch("./data/feats.json")
-      .then((r) => (r.ok ? r.json() : { feats: [] }))
+    featsCachePromise = loadData("./data/feats.json", "Feats", (rows) => ({ feats: rows }))
+      .then((json) => (json?.feats ? json : { feats: [] }))
       .catch(() => ({ feats: [] }));
   }
   return await featsCachePromise;
@@ -575,7 +545,7 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
-  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw, pickersRaw] = await Promise.all([
+  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
     loadRaces(),
     loadClasses(),
     loadClassesFull(),
@@ -585,11 +555,8 @@ export async function RadialScreen({ state }) {
     loadFeats(),
     loadClassFeatures(),
     loadRaceFeatures(),
-    loadChoices(),
-    loadPickersConfig()
+    loadChoices()
   ]);
-  // Ensure module-level pickersConfig is populated
-  if(pickersRaw && typeof pickersRaw === 'object') pickersConfig = pickersRaw;
 
   const races = racesData?.races ?? [];
   const classes = classesData?.classes ?? [];
@@ -763,21 +730,17 @@ const currentSubclass =
     ];
 
     const mapPickTypeToRoute = (pt) => {
-      const k = String(pt || "").toLowerCase();
-      // Data-driven pickType -> route mapping (no-code maintainer path)
-      const mapped = pickersConfig?.pickTypeRoutes ? pickersConfig.pickTypeRoutes[k] : null;
-      if (mapped) return mapped;
-      // Legacy fallback
-      if (k === "cantrip") return "cantrips";
-      if (k === "spell") return "spells";
-      if (k === "frontier_ballistics") return "frontierBallistics";
-      if (k === "wildshape") return "wildshapes";
-      if (k === "feat") return "feats";
-      if (k === "passive") return "passives";
-      if (k === "smite") return "smites";
-      if (k === "metamagic") return "metamagic";
-      return null;
-    };
+  	const k = String(pt || "").toLowerCase();
+  	if (k === "cantrip") return "cantrips";
+  	if (k === "spell") return "spells";
+	if (k === "frontier_ballistics") return "frontierBallistics";
+  	if (k === "wildshape") return "wildshapes";
+  	if (k === "feat") return "feats";
+	if (k === "passive") return "passives";
+	if (k === "smite") return "smites";
+	if (k === "metamagic") return "metamagic";
+	return null;
+	};
 
 
     const acc = new Map(); // route -> { need, ownerType, ownerId, listOverride }
@@ -842,7 +805,7 @@ const currentSubclass =
     }
 
     // Stable ordering (matches BG3-ish expectation).
-    const order = Array.isArray(pickersConfig?.order) ? pickersConfig.order : ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
+    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
     steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
 
     return steps;
@@ -869,10 +832,6 @@ function mapStepToRoute(stepId) {
   }
 
   function prettyStepLabel(stepId) {
-    const key = String(stepId || "").trim();
-    const dyn = pickersConfig?.labels ? pickersConfig.labels[key] : null;
-    if (dyn) return String(dyn);
-
     const labels = {
       cantrips: "Cantrips",
       spells: "Spells",

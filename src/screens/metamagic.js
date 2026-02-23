@@ -1,3 +1,5 @@
+import { loadData } from "../data/liveData.js";
+
 function escapeHtml(s){
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -9,9 +11,7 @@ function escapeHtml(s){
 
 async function loadMetamagic(){
   try{
-    const res = await fetch("./data/metamagic.json", { cache: "no-store" });
-    if(!res.ok) return [];
-    const data = await res.json();
+    const data = await loadData("./data/metamagic.json", "Choices", (rows) => rows);
     if(Array.isArray(data)) return data;
     if(Array.isArray(data?.metamagic)) return data.metamagic;
     return [];

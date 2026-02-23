@@ -1,10 +1,9 @@
 import { resolveAllowedPassiveIds } from "../passives/passiveListResolver.js";
+import { loadData } from "../data/liveData.js";
 
 async function loadPassives(){
   try{
-    const res = await fetch("./data/passives.json", { cache: "no-store" });
-    if(!res.ok) return [];
-    const json = await res.json();
+    const json = await loadData("./data/passives.json", "Passives", (rows) => rows);
 
     // Sheet exports may wrap rows; normalize to a flat array and normalize keys.
     const rows = Array.isArray(json)

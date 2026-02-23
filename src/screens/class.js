@@ -1,8 +1,8 @@
 import { ChoiceScreen } from "./choice.js";
+import { loadClassesJson } from "../data/liveData.js";
 
 async function loadClasses(){
-  const res = await fetch("./data/classes.json");
-  return res.json();
+  return await loadClassesJson();
 }
 
 export async function ClassScreen({ state }) {

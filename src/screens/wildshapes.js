@@ -1,3 +1,5 @@
+import { loadData } from "../data/liveData.js";
+
 function escapeHtml(s){
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -9,9 +11,7 @@ function escapeHtml(s){
 
 async function loadWildshapes(){
   try{
-    const res = await fetch("./data/wildshapes.json", { cache: "no-store" });
-    if(!res.ok) return [];
-    const data = await res.json();
+    const data = await loadData("./data/wildshapes.json", "Wildshapes", (rows) => rows);
     return Array.isArray(data) ? data : (data?.wildshapes || []);
   }catch(e){
     return [];

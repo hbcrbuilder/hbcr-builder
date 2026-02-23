@@ -1,6 +1,6 @@
+import { loadData } from "../data/liveData.js";
 async function loadFeats() {
-  const res = await fetch("./data/feats.json", { cache: "no-store" });
-  return res.json();
+  return await loadData("./data/feats.json", "Feats", (rows) => ({ feats: rows }));
 }
 
 function escapeHtml(s){

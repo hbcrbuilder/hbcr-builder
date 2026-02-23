@@ -1,8 +1,8 @@
 import { ChoiceScreen } from "./choice.js";
+import { loadClassesFullJson } from "../data/liveData.js";
 
 async function loadClassesFull() {
-  const res = await fetch("./data/classes.full.json", { cache: "no-store" });
-  return res.json();
+  return await loadClassesFullJson();
 }
 
 export async function SubclassScreen({ state }) {

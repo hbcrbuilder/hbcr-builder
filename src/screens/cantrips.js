@@ -1,8 +1,9 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
+import { loadData } from "../data/liveData.js";
 async function loadCantrips(){
-  const res = await fetch("./data/cantrips.json", { cache: "no-store" });
-  return res.json();
+  const data = await loadData("./data/cantrips.json", "Cantrips", (rows) => rows);
+  return Array.isArray(data) ? data : (data?.cantrips || []);
 }
 
 function escapeHtml(s){

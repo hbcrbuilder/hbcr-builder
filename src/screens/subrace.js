@@ -1,8 +1,8 @@
 import { ChoiceScreen } from "./choice.js";
+import { loadRacesJson } from "../data/liveData.js";
 
 async function loadRaces(){
-  const res = await fetch("./data/races.json");
-  return res.json();
+  return await loadRacesJson();
 }
 
 export async function SubraceScreen({ state }) {
