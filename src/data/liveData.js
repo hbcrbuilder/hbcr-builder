@@ -45,9 +45,12 @@ function tryParseCell(v) {
 }
 
 function toSnakeKey(key) {
+  // Turn headers like "RaceId" or "SpellListId" into stable snake_case keys.
   const s = String(key || '').trim();
   if (!s) return '';
 
+  // Insert underscores between camel-case boundaries.
+  // e.g. RaceId -> Race_Id, SpellListId -> Spell_List_Id
   const camelSplit = s
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
@@ -67,12 +70,28 @@ function toCamelKey(snake) {
 function normalizeRow(row) {
   const out = {};
   for (const [k, v] of Object.entries(row || {})) {
-    const nk = toSnakeKey(k);
-    if (!nk) continue;
-    out[nk] = v;
+    const key = String(k || '').trim();
+    if (!key) continue;
+
+    const parsed = tryParseCell(v);
+
+    // Preserve original key (for debugging / unexpected columns)
+    out[key] = parsed;
+
+    // Add stable aliases so the UI can be case/space-insensitive.
+    // e.g. "ID" -> "id"; "Race Id" -> "race_id" and "raceId".
+    const snake = toSnakeKey(key);
+    if (!(snake in out)) out[snake] = parsed;
+
+    const camel = toCamelKey(snake);
+    if (!(camel in out)) out[camel] = parsed;
+
+    // Also add a pure-lowercase alias (some sheets use headers like "Name")
+    const lower = String(key).trim().toLowerCase();
+    if (!(lower in out)) out[lower] = parsed;
   }
 
-  const titleCaseFromId = (raw) => {
+    const titleCaseFromId = (raw) => {
     const s = String(raw ?? '').trim();
     if (!s) return '';
     const words = s
@@ -84,64 +103,65 @@ function normalizeRow(row) {
     return words.map(w => (w ? (w[0].toUpperCase() + w.slice(1)) : '')).join(' ');
   };
 
-  // Harmonize common fields
+  // Common field harmonization across sheet tabs.
+  // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
   if (out.name == null || String(out.name).trim() === '') {
-    out.name =
-      out.title ??
-      out.trait ??
-      out.trait_name ??
-      out.race_name ??
-      out.subrace_name ??
-      out.class_name ??
-      out.subclass_name ??
-      out.spell_name ??
-      out.cantrip_name ??
-      out.feature_name ??
-      out.passive_name ??
-      out.feat_name ??
-      out.choice_name ??
-      out.name;
+    out.name = out.title
+      ?? out.trait
+      ?? out.traitName
+      ?? out.spell
+      ?? out.spellName
+      ?? out.cantrip
+      ?? out.cantripName
+      ?? out.feature
+      ?? out.featureName
+      ?? out.race
+      ?? out.raceName
+      ?? out.subrace
+      ?? out.subraceName
+      ?? out.class
+      ?? out.className
+      ?? out.subclass
+      ?? out.subclassName
+      ?? out.passive
+      ?? out.passiveName
+      ?? out.feat
+      ?? out.featName
+      ?? out.choice
+      ?? out.choiceName
+      ?? out.name;
   }
-
   if (out.description == null || String(out.description).trim() === '') {
-    out.description =
-      out.desc ??
-      out.effect ??
-      out.details ??
-      out.text ??
-      out.tooltip ??
-      out.description;
+    out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
   }
-
+  // Some tabs use "Text" for spells/cantrips and choice entries.
   if (out.text == null || String(out.text).trim() === '') {
     out.text = out.description ?? out.effect ?? out.details ?? out.tooltip ?? out.text;
   }
-
   if (out.id == null || String(out.id).trim() === '') {
-    out.id =
-      out.uuid ??
-      out.guid ??
-      out.key ??
-      out.race_id ??
-      out.subrace_id ??
-      out.class_id ??
-      out.subclass_id ??
-      out.spell_id ??
-      out.cantrip_id ??
-      out.feat_id ??
-      out.trait_id ??
-      out.feature_id ??
-      out.choice_id ??
-      out.passive_id ??
-      out.id;
+    out.id = out.uuid
+      ?? out.guid
+      ?? out.key
+      ?? out.raceId
+      ?? out.subraceId
+      ?? out.classId
+      ?? out.subclassId
+      ?? out.spellId
+      ?? out.cantripId
+      ?? out.featId
+      ?? out.traitId
+      ?? out.featureId
+      ?? out.choiceId
+      ?? out.passiveId
+      ?? out.id;
   }
 
-  // Friendly label fallback
+  // Friendly fallback label if the sheet row only has an id.
   if ((out.name == null || String(out.name).trim() === '') && out.id != null) {
     out.name = titleCaseFromId(out.id);
   }
 
-  return out;
+return out;
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
@@ -170,44 +190,8 @@ function buildRacesJson(racesRows, subracesRows) {
   const normalizeRaceId = (rid) => {
     const s = String(rid || '').trim();
     if (!s) return '';
-    // Assets + local JSON use hyphens for these
     if (s.startsWith('half_')) return s.replace(/_/g, '-');
     return s;
-  };
-
-  const normalizeSubraceToken = (raceId, rawSubId) => {
-    let sid = String(rawSubId || '').trim();
-    if (!sid) return '';
-
-    // Strip "<race>_" prefix in BOTH half-elf styles:
-    // raceId might be "half-elf" but sheet IDs might be "half_elf_high_elf"
-    const ridHyphen = normalizeRaceId(raceId);
-    const ridUnderscore = ridHyphen.replace(/-/g, '_');
-
-    const p1 = `${ridHyphen}_`;
-    const p2 = `${ridUnderscore}_`;
-
-    if (sid.startsWith(p1)) sid = sid.slice(p1.length);
-    if (sid.startsWith(p2)) sid = sid.slice(p2.length);
-
-    // Normalize separators
-    sid = sid.replace(/_/g, '-');
-
-    // Normalize common BG3 subrace tokens -> filename tokens
-    const map = {
-      'high-elf': 'highelf',
-      'wood-elf': 'woodelf',
-      'gold-dwarf': 'golddwarf',
-      'shield-dwarf': 'shielddwarf',
-      'deep-gnome': 'deepgnome',
-      'forest-gnome': 'forestgnome',
-      'rock-gnome': 'rockgnome',
-      'lolth-sworn': 'lolthsworn',
-      // asset typo:
-      'mephistopheles': 'mephistopeles'
-    };
-
-    return map[sid] ?? sid;
   };
 
   const baseRaceIcon = (raceId) => {
@@ -218,24 +202,49 @@ function buildRacesJson(racesRows, subracesRows) {
     return `./assets/icons/races/${rid}/${rid}.png`;
   };
 
-  const subraceIcon = (raceId, rawSubId) => {
-    const rid = normalizeRaceId(raceId);
-    const token = normalizeSubraceToken(raceId, rawSubId);
-    if (!rid || !token) return null;
+  
+  const normalizeSubraceTokenForAsset = (rid, sid) => {
+    // sid is expected hyphenated already.
+    const s = String(sid || '').trim();
+    if (!rid || !s) return '';
 
+    // Common BG3 filename tokens in this repo (no extra hyphens)
+    const map = {
+      elf: { 'high-elf': 'highelf', 'wood-elf': 'woodelf' },
+      drow: { 'lolth-sworn': 'lolthsworn' },
+      dwarf: { 'gold-dwarf': 'golddwarf', 'shield-dwarf': 'shielddwarf' },
+      gnome: { 'deep-gnome': 'deepgnome', 'forest-gnome': 'forestgnome', 'rock-gnome': 'rockgnome' },
+      tiefling: { 'mephistopheles': 'mephistopeles' }
+    };
+
+    if (map[rid] && map[rid][s]) return map[rid][s];
+
+    // Half-elf icons are in /half-elf and use halfelf-<token>.png
     if (rid === 'half-elf') {
-      // Half-elf filenames: halfelf-high.png / halfelf-wood.png / halfelf-drow.png
-      const map = {
-        highelf: 'high',
-        woodelf: 'wood',
-        drow: 'drow'
-      };
-      const suffix = map[token] ?? token;
-      return `./assets/icons/races/half-elf/halfelf-${suffix}.png`;
+      // Sheet might provide high_elf / wood_elf / drow
+      if (s === 'high-elf' || s === 'high') return 'high';
+      if (s === 'wood-elf' || s === 'wood') return 'wood';
+      if (s === 'drow') return 'drow';
+      // If it comes as something like "half-elf-high", caller may not have stripped prefix:
+      const stripped = s.replace(/^half-elf-/, '');
+      return stripped;
     }
 
-    // Many races have BOTH forms (e.g. dwarf-gold.png and dwarf-golddwarf.png).
-    // Prefer the longer token (more specific) when we normalized it.
+    // Otherwise, assume token already matches file naming.
+    return s;
+  };
+
+  const subraceIcon = (raceId, subId) => {
+    const rid = normalizeRaceId(raceId);
+    const sid = String(subId || '').trim();
+    if (!rid || !sid) return null;
+
+    const token = normalizeSubraceTokenForAsset(rid, sid);
+    if (!token) return null;
+
+    if (rid === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${token}.png`;
+
+    // Default pattern used in this repo: <race>/<race>-<token>.png
     return `./assets/icons/races/${rid}/${rid}-${token}.png`;
   };
 
@@ -255,13 +264,10 @@ function buildRacesJson(racesRows, subracesRows) {
   }
 
   for (const sr of subracesRows) {
-    const raceIdRaw = ensureId(
-      pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid'])
-    );
+    const raceIdRaw = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
     const raceId = normalizeRaceId(raceIdRaw);
     const rawId = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
     if (!raceId || !rawId) continue;
-
     const race = byRace.get(raceId) || {
       id: raceId,
       name: raceId,
@@ -269,20 +275,34 @@ function buildRacesJson(racesRows, subracesRows) {
       subraces: []
     };
 
+    // If the base race didn't exist, add it now.
     if (!byRace.has(raceId)) byRace.set(raceId, race);
 
-    const subId = normalizeSubraceToken(raceId, rawId);
+    let subId = rawId;
+
+// Strip "<race>_" prefixes from sheet IDs.
+// Handles both hyphen and underscore race ids (e.g. "half-elf_" and "half_elf_").
+const prefixes = [
+  `${raceId}_`,
+  `${raceId.replace(/-/g, "_")}_`
+];
+for (const pre of prefixes) {
+  if (subId.startsWith(pre)) {
+    subId = subId.slice(pre.length);
+    break;
+  }
+}
+
+// Normalize to hyphen form for internal ids.
+subId = subId.replace(/_/g, '-');
 
     race.subraces.push({
       id: subId,
       name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], subId),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, rawId),
+      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null) ?? subraceIcon(raceId, subId),
       description: pick(sr, ['description', 'desc'], ''),
-      ...Object.fromEntries(
-        Object.entries(sr).filter(
-          ([k]) => !['raceId', 'race', 'parentId', 'parent', 'id', 'name', 'icon', 'description'].includes(k)
-        )
-      )
+      // Pass through any extra fields (keeps things flexible for mod updates)
+      ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
     });
   }
 
