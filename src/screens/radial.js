@@ -97,14 +97,20 @@ async function loadChoices() {
       const count = row.count ?? row.Count ?? row.pickCount ?? row.pick_count ?? row.pickcount ?? 0;
       const listOverride = row.listOverride ?? row.ListOverride ?? row.list_override ?? row.listoverride ?? null;
 
+
+      const nOwnerType = String(ownerType || "").trim().toLowerCase();
+      const nOwnerId = String(ownerId || "").trim().toLowerCase();
+      const nPickType = String(pickType || "").trim().toLowerCase();
+      const nListOverride = listOverride == null ? null : String(listOverride || "").trim().toLowerCase();
+
       return {
         ...row,
-        ownerType,
-        ownerId,
+        ownerType: nOwnerType,
+        ownerId: nOwnerId,
         level,
-        pickType,
+        pickType: nPickType,
         count,
-        listOverride
+        listOverride: nListOverride
       };
     };
 
@@ -570,41 +576,56 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
-  // PERF: RadialScreen re-renders on every click. Avoid loading the large
-  // build datasets (spells/choices/features/etc.) when the user is still in
-  // Race/Class/Subclass selection.
-  const stagePre = state?.ui?.radial?.stage || "race";
-  const pickerTypePre = state?.ui?.picker?.open ? state?.ui?.picker?.type : null;
-  const needsBuildData = stagePre === "build" || Boolean(pickerTypePre);
+  const ch = state.character;
+  const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
+  let stage = ui.stage || "race";
+  const buildLevel = Number(ui.buildLevel ?? 1);
 
-  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
+  // Core data is needed for initial navigation.
+  const [racesData, classesData, classesFull] = await Promise.all([
     loadRaces(),
     loadClasses(),
     loadClassesFull(),
-    needsBuildData ? loadSpells() : Promise.resolve({ spells: [] }),
-    needsBuildData ? loadLevelFlows() : Promise.resolve([]),
-    needsBuildData ? loadTraits() : Promise.resolve({ traits: [] }),
-    needsBuildData ? loadFeats() : Promise.resolve({ feats: [] }),
-    needsBuildData ? loadClassFeatures() : Promise.resolve([]),
-    needsBuildData ? loadRaceFeatures() : Promise.resolve([]),
-    needsBuildData ? loadChoices() : Promise.resolve([])
   ]);
+
+  // Heavy build data (spells/flows/features/choices) is only needed once you're in Build
+  // or actively opening a picker. This cuts first-load latency drastically in live mode.
+  const pickerOpen = Boolean(state.ui?.picker?.open);
+  const needBuildData = stage === "build" || pickerOpen;
+
+  let spellsData = null;
+  let levelFlows = null;
+  let traitsData = null;
+  let featsData = null;
+  let classFeaturesRaw = null;
+  let raceFeaturesRaw = null;
+  let choicesRaw = null;
+
+  if (needBuildData) {
+    [spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
+      loadSpells(),
+      loadLevelFlows(),
+      loadTraits(),
+      loadFeats(),
+      loadClassFeatures(),
+      loadRaceFeatures(),
+      loadChoices(),
+    ]);
+  }
 
   const races = racesData?.races ?? [];
   const classes = classesData?.classes ?? [];
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
   const subclassesIndex = indexSubclasses(classesFull);
-  const spells = spellsData?.spells ?? spellsData ?? [];
+  const spells = spellsData?.spells ?? [];
   const traits = traitsData?.traits ?? traitsData ?? [];
   const feats = featsData?.feats ?? [];
 
   const spellsIndex = new Map(spells.map((s) => [s.id, s]));
   const featsIndex = new Map(feats.map((f) => [f.id, f]));
 
-  const ch = state.character;
-  const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
-  let stage = ui.stage || "race";
-  const buildLevel = Number(ui.buildLevel ?? 1);
+  
+  // Character/UI context (set near top)
 
   // Load only the class progression files currently used in the multiclass timeline.
   const usedClassIds = Array.from(new Set((ch.build?.timeline || []).map(e => e?.classId).filter(Boolean)));
@@ -740,14 +761,14 @@ const currentSubclass =
   }
 
   const getFeatures = (ownerType, ownerId, level) => {
-    const key = `${String(ownerType||"").toLowerCase()}|${String(ownerId||"")}`;
+    const key = `${String(ownerType||"").toLowerCase().trim()}|${String(ownerId||"").toLowerCase().trim()}`;
     const byLvl = featureIndex.get(key);
     if (!byLvl) return [];
     return byLvl.get(Number(level)) || [];
   };
 
   const getChoices = (ownerType, ownerId, level) => {
-    const key = `${String(ownerType||"").toLowerCase()}|${String(ownerId||"")}`;
+    const key = `${String(ownerType||"").toLowerCase().trim()}|${String(ownerId||"").toLowerCase().trim()}`;
     const byLvl = choiceIndex.get(key);
     if (!byLvl) return [];
     return byLvl.get(Number(level)) || [];
@@ -776,11 +797,11 @@ const currentSubclass =
 	if (k === "cantrip" || k === "cantrips") return "cantrips";
 	if (k === "spell" || k === "spells") return "spells";
 	if (k === "frontier_ballistics") return "frontierBallistics";
-	if (k === "wildshape" || k === "wildshapes") return "wildshapes";
-	if (k === "feat" || k === "feats") return "feats";
-	if (k === "passive" || k === "passives") return "passives";
-	if (k === "smite" || k === "smites") return "smites";
-	if (k === "metamagic" || k === "metamagics") return "metamagic";
+  	if (k === "wildshape") return "wildshapes";
+  	if (k === "feat") return "feats";
+	if (k === "passive") return "passives";
+	if (k === "smite") return "smites";
+	if (k === "metamagic") return "metamagic";
 	return null;
 	};
 
@@ -828,25 +849,11 @@ const currentSubclass =
     // double-counting or mismatches.
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("cantrips")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "cantripsKnownByLevel");
-      if (Number(scNeed) > 0) {
-        acc.set("cantrips", {
-          need: Number(scNeed),
-          ownerType: "class",
-          ownerId: cid,
-          listOverride: null,
-        });
-      }
+      if (Number(scNeed) > 0) acc.set("cantrips", { need: Number(scNeed), listOverride: "any" });
     }
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("spells")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "spellsKnownByLevel");
-      if (Number(scNeed) > 0) {
-        acc.set("spells", {
-          need: Number(scNeed),
-          ownerType: "class",
-          ownerId: cid,
-          listOverride: null,
-        });
-      }
+      if (Number(scNeed) > 0) acc.set("spells", { need: Number(scNeed), listOverride: "class" });
     }
 
     for (const [route, meta] of acc.entries()) {
@@ -861,7 +868,7 @@ const currentSubclass =
     }
 
     // Stable ordering (matches BG3-ish expectation).
-    const order = ["cantrips", "spells", "metamagic", "frontierBallistics", "smites", "passives", "feats"];
+    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
     steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
 
     return steps;
@@ -953,10 +960,10 @@ function featureNamesAtLevel(classId, subclassObj, classLevel) {
     const sid = String(subclassObj?.id || "").trim();
     const lvl = Number(classLevel);
 
-    if (!cid || !Number.isFinite(lvl)) return [];
+    if (!cid || !sid || !Number.isFinite(lvl)) return [];
 
     const base = getFeatures("class", cid, lvl);
-    const sub  = sid ? getFeatures("subclass", sid, lvl) : [];
+    const sub  = getFeatures("subclass", sid, lvl);
 
     // Keep a stable, deduped list.
     const out = [];
@@ -970,7 +977,7 @@ function featureNamesAtLevel(classId, subclassObj, classLevel) {
 
   
 function renderBuildSteps(classLevel, classId, subclassObj) {
-    if (!classId) return `<div style="opacity:.8">Pick a class to unlock steps.</div>`;
+    if (!classId || !subclassObj) return `<div style="opacity:.8">Pick a subclass to unlock steps.</div>`;
 
     const steps = resolveBuildSteps(classId, subclassObj, classLevel) || [];
     if (!steps.length) return `<div style="opacity:.75">No picks at this level.</div>`;

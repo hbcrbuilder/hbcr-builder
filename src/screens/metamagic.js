@@ -11,9 +11,14 @@ function escapeHtml(s){
 
 async function loadMetamagic(){
   try{
-    // Live sheet tab name is "Metamagic" (NOT "Choices").
-    // If this points at "Choices", live mode returns the wrong rows and the picker is empty.
-    const data = await loadData("./data/metamagic.json", "Metamagic", (rows) => rows);
+    let data = await loadData("./data/metamagic.json", "Metamagic", (rows) => rows);
+    // Back-compat: if the sheet doesn't have a Metamagic tab, fall back to Choices and filter.
+    if (!Array.isArray(data) || data.length === 0) {
+      const all = await loadData("./data/choices.json", "Choices", (rows) => rows);
+      if (Array.isArray(all)) {
+        data = all.filter(r => String(r?.pickType || r?.PickType || "").toLowerCase().includes("metamagic"));
+      }
+    }
     if(Array.isArray(data)) return data;
     if(Array.isArray(data?.metamagic)) return data.metamagic;
     return [];

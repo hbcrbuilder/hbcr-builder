@@ -5,6 +5,11 @@
 
 let _cfgPromise = null;
 
+// In-memory cache for live sheet tabs to avoid refetching on every UI open.
+// Keeps the builder snappy while still updating periodically.
+const _sheetCache = new Map();
+const LIVE_TTL_MS = 60 * 1000;
+
 async function getLiveConfig() {
   if (_cfgPromise) return _cfgPromise;
   _cfgPromise = (async () => {
@@ -105,15 +110,26 @@ function normalizeRow(row) {
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
-  const url = `${apiBase}?sheet=${encodeURIComponent(sheetName)}&v=${Date.now()}`;
-  const res = await fetch(url, { cache: 'no-store' });
+  const key = `${apiBase}::${String(sheetName || "").trim()}`;
+  const now = Date.now();
+  const hit = _sheetCache.get(key);
+  if (hit && (now - hit.ts) < LIVE_TTL_MS) {
+    return hit.rows;
+  }
+
+  const url = `${apiBase}?sheet=${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url, { cache: 'default' });
   if (!res.ok) throw new Error(`Sheet fetch failed (${res.status})`);
   const payload = await res.json();
   if (!payload || payload.ok !== true) {
     throw new Error(payload?.error || 'Sheet response not ok');
   }
-  return (payload.rows || []).map(normalizeRow);
+
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  _sheetCache.set(key, { ts: now, rows });
+  return rows;
 }
+
 
 function pick(row, keys, fallback = null) {
   for (const k of keys) {

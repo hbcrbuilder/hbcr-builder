@@ -1,21 +1,19 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
 import { loadData } from "../data/liveData.js";
+
+let _spellsAllPromise = null;
 async function loadSpells(){
-  try{
-    const data = await loadData("./data/spells.json", "Spells", (rows) => rows);
-    const arr = Array.isArray(data) ? data : (data?.spells || []);
-    // Live-sheet rows are normalized in liveData.js, but spell text can be under
-    // different headers (Text/Description/Effect/etc). Normalize to `text` here
-    // to keep the picker stable.
-    return (arr || []).map((s) => ({
-      ...s,
-      text: s?.text ?? s?.description ?? s?.desc ?? s?.effect ?? s?.details ?? "",
-      level: s?.level ?? s?.spellLevel ?? s?.spell_level ?? 0,
-    }));
-  }catch(e){
-    return [];
-  }
+  if (_spellsAllPromise) return _spellsAllPromise;
+  _spellsAllPromise = (async () => {
+    try{
+      const data = await loadData("./data/spells.json", "Spells", (rows) => rows);
+      return Array.isArray(data) ? data : (data?.spells || []);
+    }catch(e){
+      return [];
+    }
+  })();
+  return _spellsAllPromise;
 }
 
 function matchesFilters(spell, f){

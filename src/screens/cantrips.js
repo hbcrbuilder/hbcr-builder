@@ -1,14 +1,11 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
 import { loadData } from "../data/liveData.js";
+
+let _cantripsAllPromise = null;
 async function loadCantrips(){
   const data = await loadData("./data/cantrips.json", "Cantrips", (rows) => rows);
-  const arr = Array.isArray(data) ? data : (data?.cantrips || []);
-  // Live-sheet rows may store description under a different header; normalize to `text`.
-  return (arr || []).map((c) => ({
-    ...c,
-    text: c?.text ?? c?.description ?? c?.desc ?? c?.effect ?? c?.details ?? "",
-  }));
+  return Array.isArray(data) ? data : (data?.cantrips || []);
 }
 
 function escapeHtml(s){
