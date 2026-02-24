@@ -1,457 +1,52 @@
-// Live Google Sheet loader (Apps Script Web App) with local JSON fallback.
-//
-// Maintainer workflow (no-code): edit the Google Sheet → site updates automatically.
-// Developer workflow: local /data/*.json still works as a fallback.
+// src/data/liveData.js
+const BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
 
-let _cfgPromise = null;
 let _bundlePromise = null;
 
-async function getLiveConfig() {
-  if (_cfgPromise) return _cfgPromise;
-  _cfgPromise = (async () => {
-    try {
-      const res = await fetch('./data/live_source.json', { cache: 'no-store' });
-      if (!res.ok) return { mode: 'local' };
-      const cfg = await res.json();
-      if (!cfg || cfg.mode !== 'live' || !cfg.apiBase) return { mode: 'local' };
-      return cfg;
-    } catch {
-      return { mode: 'local' };
-    }
-  })();
-  return _cfgPromise;
-}
+async function fetchBundle() {
+  // If you ever inject it globally, support that too:
+  if (typeof window !== "undefined" && window.__HBCR_BUNDLE) return window.__HBCR_BUNDLE;
 
-function isBundleEndpoint(url) {
-  const s = String(url || '');
-  return /\/api\/bundle\b/.test(s);
-}
-
-async function fetchBundle(bundleUrl) {
-  if (_bundlePromise) return _bundlePromise;
-  _bundlePromise = (async () => {
-    // IMPORTANT: do NOT append cache-busting query params here.
-    // We want Cloudflare + browser caching to make this near-instant on repeat loads.
-    const res = await fetch(bundleUrl, { cache: 'default' });
-    if (!res.ok) throw new Error(`Bundle fetch failed (${res.status})`);
-    const json = await res.json();
-    if (!json || typeof json !== 'object') throw new Error('Bundle response invalid');
-    return json;
-  })();
-  return _bundlePromise;
-}
-
-function tryParseCell(v) {
-  if (typeof v !== 'string') return v;
-  const s = v.trim();
-  if (!s) return v;
-
-  // JSON-ish values embedded in sheet cells
-  if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) {
-    try { return JSON.parse(s); } catch { /* ignore */ }
-  }
-
-  // Booleans
-  if (s === 'TRUE') return true;
-  if (s === 'FALSE') return false;
-
-  // Numbers
-  if (/^-?\d+(\.\d+)?$/.test(s)) {
-    const n = Number(s);
-    if (!Number.isNaN(n)) return n;
-  }
-
-  return v;
-}
-
-function toSnakeKey(key) {
-  const s = String(key || '').trim();
-  if (!s) return '';
-
-  // Insert underscores between camel-case boundaries: RaceId -> Race_Id
-  const camelSplit = s
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1_$2');
-
-  return camelSplit
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/__+/g, '_')
-    .toLowerCase();
-}
-
-function toCamelKey(snake) {
-  const s = String(snake).toLowerCase();
-  return s.replace(/_([a-z0-9])/g, (_, c) => String(c).toUpperCase());
-}
-
-function normalizeRow(row) {
-  const out = {};
-  for (const [k, v] of Object.entries(row || {})) {
-    const key = String(k || '').trim();
-    if (!key) continue;
-
-    const parsed = tryParseCell(v);
-
-    // Preserve original key (for debugging / unexpected columns)
-    out[key] = parsed;
-
-    // Add stable aliases so the UI can be case/space-insensitive.
-    // e.g. "ID" -> "id"; "Race Id" -> "race_id" and "raceId".
-    const snake = toSnakeKey(key);
-    if (!(snake in out)) out[snake] = parsed;
-
-    const camel = toCamelKey(snake);
-    if (!(camel in out)) out[camel] = parsed;
-
-    // Also add a pure-lowercase alias (some sheets use headers like "Name")
-    const lower = String(key).trim().toLowerCase();
-    if (!(lower in out)) out[lower] = parsed;
-  }
-
-  // Common field harmonization across sheet tabs.
-  // Many tabs use slightly different header labels (Title vs Name, Effect vs Description, etc.).
-  if (out.name == null || String(out.name).trim() === '') {
-    out.name = out.title ?? out.trait ?? out.spell ?? out.feature ?? out.race ?? out.class ?? out.subclass ?? out.passive ?? out.feat ?? out.choice ?? out.name;
-  }
-  if (out.description == null || String(out.description).trim() === '') {
-    out.description = out.desc ?? out.effect ?? out.details ?? out.text ?? out.tooltip ?? out.description;
-  }
-  if (out.id == null || String(out.id).trim() === '') {
-    out.id = out.uuid ?? out.guid ?? out.key ?? out.id;
-  }
-
-  return out;
-}
-
-async function fetchSheetRows(apiBase, sheetName) {
-  // If the config points at the Cloudflare worker bundle endpoint, load once and read from it.
-  if (isBundleEndpoint(apiBase)) {
-    const bundle = await fetchBundle(apiBase);
-    const rows = bundle?.[sheetName] || [];
-    return Array.isArray(rows) ? rows.map(normalizeRow) : [];
-  }
-
-  // Legacy mode: direct Apps Script sheet tab fetches (slow; many requests)
-  const url = `${apiBase}?sheet=${encodeURIComponent(sheetName)}&v=${Date.now()}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Sheet fetch failed (${res.status})`);
-  const payload = await res.json();
-  if (!payload || payload.ok !== true) {
-    throw new Error(payload?.error || 'Sheet response not ok');
-  }
-  return (payload.rows || []).map(normalizeRow);
-}
-
-function pick(row, keys, fallback = null) {
-  for (const k of keys) {
-    if (row && row[k] != null && String(row[k]).trim() !== '') return row[k];
-  }
-  return fallback;
-}
-
-function ensureId(s) {
-  return String(s || '').trim();
-}
-
-function buildRacesJson(racesRows, subracesRows) {
-  const byRace = new Map();
-
-  const normalizeRaceIdForAssets = (rid) => {
-    const s = String(rid || '').trim().toLowerCase();
-    if (!s) return '';
-    return s.replace(/_/g, '-');
-  };
-
-  const baseRaceIcon = (raceId) => {
-    const rid = normalizeRaceIdForAssets(raceId);
-    if (!rid) return null;
-    if (rid === 'half-elf') return './assets/icons/races/half-elf/halfelf.png';
-    if (rid === 'half-orc') return './assets/icons/races/half-orc/halforc.png';
-    return `./assets/icons/races/${rid}/${rid}.png`;
-  };
-
-  const normalizeSubraceTokenForAssets = (ridNorm, tokenRaw) => {
-    let t = String(tokenRaw || '').trim().toLowerCase();
-    if (!t) return '';
-    t = t.replace(/[_\s]+/g, '-');
-
-    // Map to actual filenames in /assets/icons/races
-    const key = t.replace(/-/g, '');
-
-    if (ridNorm === 'dragonborn') return t;
-
-    if (ridNorm === 'elf') {
-      if (key === 'high' || key === 'highelf') return 'highelf';
-      if (key === 'wood' || key === 'woodelf') return 'woodelf';
-      return t;
-    }
-
-    if (ridNorm === 'gnome') {
-      if (key === 'rock' || key === 'rockgnome') return 'rockgnome';
-      if (key === 'forest' || key === 'forestgnome') return 'forestgnome';
-      if (key === 'deep' || key === 'deepgnome') return 'deepgnome';
-      return t;
-    }
-
-    if (ridNorm === 'dwarf') {
-      if (key === 'gold' || key === 'golddwarf') return 'golddwarf';
-      if (key === 'shield' || key === 'shielddwarf') return 'shielddwarf';
-      if (key === 'duergar') return 'duergar';
-      return t;
-    }
-
-    if (ridNorm === 'drow') {
-      if (key === 'lolthsworn') return 'lolthsworn';
-      if (key === 'seldarine') return 'seldarine';
-      return t;
-    }
-
-    if (ridNorm === 'halfling') {
-      if (key === 'lightfoot') return 'lightfoot';
-      if (key === 'strongheart') return 'strongheart';
-      return t;
-    }
-
-    if (ridNorm === 'tiefling') {
-      if (key === 'mephistopheles') return 'mephistopeles';
-      if (key === 'mephistopeles') return 'mephistopeles';
-      if (key === 'asmodeus') return 'asmodeus';
-      if (key === 'zariel') return 'zariel';
-      return t;
-    }
-
-    if (ridNorm === 'half-elf') {
-      if (key === 'high') return 'high';
-      if (key === 'wood') return 'wood';
-      if (key === 'drow') return 'drow';
-      return t;
-    }
-
-    return t;
-  };
-
-  const subraceIcon = (raceId, subIdRaw) => {
-  const ridNorm = normalizeRaceIdForAssets(raceId);
-  if (!ridNorm) return null;
-
-  let token = String(subIdRaw || '').trim().toLowerCase();
-  if (!token) return null;
-
-  const raceRaw = String(raceId || '').trim().toLowerCase();
-  const raceHyphen = raceRaw.replace(/_/g, '-');
-  const raceUnder = raceHyphen.replace(/-/g, '_');
-
-  // Keep underscores/hyphens for detection, but normalize spaces.
-  token = token.replace(/\s+/g, '_');
-
-  // Strip prefix (dragonborn_black / dragonborn-black / half_elf_high etc.)
-  const prefixes = [
-    `${raceRaw}_`, `${raceRaw}-`,
-    `${ridNorm}_`, `${ridNorm}-`,
-    `${raceHyphen}_`, `${raceHyphen}-`,
-    `${raceUnder}_`, `${raceUnder}-`
-  ];
-  for (const p of prefixes) {
-    if (token.startsWith(p)) { token = token.slice(p.length); break; }
-  }
-
-  // Strip suffix (amethyst_dragonborn / amethyst-dragonborn etc.)
-  const suffixes = [
-    `_${raceRaw}`, `-${raceRaw}`,
-    `_${ridNorm}`, `-${ridNorm}`,
-    `_${raceHyphen}`, `-${raceHyphen}`,
-    `_${raceUnder}`, `-${raceUnder}`
-  ];
-  for (const sfx of suffixes) {
-    if (token.endsWith(sfx)) { token = token.slice(0, -sfx.length); break; }
-  }
-
-  // Normalize to hyphen tokens for filenames.
-  token = token.replace(/_/g, '-');
-
-  const t = normalizeSubraceTokenForAssets(ridNorm, token);
-  if (!t) return null;
-
-  if (ridNorm === 'half-elf') return `./assets/icons/races/half-elf/halfelf-${t}.png`;
-  if (ridNorm === 'drow' && t === 'lolthsworn') return './assets/icons/races/drow/drow-lolthsworn.png';
-  if (ridNorm === 'dwarf' && t === 'duergar') return './assets/icons/races/dwarf/dwarf-duergar.png';
-
-  return `./assets/icons/races/${ridNorm}/${ridNorm}-${t}.png`;
-};
-
-  for (const r of racesRows) {
-    const id = ensureId(pick(r, ['id', 'raceId', 'race_id', 'raceid']));
-    if (!id) continue;
-    byRace.set(id, {
-      id,
-      name: pick(r, ['name', 'race', 'raceName', 'race_name'], id),
-      icon: pick(r, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || baseRaceIcon(id),
-      description: pick(r, ['description', 'desc'], ''),
-      subraces: []
-    });
-  }
-
-  for (const sr of subracesRows) {
-    const raceId = ensureId(pick(sr, ['raceId', 'race', 'parentId', 'parent', 'race_id', 'raceid', 'parentid']));
-    const id = ensureId(pick(sr, ['id', 'subraceId', 'subrace_id', 'subraceid']));
-    if (!raceId || !id) continue;
-
-    const race = byRace.get(raceId) || {
-      id: raceId,
-      name: raceId,
-      icon: baseRaceIcon(raceId),
-      subraces: []
-    };
-
-    if (!byRace.has(raceId)) byRace.set(raceId, race);
-
-    race.subraces.push({
-      id,
-      name: pick(sr, ['name', 'subrace', 'subraceName', 'subrace_name'], id),
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || subraceIcon(raceId, id),
-      description: pick(sr, ['description', 'desc'], ''),
-      ...Object.fromEntries(Object.entries(sr).filter(([k]) => !['raceId','race','parentId','parent','id','name','icon','description'].includes(k)))
-    });
-  }
-
-  return {
-    meta: { source: 'live-sheet' },
-    races: Array.from(byRace.values())
-  };
-}
-
-function buildClassesJson(classesRows) {
-  return {
-    classes: (classesRows || [])
-      .map(r => {
-        const id = ensureId(pick(r, ['id', 'classId', 'class_id', 'classid']));
-        if (!id) return null;
-        return {
-          id,
-          name: pick(r, ['name', 'class', 'className', 'class_name'], id),
-          icon: pick(r, ['icon', 'iconPath', 'icon_path', 'image', 'png'], null) || `./assets/icons/classes/${id}/${id}.png`
-        };
-      })
-      .filter(Boolean)
-  };
-}
-
-function buildClassesFullJson(classesRows, subclassesRows) {
-  const base = buildClassesJson(classesRows);
-  const byId = new Map((base.classes || []).map(c => [c.id, { ...c, sourceFile: 'sheet', subclasses: [] }]));
-
-  for (const sr of (subclassesRows || [])) {
-    const classId = ensureId(pick(sr, ['classId', 'class', 'parentId', 'parent', 'class_id', 'classid', 'parentid']));
-    const rawId = ensureId(pick(sr, ['id', 'subclassId', 'subclass_id', 'subclassid']));
-    if (!classId || !rawId) continue;
-
-    const cls = byId.get(classId) || {
-      id: classId,
-      name: classId,
-      icon: null,
-      sourceFile: 'sheet',
-      subclasses: []
-    };
-    if (!byId.has(classId)) byId.set(classId, cls);
-
-    // If the sheet already provides a full id like "sorcerer_draconic_bloodline", keep it.
-    // Otherwise, compose a stable id.
-    const fullId = rawId.includes('_') ? rawId : `${classId}_${rawId}`;
-    cls.subclasses.push({
-      id: fullId,
-      name: pick(sr, ['name', 'subclass', 'subclassName', 'subclass_name'], rawId),
-      levels: {},
-      icon: pick(sr, ['icon', 'iconPath', 'icon_path'], null)
-    });
-  }
-
-  return { classes: Array.from(byId.values()) };
-}
-
-async function fetchLocalJson(localPath) {
-  const res = await fetch(localPath, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Local fetch failed (${res.status})`);
+  const url = `${BUNDLE_URL}?t=${Date.now()}`; // cache-bust so "disable cache" behaves predictably
+  const res = await fetch(url, { method: "GET", mode: "cors", cache: "no-store" });
+  if (!res.ok) throw new Error(`Bundle fetch failed: ${res.status}`);
   return await res.json();
 }
 
+export async function getBundle() {
+  if (!_bundlePromise) _bundlePromise = fetchBundle();
+  return _bundlePromise;
+}
+
 /**
- * Load data from the live sheet (if enabled), otherwise from local JSON.
- *
- * @param {string} localPath e.g. "./data/spells.json"
- * @param {string|null} sheetName e.g. "Spells" (tab name)
- * @param {(rows: any[]) => any} [transform] optional transform for complex files
+ * loadData(path, sheetName, transform?)
+ * - Prefer Worker bundle[sheetName]
+ * - Fall back to local JSON at `path`
  */
-export async function loadData(localPath, sheetName, transform) {
-  const cfg = await getLiveConfig();
+export async function loadData(path, sheetName, transform) {
+  // 1) Try Worker bundle first
+  try {
+    const b = await getBundle();
+    const rows = b?.[sheetName];
 
-  // Live mode: attempt sheet → fallback to local JSON
-  if (cfg?.mode === 'live' && cfg?.apiBase && sheetName) {
-    try {
-      const rows = await fetchSheetRows(cfg.apiBase, sheetName);
-      return typeof transform === 'function' ? transform(rows) : rows;
-    } catch {
-      // fall back
+    if (Array.isArray(rows)) {
+      return transform ? transform(rows) : rows;
     }
-  }
-  return await fetchLocalJson(localPath);
-}
 
-// Convenience loaders for files that require combining multiple sheet tabs.
-export async function loadRacesJson() {
-  const cfg = await getLiveConfig();
-  if (cfg?.mode === 'live' && cfg?.apiBase) {
-    try {
-      const [racesRows, subracesRows] = await Promise.all([
-        fetchSheetRows(cfg.apiBase, 'Races'),
-        fetchSheetRows(cfg.apiBase, 'Subraces')
-      ]);
-      const built = buildRacesJson(racesRows, subracesRows);
-      // If the sheet returned rows but we couldn't parse any IDs, fall back to local.
-      if ((racesRows?.length || subracesRows?.length) && (!built?.races || built.races.length === 0)) {
-        throw new Error('Live Races/Subraces parsed empty');
-      }
-      return built;
-    } catch {
-      // fall back
+    // Support { ok:true, sheet:"X", rows:[...] } shapes too
+    if (rows?.rows && Array.isArray(rows.rows)) {
+      return transform ? transform(rows.rows) : rows.rows;
     }
+  } catch (e) {
+    // ignore and fall back to local
   }
-  return await fetchLocalJson('./data/races.json');
-}
 
-export async function loadClassesJson() {
-  const cfg = await getLiveConfig();
-  if (cfg?.mode === 'live' && cfg?.apiBase) {
-    try {
-      const rows = await fetchSheetRows(cfg.apiBase, 'Classes');
-      const built = buildClassesJson(rows);
-      if (rows?.length && (!built?.classes || built.classes.length === 0)) {
-        throw new Error('Live Classes parsed empty');
-      }
-      return built;
-    } catch {
-      // fall back
-    }
-  }
-  return await fetchLocalJson('./data/classes.json');
-}
+  // 2) Fall back to local file
+  const res = await fetch(path, { cache: "no-store" });
+  if (!res.ok) return [];
+  const j = await res.json();
 
-export async function loadClassesFullJson() {
-  const cfg = await getLiveConfig();
-  if (cfg?.mode === 'live' && cfg?.apiBase) {
-    try {
-      const [classesRows, subclassesRows] = await Promise.all([
-        fetchSheetRows(cfg.apiBase, 'Classes'),
-        fetchSheetRows(cfg.apiBase, 'Subclasses')
-      ]);
-      const built = buildClassesFullJson(classesRows, subclassesRows);
-      if ((classesRows?.length || subclassesRows?.length) && (!built?.classes || built.classes.length === 0)) {
-        throw new Error('Live Classes/Subclasses parsed empty');
-      }
-      return built;
-    } catch {
-      // fall back
-    }
-  }
-  return await fetchLocalJson('./data/classes.full.json');
+  // handle either raw array or {rows:[...]}
+  const rows = Array.isArray(j) ? j : (Array.isArray(j?.rows) ? j.rows : []);
+  return transform ? transform(rows) : rows;
 }
