@@ -130,30 +130,48 @@ export async function loadRacesJson() {
 
   if (!liveRows.length) return local;
 
+  const normKey = (v) =>
+    String(v ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
   const byIdLocal = new Map((local.races || []).map((r) => [String(r.id), r]));
-  const seen = new Set();
+  const byNameLocal = new Map(
+    (local.races || [])
+      .filter((r) => r?.name)
+      .map((r) => [normKey(r.name), r])
+  );
+
+  // Track which local entries have been represented in the merged list so we
+  // don't append duplicates (e.g. local id uses '_' while live id uses '-').
+  const seenLocalIds = new Set();
+  const seenLiveIds = new Set();
 
   const merged = [];
   for (const lr of liveRows) {
     const id = String(lr.id);
-    const base = byIdLocal.get(id);
+    let base = byIdLocal.get(id);
+    // If ids don't line up between local and live, fall back to a name match.
+    if (!base && lr.name) base = byNameLocal.get(normKey(lr.name));
     if (base) {
       merged.push({
         ...base,
         // Let live override display name (but keep everything else local)
+        id,
         name: lr.name || base.name,
       });
+      seenLocalIds.add(String(base.id));
     } else {
       // Live-only entry: keep id/name; no icons/subraces available.
       merged.push({ id, name: lr.name || id, icon: null, subraces: [] });
     }
-    seen.add(id);
+    seenLiveIds.add(id);
   }
 
   // Keep any local-only entries that weren't present in liveRows (defensive)
   for (const r of (local.races || [])) {
     const id = String(r.id);
-    if (!seen.has(id)) merged.push(r);
+    if (!seenLocalIds.has(id) && !seenLiveIds.has(id)) merged.push(r);
   }
 
   return { ...local, races: merged };
@@ -190,27 +208,42 @@ export async function loadClassesJson() {
 
   if (!liveRows.length) return local;
 
+  const normKey = (v) =>
+    String(v ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
   const byIdLocal = new Map((local.classes || []).map((c) => [String(c.id), c]));
-  const seen = new Set();
+  const byNameLocal = new Map(
+    (local.classes || [])
+      .filter((c) => c?.name)
+      .map((c) => [normKey(c.name), c])
+  );
+
+  const seenLocalIds = new Set();
+  const seenLiveIds = new Set();
   const merged = [];
 
   for (const lr of liveRows) {
     const id = String(lr.id);
-    const base = byIdLocal.get(id);
+    let base = byIdLocal.get(id);
+    if (!base && lr.name) base = byNameLocal.get(normKey(lr.name));
     if (base) {
       merged.push({
         ...base,
+        id,
         name: lr.name || base.name,
       });
+      seenLocalIds.add(String(base.id));
     } else {
       merged.push({ id, name: lr.name || id, icon: null });
     }
-    seen.add(id);
+    seenLiveIds.add(id);
   }
 
   for (const c of (local.classes || [])) {
     const id = String(c.id);
-    if (!seen.has(id)) merged.push(c);
+    if (!seenLocalIds.has(id) && !seenLiveIds.has(id)) merged.push(c);
   }
 
   return { ...local, classes: merged };
