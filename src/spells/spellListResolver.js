@@ -48,8 +48,8 @@ function buildListMapFromClassColumns(rows, kind) {
   if (!Array.isArray(rows) || rows.length === 0) return out;
 
   const valueKeyCandidates = kind === "cantrip"
-    ? ["CantripId", "Cantrip Name", "CantripName", "name"]
-    : ["SpellId", "Spell Name", "SpellName", "name"];
+    ? ["CantripId", "Cantrip", "Cantrip Name", "CantripName", "name"]
+    : ["SpellId", "Spell", "Spell Name", "SpellName", "name"];
 
   const getValue = (r) => {
     for (const k of valueKeyCandidates) {
@@ -90,13 +90,18 @@ async function loadSpellListData() {
   cachePromise = (async () => {
     const bundle = await tryFetchBundle();
 
-    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
+    // IMPORTANT:
+    // Our local spell_lists.json is map-shaped ({lists:{...}}), not row-shaped.
+    // liveData.loadData() only returns arrays of rows, so it will return [] for
+    // map-shaped json files. Therefore we must fetch the raw json first.
+    // When the live bundle includes SpellLists, we'll still pick that up below.
+    const lists =
+      (await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"])) ??
+      (await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows).catch(() => null));
 
-    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
+    const owners =
+      (await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows).catch(() => null)) ??
+      (await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]));
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }
@@ -104,11 +109,22 @@ async function loadSpellListData() {
     //  - [ { listId: 1, spellId: "..." }, ... ]
     let listMap = null;
     if (lists) {
-      if (Array.isArray(lists)) {
+      // spell_lists.json can be either:
+      //  - { lists: { "1": ["guiding-bolt", ...], ... } }
+      //  - { "1": [..], "2": [..] }
+      //  - [ { listId: 1, spellId: "..." }, ... ]
+      //  - { rows:[ ... ] } / { data:[ ... ] } wrapper shapes
+      const listRows =
+        Array.isArray(lists) ? lists :
+        (Array.isArray(lists?.rows) ? lists.rows :
+         Array.isArray(lists?.data) ? lists.data :
+         null);
+
+      if (listRows) {
         listMap = {};
-        for (const r of lists) {
-          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? "").trim();
-          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? "").trim();
+        for (const r of listRows) {
+          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? r?.spellListId ?? "").trim();
+          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? r?.spellId ?? "").trim();
           if (!lid || !sid) continue;
           (listMap[lid] ||= []).push(sid);
         }
@@ -117,12 +133,6 @@ async function loadSpellListData() {
       } else if (typeof lists === "object") {
         listMap = lists;
       }
-    }
-
-    // If we couldn't load SpellLists content (common if the live bundle doesn't include that sheet),
-    // build listMap from the wide "Spells" sheet columns in the live bundle.
-    if (!listMap && bundle?.Spells) {
-      listMap = buildListMapFromClassColumns(bundle.Spells, "spell");
     }
 
     // owners can be either:
@@ -153,6 +163,7 @@ function norm(s) {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+
 function isAlwaysAny(ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
@@ -160,8 +171,8 @@ function isAlwaysAny(ownerType, ownerId) {
   // Explicit design rules (these should also be true in the sheet, but this keeps
   // the app usable even if the sheet config drifts temporarily).
   if (ot === "class" && oid === "bard") return true;
-  if (ot === "subclass" && oid.includes("artificer_arcanist")) return true;
-  if (ot === "subclass" && (oid.includes("way_of_the_arcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
+  if (ot === "subclass" && oid.includes("artificerarcanist")) return true;
+  if (ot === "subclass" && (oid.includes("wayofthearcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
   return false;
 }
 
@@ -184,9 +195,10 @@ function fallbackListId(ownerType, ownerId) {
 
   // Subclasses
   if (ot === "subclass") {
-    if (oid.includes("wild_soul")) return 3;
-    if (oid.includes("eldritch_knight")) return 4;
-    if (oid.includes("arcane_trickster")) return 5;
+    // NOTE: oid is normalized by norm() (punctuation removed), so match normalized tokens too.
+    if (oid.includes("wildsoul")) return 3;
+    if (oid.includes("eldritchknight")) return 4;
+    if (oid.includes("arcanetrickster")) return 5;
   }
 
   return null;
