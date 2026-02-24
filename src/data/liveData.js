@@ -4,11 +4,7 @@
 // Developer workflow: local /data/*.json still works as a fallback.
 
 let _cfgPromise = null;
-
-// In-memory cache for live sheet tabs to avoid refetching on every UI open.
-// Keeps the builder snappy while still updating periodically.
-const _sheetCache = new Map();
-const LIVE_TTL_MS = 60 * 1000;
+let _bundlePromise = null;
 
 async function getLiveConfig() {
   if (_cfgPromise) return _cfgPromise;
@@ -24,6 +20,25 @@ async function getLiveConfig() {
     }
   })();
   return _cfgPromise;
+}
+
+function isBundleEndpoint(url) {
+  const s = String(url || '');
+  return /\/api\/bundle\b/.test(s);
+}
+
+async function fetchBundle(bundleUrl) {
+  if (_bundlePromise) return _bundlePromise;
+  _bundlePromise = (async () => {
+    // IMPORTANT: do NOT append cache-busting query params here.
+    // We want Cloudflare + browser caching to make this near-instant on repeat loads.
+    const res = await fetch(bundleUrl, { cache: 'default' });
+    if (!res.ok) throw new Error(`Bundle fetch failed (${res.status})`);
+    const json = await res.json();
+    if (!json || typeof json !== 'object') throw new Error('Bundle response invalid');
+    return json;
+  })();
+  return _bundlePromise;
 }
 
 function tryParseCell(v) {
@@ -110,26 +125,23 @@ function normalizeRow(row) {
 }
 
 async function fetchSheetRows(apiBase, sheetName) {
-  const key = `${apiBase}::${String(sheetName || "").trim()}`;
-  const now = Date.now();
-  const hit = _sheetCache.get(key);
-  if (hit && (now - hit.ts) < LIVE_TTL_MS) {
-    return hit.rows;
+  // If the config points at the Cloudflare worker bundle endpoint, load once and read from it.
+  if (isBundleEndpoint(apiBase)) {
+    const bundle = await fetchBundle(apiBase);
+    const rows = bundle?.[sheetName] || [];
+    return Array.isArray(rows) ? rows.map(normalizeRow) : [];
   }
 
-  const url = `${apiBase}?sheet=${encodeURIComponent(sheetName)}`;
-  const res = await fetch(url, { cache: 'default' });
+  // Legacy mode: direct Apps Script sheet tab fetches (slow; many requests)
+  const url = `${apiBase}?sheet=${encodeURIComponent(sheetName)}&v=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Sheet fetch failed (${res.status})`);
   const payload = await res.json();
   if (!payload || payload.ok !== true) {
     throw new Error(payload?.error || 'Sheet response not ok');
   }
-
-  const rows = Array.isArray(payload.rows) ? payload.rows : [];
-  _sheetCache.set(key, { ts: now, rows });
-  return rows;
+  return (payload.rows || []).map(normalizeRow);
 }
-
 
 function pick(row, keys, fallback = null) {
   for (const k of keys) {

@@ -1,4 +1,4 @@
 {
   "mode": "live",
-  "apiBase": "https://script.google.com/macros/s/AKfycbxAPj1qH2uKUFDVM2oJuBU9-6U2tlrkFvs8OLrGNeS7dk1YYTjvGnSWP_U5BBLnR0Yl/exec"
+  "apiBase": "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle"
 }
