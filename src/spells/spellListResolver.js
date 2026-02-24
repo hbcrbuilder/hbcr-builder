@@ -43,17 +43,34 @@ async function loadSpellListData() {
     //  - [ { listId: 1, spellId: "..." }, ... ]
     let listMap = null;
     if (lists) {
-      if (Array.isArray(lists)) {
+      // spell_lists.json can be either:
+      //  - { lists: { "1": ["guiding-bolt", ...], ... } }
+      //  - { "1": [..], "2": [..] }
+      //  - [ { listId: 1, spellId: "..." }, ... ]
+      //  - { rows: [ { SpellListId, SpellId }, ... ] }  (common wrapper from liveData/loadData)
+      //  - { data: [ ... ] }
+      const listRows =
+        Array.isArray(lists) ? lists :
+        (Array.isArray(lists?.rows) ? lists.rows :
+         Array.isArray(lists?.data) ? lists.data :
+         Array.isArray(lists?.SpellLists) ? lists.SpellLists :
+         Array.isArray(lists?.spellLists) ? lists.spellLists :
+         null);
+
+      if (listRows) {
+        // Row form: [ { SpellListId, SpellId }, ... ]
         listMap = {};
-        for (const r of lists) {
-          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? "").trim();
-          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? "").trim();
+        for (const r of listRows) {
+          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? r?.spellListId ?? "").trim();
+          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? r?.spellId ?? "").trim();
           if (!lid || !sid) continue;
           (listMap[lid] ||= []).push(sid);
         }
       } else if (lists?.lists && typeof lists.lists === "object") {
+        // Map form: { lists: { "1": ["spell_id", ...], ... } }
         listMap = lists.lists;
       } else if (typeof lists === "object") {
+        // Map form: { "1": [...], "2": [...] }
         listMap = lists;
       }
     }
@@ -125,7 +142,7 @@ function resolveListIdFromOwners(ownerRows, ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
   for (const r of ownerRows) {
-        const rot = norm(r?.ownerType ?? r?.OwnerType);
+    const rot = norm(r?.ownerType ?? r?.OwnerType);
     const roid = norm(r?.ownerId ?? r?.OwnerId);
     const roName = norm(r?.ownerName ?? r?.OwnerName ?? r?.name ?? r?.Name);
 
