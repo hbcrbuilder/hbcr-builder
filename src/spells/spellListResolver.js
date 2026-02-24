@@ -74,7 +74,11 @@ async function loadSpellListData() {
 }
 
 function norm(s) {
-  return String(s || "").trim().toLowerCase();
+  return String(s || "")
+    .trim()
+    .toLowerCase()
+    // treat underscores, dashes, spaces, punctuation all the same
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 function isAlwaysAny(ownerType, ownerId) {
@@ -121,10 +125,17 @@ function resolveListIdFromOwners(ownerRows, ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
   for (const r of ownerRows) {
-    const rot = norm(r?.ownerType ?? r?.OwnerType);
+        const rot = norm(r?.ownerType ?? r?.OwnerType);
     const roid = norm(r?.ownerId ?? r?.OwnerId);
-    if (!rot || !roid) continue;
-    if (rot === ot && roid === oid) {
+    const roName = norm(r?.ownerName ?? r?.OwnerName ?? r?.name ?? r?.Name);
+
+    if (!rot) continue;
+
+    const ownerMatches =
+      (roid && roid === oid) ||
+      (roName && roName === oid);
+
+    if (rot === ot && ownerMatches) {
       const lid = r?.spellListId ?? r?.SpellListId ?? r?.listId ?? r?.ListId;
       if (lid === 0 || lid === "0") return 0;
       const n = Number(lid);
