@@ -11,7 +11,9 @@ function escapeHtml(s){
 
 async function loadMetamagic(){
   try{
-    const data = await loadData("./data/metamagic.json", "Choices", (rows) => rows);
+    // Live sheet tab name is "Metamagic" (NOT "Choices").
+    // If this points at "Choices", live mode returns the wrong rows and the picker is empty.
+    const data = await loadData("./data/metamagic.json", "Metamagic", (rows) => rows);
     if(Array.isArray(data)) return data;
     if(Array.isArray(data?.metamagic)) return data.metamagic;
     return [];

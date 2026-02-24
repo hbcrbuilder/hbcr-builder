@@ -570,24 +570,31 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
+  // PERF: RadialScreen re-renders on every click. Avoid loading the large
+  // build datasets (spells/choices/features/etc.) when the user is still in
+  // Race/Class/Subclass selection.
+  const stagePre = state?.ui?.radial?.stage || "race";
+  const pickerTypePre = state?.ui?.picker?.open ? state?.ui?.picker?.type : null;
+  const needsBuildData = stagePre === "build" || Boolean(pickerTypePre);
+
   const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
     loadRaces(),
     loadClasses(),
     loadClassesFull(),
-    loadSpells(),
-    loadLevelFlows(),
-    loadTraits(),
-    loadFeats(),
-    loadClassFeatures(),
-    loadRaceFeatures(),
-    loadChoices()
+    needsBuildData ? loadSpells() : Promise.resolve({ spells: [] }),
+    needsBuildData ? loadLevelFlows() : Promise.resolve([]),
+    needsBuildData ? loadTraits() : Promise.resolve({ traits: [] }),
+    needsBuildData ? loadFeats() : Promise.resolve({ feats: [] }),
+    needsBuildData ? loadClassFeatures() : Promise.resolve([]),
+    needsBuildData ? loadRaceFeatures() : Promise.resolve([]),
+    needsBuildData ? loadChoices() : Promise.resolve([])
   ]);
 
   const races = racesData?.races ?? [];
   const classes = classesData?.classes ?? [];
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
   const subclassesIndex = indexSubclasses(classesFull);
-  const spells = spellsData?.spells ?? [];
+  const spells = spellsData?.spells ?? spellsData ?? [];
   const traits = traitsData?.traits ?? traitsData ?? [];
   const feats = featsData?.feats ?? [];
 
@@ -754,23 +761,26 @@ const currentSubclass =
     const sid = String(subclassObj?.id || "").trim();
     const lvl = Number(classLevel);
 
-    if (!cid || !sid || !Number.isFinite(lvl)) return steps;
+    // Subclass is optional: many classes gain picks before a subclass is chosen,
+    // and multiclass timelines can include levels without a subclass.
+    if (!cid || !Number.isFinite(lvl)) return steps;
 
     const buckets = [
       ...getChoices("class", cid, lvl),
-      ...getChoices("subclass", sid, lvl),
+      ...(sid ? getChoices("subclass", sid, lvl) : []),
     ];
 
     const mapPickTypeToRoute = (pt) => {
-  	const k = String(pt || "").toLowerCase();
-  	if (k === "cantrip") return "cantrips";
-  	if (k === "spell") return "spells";
+	const k = String(pt || "").toLowerCase().trim();
+	// Support common sheet variations (singular/plural)
+	if (k === "cantrip" || k === "cantrips") return "cantrips";
+	if (k === "spell" || k === "spells") return "spells";
 	if (k === "frontier_ballistics") return "frontierBallistics";
-  	if (k === "wildshape") return "wildshapes";
-  	if (k === "feat") return "feats";
-	if (k === "passive") return "passives";
-	if (k === "smite") return "smites";
-	if (k === "metamagic") return "metamagic";
+	if (k === "wildshape" || k === "wildshapes") return "wildshapes";
+	if (k === "feat" || k === "feats") return "feats";
+	if (k === "passive" || k === "passives") return "passives";
+	if (k === "smite" || k === "smites") return "smites";
+	if (k === "metamagic" || k === "metamagics") return "metamagic";
 	return null;
 	};
 
@@ -818,11 +828,25 @@ const currentSubclass =
     // double-counting or mismatches.
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("cantrips")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "cantripsKnownByLevel");
-      if (Number(scNeed) > 0) acc.set("cantrips", Number(scNeed));
+      if (Number(scNeed) > 0) {
+        acc.set("cantrips", {
+          need: Number(scNeed),
+          ownerType: "class",
+          ownerId: cid,
+          listOverride: null,
+        });
+      }
     }
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("spells")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "spellsKnownByLevel");
-      if (Number(scNeed) > 0) acc.set("spells", Number(scNeed));
+      if (Number(scNeed) > 0) {
+        acc.set("spells", {
+          need: Number(scNeed),
+          ownerType: "class",
+          ownerId: cid,
+          listOverride: null,
+        });
+      }
     }
 
     for (const [route, meta] of acc.entries()) {
@@ -837,7 +861,7 @@ const currentSubclass =
     }
 
     // Stable ordering (matches BG3-ish expectation).
-    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
+    const order = ["cantrips", "spells", "metamagic", "frontierBallistics", "smites", "passives", "feats"];
     steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
 
     return steps;
@@ -929,10 +953,10 @@ function featureNamesAtLevel(classId, subclassObj, classLevel) {
     const sid = String(subclassObj?.id || "").trim();
     const lvl = Number(classLevel);
 
-    if (!cid || !sid || !Number.isFinite(lvl)) return [];
+    if (!cid || !Number.isFinite(lvl)) return [];
 
     const base = getFeatures("class", cid, lvl);
-    const sub  = getFeatures("subclass", sid, lvl);
+    const sub  = sid ? getFeatures("subclass", sid, lvl) : [];
 
     // Keep a stable, deduped list.
     const out = [];
@@ -946,7 +970,7 @@ function featureNamesAtLevel(classId, subclassObj, classLevel) {
 
   
 function renderBuildSteps(classLevel, classId, subclassObj) {
-    if (!classId || !subclassObj) return `<div style="opacity:.8">Pick a subclass to unlock steps.</div>`;
+    if (!classId) return `<div style="opacity:.8">Pick a class to unlock steps.</div>`;
 
     const steps = resolveBuildSteps(classId, subclassObj, classLevel) || [];
     if (!steps.length) return `<div style="opacity:.75">No picks at this level.</div>`;
