@@ -168,8 +168,8 @@ function isAlwaysAny(ownerType, ownerId) {
   // Explicit design rules (these should also be true in the sheet, but this keeps
   // the app usable even if the sheet config drifts temporarily).
   if (ot === "class" && oid === "bard") return true;
-  if (ot === "subclass" && oid.includes("artificer_arcanist")) return true;
-  if (ot === "subclass" && (oid.includes("way_of_the_arcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
+  if (ot === "subclass" && oid.includes("artificerarcanist")) return true;
+  if (ot === "subclass" && (oid.includes("wayofthearcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
   return false;
 }
 
@@ -192,9 +192,10 @@ function fallbackListId(ownerType, ownerId) {
 
   // Subclasses
   if (ot === "subclass") {
-    if (oid.includes("wild_soul")) return 3;
-    if (oid.includes("eldritch_knight")) return 4;
-    if (oid.includes("arcane_trickster")) return 5;
+    // NOTE: oid is normalized by norm() (punctuation removed), so match normalized tokens too.
+    if (oid.includes("wildsoul")) return 3;
+    if (oid.includes("eldritchknight")) return 4;
+    if (oid.includes("arcanetrickster")) return 5;
   }
 
   return null;
@@ -205,7 +206,7 @@ function resolveListIdFromOwners(ownerRows, ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
   for (const r of ownerRows) {
-        const rot = norm(r?.ownerType ?? r?.OwnerType);
+    const rot = norm(r?.ownerType ?? r?.OwnerType);
     const roid = norm(r?.ownerId ?? r?.OwnerId);
     const roName = norm(r?.ownerName ?? r?.OwnerName ?? r?.name ?? r?.Name);
 
