@@ -796,6 +796,8 @@ const currentSubclass =
 	// Support common sheet variations (singular/plural)
 	if (k === "cantrip" || k === "cantrips") return "cantrips";
 	if (k === "spell" || k === "spells") return "spells";
+	// Draconic Sorcerer: Dragon Ancestor picker
+	if (k === "dragon_ancestor" || k === "dragonancestor" || k === "draconic_ancestry") return "dragonAncestor";
 	if (k === "frontier_ballistics") return "frontierBallistics";
   	if (k === "wildshape") return "wildshapes";
   	if (k === "feat") return "feats";
@@ -868,7 +870,17 @@ const currentSubclass =
     }
 
     // Stable ordering (matches BG3-ish expectation).
-    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
+    const order = [
+      "cantrips",
+      "spells",
+      "dragonAncestor",
+      "metamagic",
+      "frontierBallistics",
+      "smites",
+      "wildshapes",
+      "passives",
+      "feats",
+    ];
     steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
 
     return steps;
