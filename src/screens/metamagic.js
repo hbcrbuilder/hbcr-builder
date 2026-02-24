@@ -170,7 +170,8 @@ export async function MetamagicScreen({ state }) {
     const isOn = picked.includes(id);
     const disabled = need > 0 && !isOn && picked.length >= need;
 
-    const hay = `${name} ${descRaw} ${cost ? `SP ${cost}` : ''}`.replace(/"/g, "&quot;");
+    // Keep cost searchable (optional) but do not display "SP 1/2/3" in the UI.
+    const hay = `${name} ${descRaw} ${cost ? `${cost}` : ''}`.replace(/"/g, "&quot;");
     const nm  = `${name}`.replace(/"/g, "&quot;");
     const ds  = `${descRaw}`.replace(/"/g, "&quot;");
 
@@ -190,7 +191,7 @@ export async function MetamagicScreen({ state }) {
         <div class="card-top compact-row-top">
           <div class="icon sm">${iconHtml}</div>
           <div class="card-copy">
-            <div class="label">${escapeHtml(name)}${cost ? ` <span class=\"muted\" style=\"margin-left:10px\">SP ${escapeHtml(cost)}</span>` : ""}</div>
+            <div class="label">${escapeHtml(name)}</div>
             <div class="desc">${escapeHtml(descRaw)}</div>
           </div>
         </div>

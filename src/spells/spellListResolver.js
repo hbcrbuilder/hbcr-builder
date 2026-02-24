@@ -48,8 +48,8 @@ function buildListMapFromClassColumns(rows, kind) {
   if (!Array.isArray(rows) || rows.length === 0) return out;
 
   const valueKeyCandidates = kind === "cantrip"
-    ? ["CantripId", "Cantrip", "Cantrip Name", "CantripName", "name"]
-    : ["SpellId", "Spell", "Spell Name", "SpellName", "name"];
+    ? ["CantripId", "Cantrip Name", "CantripName", "name"]
+    : ["SpellId", "Spell Name", "SpellName", "name"];
 
   const getValue = (r) => {
     for (const k of valueKeyCandidates) {
@@ -90,18 +90,13 @@ async function loadSpellListData() {
   cachePromise = (async () => {
     const bundle = await tryFetchBundle();
 
-    // IMPORTANT:
-    // Our local spell_lists.json is map-shaped ({lists:{...}}), not row-shaped.
-    // liveData.loadData() only returns arrays of rows, so it will return [] for
-    // map-shaped json files. Therefore we must fetch the raw json first.
-    // When the live bundle includes SpellLists, we'll still pick that up below.
-    const lists =
-      (await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"])) ??
-      (await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows).catch(() => null));
+    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
 
-    const owners =
-      (await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows).catch(() => null)) ??
-      (await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]));
+    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }
@@ -126,10 +121,7 @@ async function loadSpellListData() {
 
     // If we couldn't load SpellLists content (common if the live bundle doesn't include that sheet),
     // build listMap from the wide "Spells" sheet columns in the live bundle.
-    const isEmptyObject = (v) =>
-      v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0;
-
-    if ((!listMap || isEmptyObject(listMap)) && bundle?.Spells) {
+    if (!listMap && bundle?.Spells) {
       listMap = buildListMapFromClassColumns(bundle.Spells, "spell");
     }
 
@@ -168,8 +160,8 @@ function isAlwaysAny(ownerType, ownerId) {
   // Explicit design rules (these should also be true in the sheet, but this keeps
   // the app usable even if the sheet config drifts temporarily).
   if (ot === "class" && oid === "bard") return true;
-  if (ot === "subclass" && oid.includes("artificerarcanist")) return true;
-  if (ot === "subclass" && (oid.includes("wayofthearcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
+  if (ot === "subclass" && oid.includes("artificer_arcanist")) return true;
+  if (ot === "subclass" && (oid.includes("way_of_the_arcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
   return false;
 }
 
@@ -192,10 +184,9 @@ function fallbackListId(ownerType, ownerId) {
 
   // Subclasses
   if (ot === "subclass") {
-    // NOTE: oid is normalized by norm() (punctuation removed), so match normalized tokens too.
-    if (oid.includes("wildsoul")) return 3;
-    if (oid.includes("eldritchknight")) return 4;
-    if (oid.includes("arcanetrickster")) return 5;
+    if (oid.includes("wild_soul")) return 3;
+    if (oid.includes("eldritch_knight")) return 4;
+    if (oid.includes("arcane_trickster")) return 5;
   }
 
   return null;
@@ -206,7 +197,7 @@ function resolveListIdFromOwners(ownerRows, ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
   for (const r of ownerRows) {
-    const rot = norm(r?.ownerType ?? r?.OwnerType);
+        const rot = norm(r?.ownerType ?? r?.OwnerType);
     const roid = norm(r?.ownerId ?? r?.OwnerId);
     const roName = norm(r?.ownerName ?? r?.OwnerName ?? r?.name ?? r?.Name);
 
