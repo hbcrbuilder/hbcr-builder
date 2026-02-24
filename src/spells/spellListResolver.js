@@ -48,8 +48,8 @@ function buildListMapFromClassColumns(rows, kind) {
   if (!Array.isArray(rows) || rows.length === 0) return out;
 
   const valueKeyCandidates = kind === "cantrip"
-    ? ["CantripId", "Cantrip Name", "CantripName", "name"]
-    : ["SpellId", "Spell Name", "SpellName", "name"];
+    ? ["CantripId", "Cantrip", "Cantrip Name", "CantripName", "name"]
+    : ["SpellId", "Spell", "Spell Name", "SpellName", "name"];
 
   const getValue = (r) => {
     for (const k of valueKeyCandidates) {
@@ -90,13 +90,18 @@ async function loadSpellListData() {
   cachePromise = (async () => {
     const bundle = await tryFetchBundle();
 
-    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
+    // IMPORTANT:
+    // Our local spell_lists.json is map-shaped ({lists:{...}}), not row-shaped.
+    // liveData.loadData() only returns arrays of rows, so it will return [] for
+    // map-shaped json files. Therefore we must fetch the raw json first.
+    // When the live bundle includes SpellLists, we'll still pick that up below.
+    const lists =
+      (await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"])) ??
+      (await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows).catch(() => null));
 
-    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
+    const owners =
+      (await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows).catch(() => null)) ??
+      (await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]));
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }
@@ -121,7 +126,10 @@ async function loadSpellListData() {
 
     // If we couldn't load SpellLists content (common if the live bundle doesn't include that sheet),
     // build listMap from the wide "Spells" sheet columns in the live bundle.
-    if (!listMap && bundle?.Spells) {
+    const isEmptyObject = (v) =>
+      v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0;
+
+    if ((!listMap || isEmptyObject(listMap)) && bundle?.Spells) {
       listMap = buildListMapFromClassColumns(bundle.Spells, "spell");
     }
 
