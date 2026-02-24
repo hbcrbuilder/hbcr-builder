@@ -170,8 +170,7 @@ export async function MetamagicScreen({ state }) {
     const isOn = picked.includes(id);
     const disabled = need > 0 && !isOn && picked.length >= need;
 
-    // Keep cost searchable (optional) but do not display "SP 1/2/3" in the UI.
-    const hay = `${name} ${descRaw} ${cost ? `${cost}` : ''}`.replace(/"/g, "&quot;");
+    const hay = `${name} ${descRaw} ${cost ? `SP ${cost}` : ''}`.replace(/"/g, "&quot;");
     const nm  = `${name}`.replace(/"/g, "&quot;");
     const ds  = `${descRaw}`.replace(/"/g, "&quot;");
 

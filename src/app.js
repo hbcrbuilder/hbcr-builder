@@ -916,6 +916,47 @@ if (action === "toggle-frontierBallistics-lvl") {
   });
 }
 
+
+      // --- Build-level Metamagic multi-select ---
+      // Encoded id: "<metamagicId>|<buildLevel>|<limit>"
+      if (action === "toggle-metamagic-lvl") {
+        const raw = String(id || "");
+        const [mmId, lvlRaw, limitRaw] = raw.split("|");
+        const lvl = Math.max(1, Math.min(12, Number(lvlRaw || 1)));
+        const limit = Math.max(0, Number(limitRaw || 0));
+
+        const ch = store.getState().character;
+        const timeline = Array.isArray(ch.build?.timeline) ? ch.build.timeline : [];
+        const nextTimeline = timeline.map((e, idx) => {
+          if (idx !== (lvl - 1)) return e;
+          const picks = { ...(e?.picks || {}) };
+          const curList = Array.isArray(picks.metamagic)
+            ? picks.metamagic
+            : (picks.metamagic ? [picks.metamagic] : []);
+
+          const has = curList.includes(mmId);
+          const nextList = has ? curList.filter(x => x !== mmId) : [...curList, mmId].slice(0, limit);
+          picks.metamagic = nextList;
+          return { ...e, picks };
+        });
+
+        // Flatten across all build levels
+        const all = new Set();
+        nextTimeline.forEach((e) =>
+          (Array.isArray(e?.picks?.metamagic) ? e.picks.metamagic : (e?.picks?.metamagic ? [e.picks.metamagic] : []))
+            .forEach(x => all.add(x))
+        );
+
+        store.patchCharacter({
+          build: { ...(ch.build || {}), timeline: nextTimeline },
+          metamagic: Array.from(all)
+        });
+
+        // Keep UI focused on last interacted metamagic.
+        const ui = store.getState().ui;
+        store.patchUI({ pickerFocus: { ...(ui.pickerFocus || {}), metamagic: mmId } });
+      }
+
 if (action === "toggle-cantrip-lvl") {
         const raw = String(id || "");
         const [spellId, lvlRaw, limitRaw] = raw.split("|");
@@ -1004,38 +1045,6 @@ if (action === "toggle-cantrip-lvl") {
 
         const ui = store.getState().ui;
         store.patchUI({ pickerFocus: { ...(ui.pickerFocus || {}), wildshapes: wsId } });
-      }
-
-      // --- Build-level Metamagic multi-select ---
-      // Encoded id: "<metamagicId>|<buildLevel>|<limit>"
-      if (action === "toggle-metamagic-lvl") {
-        const raw = String(id || "");
-        const [mmId, lvlRaw, limitRaw] = raw.split("|");
-        const lvl = Math.max(1, Math.min(12, Number(lvlRaw || 1)));
-        const limit = Math.max(0, Number(limitRaw || 0));
-
-        const ch = store.getState().character;
-        const timeline = Array.isArray(ch.build?.timeline) ? ch.build.timeline : [];
-        const nextTimeline = timeline.map((e, idx) => {
-          if (idx !== (lvl - 1)) return e;
-          const picks = { ...(e?.picks || {}) };
-          const curList = Array.isArray(picks.metamagic) ? picks.metamagic : [];
-          const has = curList.includes(mmId);
-          const nextList = has ? curList.filter(x => x !== mmId) : [...curList, mmId].slice(0, limit);
-          picks.metamagic = nextList;
-          return { ...e, picks };
-        });
-
-        const all = new Set();
-        nextTimeline.forEach((e) => (Array.isArray(e?.picks?.metamagic) ? e.picks.metamagic : []).forEach(x => all.add(x)));
-
-        store.patchCharacter({
-          build: { ...(ch.build || {}), timeline: nextTimeline },
-          metamagic: Array.from(all)
-        });
-
-        const ui = store.getState().ui;
-        store.patchUI({ pickerFocus: { ...(ui.pickerFocus || {}), metamagic: mmId } });
       }
 
       // --- Cantrips / Spells multi-select ---
