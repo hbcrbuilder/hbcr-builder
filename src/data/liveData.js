@@ -25,19 +25,36 @@ export async function getBundle() {
 // 2) Fall back to local json file at `path`
 // Supports local shapes: [] OR { ok:true, rows:[...] } OR { rows:[...] }
 export async function loadData(path, sheetName, transform) {
+  // ---- normalizer: map Sheets column names to UI-friendly keys ----
+  const normalize = (arr) =>
+    arr.map((r) => ({
+      ...r,
+
+      // UI expects `id`
+      id:
+        r.id ??
+        r.Id ?? r.ID ??
+        r.RaceId ?? r.ClassId ?? r.SubraceId ?? r.SubclassId ??
+        r.SpellId ?? r.CantripId ??
+        r.FeatureId ?? r.FeatId ?? r.TraitId ??
+        r.ChoiceId ?? r.ItemId,
+
+      // UI expects `name`
+      name:
+        r.name ??
+        r.Name ?? r.Label ??
+        r.RaceName ?? r.ClassName ?? r.SubraceName ?? r.SubclassName ??
+        r.SpellName ?? r.CantripName ??
+        r.FeatureName ?? r.FeatName ?? r.TraitName,
+
+      // UI uses `icon` when present
+      icon: r.icon ?? r.Icon,
+    }));
+
   // 1) Prefer Worker bundle
   try {
     const b = await getBundle();
     const fromBundle = b?.[sheetName];
-
-    // normalize Sheets-style columns (Id/Name/Icon) to UI-style (id/name/icon)
-    const normalize = (arr) =>
-      arr.map((r) => ({
-        ...r,
-        id: r.id ?? r.Id ?? r.ID,
-        name: r.name ?? r.Name ?? r.Label,
-        icon: r.icon ?? r.Icon,
-      }));
 
     if (Array.isArray(fromBundle)) {
       const norm = normalize(fromBundle);
@@ -59,33 +76,34 @@ export async function loadData(path, sheetName, transform) {
 
   const rows = Array.isArray(j) ? j : (Array.isArray(j?.rows) ? j.rows : []);
 
-  // local files might already be normalized, but normalize anyway (harmless)
-  const norm = rows.map((r) => ({
-    ...r,
-    id: r.id ?? r.Id ?? r.ID,
-    name: r.name ?? r.Name ?? r.Label,
-    icon: r.icon ?? r.Icon,
-  }));
-
+  const norm = normalize(rows);
   return transform ? transform(norm) : norm;
 }
 
 /**
  * ---- Compatibility exports (keep these names!) ----
  * These match what your existing modules import.
- * If you have more sheets, add another line here.
  */
 export const loadRacesJson = () => loadData("./data/races.json", "Races");
 export const loadSubracesJson = () => loadData("./data/subraces.json", "Subraces");
+
 export const loadClassesJson = () => loadData("./data/classes.json", "Classes");
+export const loadClassesFullJson = () => loadData("./data/classesFull.json", "Classes");
+
+export const loadSubclassesJson = () => loadData("./data/subclasses.json", "Subclasses");
+
 export const loadSpellsJson = () => loadData("./data/spells.json", "Spells");
 export const loadCantripsJson = () => loadData("./data/cantrips.json", "Cantrips");
+
 export const loadLevelFlowsJson = () => loadData("./data/levelFlows.json", "LevelFlows");
 export const loadTraitsJson = () => loadData("./data/traits.json", "Traits");
 export const loadFeatsJson = () => loadData("./data/feats.json", "Feats");
-export const loadClassFeaturesJson = () => loadData("./data/classFeatures.json", "ClassFeatures");
-export const loadRaceFeaturesJson = () => loadData("./data/raceFeatures.json", "RaceFeatures");
+
+export const loadClassFeaturesJson = () =>
+  loadData("./data/classFeatures.json", "ClassFeatures");
+export const loadRaceFeaturesJson = () =>
+  loadData("./data/raceFeatures.json", "RaceFeatures");
+
 export const loadChoicesJson = () => loadData("./data/choices.json", "Choices");
-export const loadPickListItemsJson = () => loadData("./data/pickListItems.json", "PickListItems");
-export const loadClassesFullJson = () => loadData("./data/classesFull.json", "Classes");
-export const loadSubclassesJson   = () => loadData("./data/subclasses.json", "Subclasses");
+export const loadPickListItemsJson = () =>
+  loadData("./data/pickListItems.json", "PickListItems");
