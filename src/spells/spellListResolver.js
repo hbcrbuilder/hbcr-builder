@@ -12,6 +12,35 @@ import { loadData } from "../data/liveData.js";
 
 let cachePromise = null;
 
+let bundlePromise = null;
+
+const BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
+
+// Fetch the full bundle once and cache it. We do this here (instead of via liveData.loadData)
+// because liveData may normalize rows into {id,name,icon} which destroys the columnar
+// data needed for SpellLists/SpellListOwners.
+async function fetchBundle() {
+  if (bundlePromise) return bundlePromise;
+  bundlePromise = (async () => {
+    const res = await fetch(BUNDLE_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`bundle fetch failed: ${res.status}`);
+    return await res.json();
+  })();
+  return bundlePromise;
+}
+
+function getBundleSheet(bundle, sheetName) {
+  if (!bundle || !sheetName) return null;
+  // Try a few common key variants.
+  return (
+    bundle[sheetName] ??
+    bundle[sheetName.toLowerCase()] ??
+    bundle[sheetName.toUpperCase()] ??
+    null
+  );
+}
+
+
 async function tryFetchJson(paths) {
   for (const p of paths) {
     try {
@@ -29,13 +58,30 @@ async function loadSpellListData() {
   if (cachePromise) return await cachePromise;
 
   cachePromise = (async () => {
-    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
+    // Prefer live bundle sheets for these, because the source of truth is Google Sheets.
+// Fall back to local exports if bundle is unavailable.
+    let lists = null;
+    let owners = null;
+    try {
+      const bundle = await fetchBundle();
+      lists = getBundleSheet(bundle, "SpellLists");
+      owners = getBundleSheet(bundle, "SpellListOwners");
+    } catch {
+      // ignore bundle errors; we'll fall back to local json
+    }
 
-    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
-      .catch(() => null)
-      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
+    if (!lists) {
+      lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
+        .catch(() => null)
+        ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
+    }
+
+    if (!owners) {
+      owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
+        .catch(() => null)
+        ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
+    }
+
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }
@@ -43,34 +89,17 @@ async function loadSpellListData() {
     //  - [ { listId: 1, spellId: "..." }, ... ]
     let listMap = null;
     if (lists) {
-      // spell_lists.json can be either:
-      //  - { lists: { "1": ["guiding-bolt", ...], ... } }
-      //  - { "1": [..], "2": [..] }
-      //  - [ { listId: 1, spellId: "..." }, ... ]
-      //  - { rows: [ { SpellListId, SpellId }, ... ] }  (common wrapper from liveData/loadData)
-      //  - { data: [ ... ] }
-      const listRows =
-        Array.isArray(lists) ? lists :
-        (Array.isArray(lists?.rows) ? lists.rows :
-         Array.isArray(lists?.data) ? lists.data :
-         Array.isArray(lists?.SpellLists) ? lists.SpellLists :
-         Array.isArray(lists?.spellLists) ? lists.spellLists :
-         null);
-
-      if (listRows) {
-        // Row form: [ { SpellListId, SpellId }, ... ]
+      if (Array.isArray(lists)) {
         listMap = {};
-        for (const r of listRows) {
-          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? r?.spellListId ?? "").trim();
-          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? r?.spellId ?? "").trim();
+        for (const r of lists) {
+          const lid = String(r?.listId ?? r?.ListId ?? r?.SpellListId ?? "").trim();
+          const sid = String(r?.spellId ?? r?.SpellId ?? r?.Spell ?? "").trim();
           if (!lid || !sid) continue;
           (listMap[lid] ||= []).push(sid);
         }
       } else if (lists?.lists && typeof lists.lists === "object") {
-        // Map form: { lists: { "1": ["spell_id", ...], ... } }
         listMap = lists.lists;
       } else if (typeof lists === "object") {
-        // Map form: { "1": [...], "2": [...] }
         listMap = lists;
       }
     }
@@ -105,8 +134,8 @@ function isAlwaysAny(ownerType, ownerId) {
   // Explicit design rules (these should also be true in the sheet, but this keeps
   // the app usable even if the sheet config drifts temporarily).
   if (ot === "class" && oid === "bard") return true;
-  if (ot === "subclass" && oid.includes("artificer_arcanist")) return true;
-  if (ot === "subclass" && (oid.includes("way_of_the_arcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
+  if (ot === "subclass" && oid.includes("artificerarcanist")) return true;
+  if (ot === "subclass" && (oid.includes("wayofthearcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
   return false;
 }
 
@@ -129,9 +158,9 @@ function fallbackListId(ownerType, ownerId) {
 
   // Subclasses
   if (ot === "subclass") {
-    if (oid.includes("wild_soul")) return 3;
-    if (oid.includes("eldritch_knight")) return 4;
-    if (oid.includes("arcane_trickster")) return 5;
+    if (oid.includes("wildsoul")) return 3;
+    if (oid.includes("eldritchknight")) return 4;
+    if (oid.includes("arcanetrickster")) return 5;
   }
 
   return null;
@@ -142,7 +171,7 @@ function resolveListIdFromOwners(ownerRows, ownerType, ownerId) {
   const ot = norm(ownerType);
   const oid = norm(ownerId);
   for (const r of ownerRows) {
-    const rot = norm(r?.ownerType ?? r?.OwnerType);
+        const rot = norm(r?.ownerType ?? r?.OwnerType);
     const roid = norm(r?.ownerId ?? r?.OwnerId);
     const roName = norm(r?.ownerName ?? r?.OwnerName ?? r?.name ?? r?.Name);
 
