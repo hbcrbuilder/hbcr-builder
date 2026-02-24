@@ -796,8 +796,6 @@ const currentSubclass =
 	// Support common sheet variations (singular/plural)
 	if (k === "cantrip" || k === "cantrips") return "cantrips";
 	if (k === "spell" || k === "spells") return "spells";
-	// Draconic Bloodline L1: Dragon Ancestor / Draconic Ancestry
-	if (k === "dragon_ancestor" || k === "draconic_ancestry" || k === "draconic ancestry") return "dragonAncestor";
 	if (k === "frontier_ballistics") return "frontierBallistics";
   	if (k === "wildshape") return "wildshapes";
   	if (k === "feat") return "feats";
