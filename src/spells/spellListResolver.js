@@ -12,34 +12,7 @@ import { loadData } from "../data/liveData.js";
 
 let cachePromise = null;
 
-let bundlePromise = null;
-
 const BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
-
-// Fetch the full bundle once and cache it. We do this here (instead of via liveData.loadData)
-// because liveData may normalize rows into {id,name,icon} which destroys the columnar
-// data needed for SpellLists/SpellListOwners.
-async function fetchBundle() {
-  if (bundlePromise) return bundlePromise;
-  bundlePromise = (async () => {
-    const res = await fetch(BUNDLE_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`bundle fetch failed: ${res.status}`);
-    return await res.json();
-  })();
-  return bundlePromise;
-}
-
-function getBundleSheet(bundle, sheetName) {
-  if (!bundle || !sheetName) return null;
-  // Try a few common key variants.
-  return (
-    bundle[sheetName] ??
-    bundle[sheetName.toLowerCase()] ??
-    bundle[sheetName.toUpperCase()] ??
-    null
-  );
-}
-
 
 async function tryFetchJson(paths) {
   for (const p of paths) {
@@ -54,34 +27,76 @@ async function tryFetchJson(paths) {
   return null;
 }
 
+async function tryFetchBundle() {
+  try {
+    const res = await fetch(BUNDLE_URL, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function buildListMapFromClassColumns(rows, kind) {
+  // Builds listId -> [spell/cantrip names or ids]
+  // from wide-sheet rows that mark class membership with an "X".
+  // Example spell row keys:
+  //   "Cleric Spell List": "X", "Wizard Spell List": ""
+  // Example cantrip row keys (if present):
+  //   "Cleric Cantrip List": "X", ...
+  const out = { "1": [], "2": [], "3": [], "4": [], "5": [] };
+  if (!Array.isArray(rows) || rows.length === 0) return out;
+
+  const valueKeyCandidates = kind === "cantrip"
+    ? ["CantripId", "Cantrip Name", "CantripName", "name"]
+    : ["SpellId", "Spell Name", "SpellName", "name"];
+
+  const getValue = (r) => {
+    for (const k of valueKeyCandidates) {
+      const v = r?.[k];
+      if (v != null && String(v).trim()) return String(v).trim();
+    }
+    return "";
+  };
+
+  const keyNeedle = kind === "cantrip" ? "cantrip list" : "spell list";
+
+  for (const r of rows) {
+    const value = getValue(r);
+    if (!value) continue;
+
+    for (const [k, v] of Object.entries(r || {})) {
+      const kk = String(k).toLowerCase();
+      if (!kk.includes(keyNeedle)) continue;
+      const mark = String(v || "").trim().toLowerCase();
+      if (mark !== "x" && mark !== "true" && mark !== "1" && mark !== "yes") continue;
+
+      // Determine which listId this column implies.
+      // list 1 = cleric/paladin, 2 = druid/ranger, 3 = sorcerer, 4 = warlock, 5 = wizard
+      if (kk.includes("cleric") || kk.includes("paladin")) out["1"].push(value);
+      else if (kk.includes("druid") || kk.includes("ranger")) out["2"].push(value);
+      else if (kk.includes("sorcerer")) out["3"].push(value);
+      else if (kk.includes("warlock")) out["4"].push(value);
+      else if (kk.includes("wizard")) out["5"].push(value);
+    }
+  }
+
+  return out;
+}
+
 async function loadSpellListData() {
   if (cachePromise) return await cachePromise;
 
   cachePromise = (async () => {
-    // Prefer live bundle sheets for these, because the source of truth is Google Sheets.
-// Fall back to local exports if bundle is unavailable.
-    let lists = null;
-    let owners = null;
-    try {
-      const bundle = await fetchBundle();
-      lists = getBundleSheet(bundle, "SpellLists");
-      owners = getBundleSheet(bundle, "SpellListOwners");
-    } catch {
-      // ignore bundle errors; we'll fall back to local json
-    }
+    const bundle = await tryFetchBundle();
 
-    if (!lists) {
-      lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
-        .catch(() => null)
-        ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
-    }
+    const lists = await loadData("./data/spell_lists.json", "SpellLists", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_lists.json", "./data/spellLists.json"]);
 
-    if (!owners) {
-      owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
-        .catch(() => null)
-        ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
-    }
-
+    const owners = await loadData("./data/spell_list_owners.json", "SpellListOwners", (rows) => rows)
+      .catch(() => null)
+      ?? await tryFetchJson(["./data/spell_list_owners.json", "./data/spellListOwners.json"]);
 
     // spell_lists.json can be either:
     //  - { lists: { "1": ["guiding-bolt", ...], ... } }
@@ -104,6 +119,12 @@ async function loadSpellListData() {
       }
     }
 
+    // If we couldn't load SpellLists content (common if the live bundle doesn't include that sheet),
+    // build listMap from the wide "Spells" sheet columns in the live bundle.
+    if (!listMap && bundle?.Spells) {
+      listMap = buildListMapFromClassColumns(bundle.Spells, "spell");
+    }
+
     // owners can be either:
     //  - { owners: [ ... ] }
     //  - [ ... ]
@@ -111,6 +132,11 @@ async function loadSpellListData() {
     if (owners) {
       ownerRows = Array.isArray(owners) ? owners : (owners?.owners || owners?.rows || owners?.data || null);
       if (!Array.isArray(ownerRows)) ownerRows = null;
+    }
+
+    // If SpellListOwners isn't available via loadData/json, use the live bundle if present.
+    if (!ownerRows && bundle?.SpellListOwners && Array.isArray(bundle.SpellListOwners)) {
+      ownerRows = bundle.SpellListOwners;
     }
 
     return { listMap, ownerRows };
@@ -134,8 +160,8 @@ function isAlwaysAny(ownerType, ownerId) {
   // Explicit design rules (these should also be true in the sheet, but this keeps
   // the app usable even if the sheet config drifts temporarily).
   if (ot === "class" && oid === "bard") return true;
-  if (ot === "subclass" && oid.includes("artificerarcanist")) return true;
-  if (ot === "subclass" && (oid.includes("wayofthearcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
+  if (ot === "subclass" && oid.includes("artificer_arcanist")) return true;
+  if (ot === "subclass" && (oid.includes("way_of_the_arcane") || (oid.includes("monk") && oid.includes("arcane")))) return true;
   return false;
 }
 
@@ -158,9 +184,9 @@ function fallbackListId(ownerType, ownerId) {
 
   // Subclasses
   if (ot === "subclass") {
-    if (oid.includes("wildsoul")) return 3;
-    if (oid.includes("eldritchknight")) return 4;
-    if (oid.includes("arcanetrickster")) return 5;
+    if (oid.includes("wild_soul")) return 3;
+    if (oid.includes("eldritch_knight")) return 4;
+    if (oid.includes("arcane_trickster")) return 5;
   }
 
   return null;
