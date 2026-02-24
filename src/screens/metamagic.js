@@ -11,16 +11,37 @@ function escapeHtml(s){
 
 async function loadMetamagic(){
   try{
+    // 1) Try bundle Metamagic tab.
+    // If the bundle doesn't actually contain metamagic OPTIONS (often it only
+    // contains choice rows like "sorcerer_l1_metamagic"), fall back to the
+    // canonical local metamagic.json.
     let data = await loadData("./data/metamagic.json", "Metamagic", (rows) => rows);
-    // Back-compat: if the sheet doesn't have a Metamagic tab, fall back to Choices and filter.
-    if (!Array.isArray(data) || data.length === 0) {
-      const all = await loadData("./data/choices.json", "Choices", (rows) => rows);
-      if (Array.isArray(all)) {
-        data = all.filter(r => String(r?.pickType || r?.PickType || "").toLowerCase().includes("metamagic"));
+
+    const looksLikeOptions = (arr) => {
+      if (!Array.isArray(arr) || !arr.length) return false;
+      // Real options have readable names + a description/cost.
+      // Choice rows usually have ids like "sorcerer_l1_metamagic" and no desc.
+      return arr.some(r => {
+        const id = String(r?.id || "");
+        const name = String(r?.name || r?.label || "");
+        const desc = String(r?.desc || r?.description || "");
+        const cost = Number(r?.cost || 0);
+        return name && (desc || cost) && !id.endsWith("_metamagic");
+      });
+    };
+
+    if (looksLikeOptions(data)) return data;
+
+    // 2) Canonical local file.
+    try{
+      const res = await fetch("./data/metamagic.json", { cache: "no-store" });
+      if (res.ok) {
+        const j = await res.json();
+        if (Array.isArray(j)) return j;
+        if (Array.isArray(j?.metamagic)) return j.metamagic;
       }
-    }
-    if(Array.isArray(data)) return data;
-    if(Array.isArray(data?.metamagic)) return data.metamagic;
+    }catch(e){}
+
     return [];
   }catch(e){
     return [];

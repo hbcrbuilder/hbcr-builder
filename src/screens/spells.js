@@ -1,13 +1,13 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
-import { loadData } from "../data/liveData.js";
+import { loadSpellsJson } from "../data/liveData.js";
 
 let _spellsAllPromise = null;
 async function loadSpells(){
   if (_spellsAllPromise) return _spellsAllPromise;
   _spellsAllPromise = (async () => {
     try{
-      const data = await loadData("./data/spells.json", "Spells", (rows) => rows);
+      const data = await loadSpellsJson();
       return Array.isArray(data) ? data : (data?.spells || []);
     }catch(e){
       return [];

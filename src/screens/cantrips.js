@@ -1,10 +1,10 @@
 import { resolveAbilityIcon } from "../ui/abilityIcons.js";
 import { resolveAllowedAbilityIds } from "../spells/spellListResolver.js";
-import { loadData } from "../data/liveData.js";
+import { loadCantripsJson } from "../data/liveData.js";
 
 let _cantripsAllPromise = null;
 async function loadCantrips(){
-  const data = await loadData("./data/cantrips.json", "Cantrips", (rows) => rows);
+  const data = await loadCantripsJson();
   return Array.isArray(data) ? data : (data?.cantrips || []);
 }
 

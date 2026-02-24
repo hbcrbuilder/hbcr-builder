@@ -45,7 +45,28 @@ export async function loadData(path, sheetName, transform) {
         r.Name ?? r.Label ??
         r.RaceName ?? r.ClassName ?? r.SubraceName ?? r.SubclassName ??
         r.SpellName ?? r.CantripName ??
+        r.MetamagicName ?? r.DragonAncestorName ??
         r.FeatureName ?? r.FeatName ?? r.TraitName,
+
+      // Many pickers expect a description/text field.
+      // Spells/Cantrips: `text`
+      // Metamagic/Traits/Feats/etc: `desc`
+      text:
+        r.text ??
+        r.Text ??
+        r.SpellText ?? r.CantripText ??
+        r.Description ?? r.Desc ?? r.desc ??
+        r.SpellDescription ?? r.CantripDescription ??
+        "",
+
+      desc:
+        r.desc ??
+        r.Desc ??
+        r.Description ??
+        r.MetamagicDesc ?? r.MetamagicDescription ??
+        r.TraitDesc ?? r.FeatDesc ??
+        r.SpellDesc ?? r.CantripDesc ??
+        "",
 
       // UI uses `icon` when present
       // Bundle sheets aren't perfectly consistent on icon column names.
@@ -67,6 +88,16 @@ export async function loadData(path, sheetName, transform) {
 
     if (Array.isArray(fromBundle)) {
       const norm = normalize(fromBundle);
+
+      // If the bundle sheet exists but is clearly not in the expected shape
+      // for certain pickers (e.g. Spells/Cantrips coming through as unrelated
+      // rows), fall back to the local json.
+      if (sheetName === "Spells" && norm.length && !norm.some(s => (s.name || s.SpellName) && (s.text || s.SpellText || s.Description))) {
+        throw new Error("Bundle Spells sheet missing name/text");
+      }
+      if (sheetName === "Cantrips" && norm.length && !norm.some(s => (s.name || s.CantripName) && (s.text || s.CantripText || s.Description))) {
+        throw new Error("Bundle Cantrips sheet missing name/text");
+      }
       return transform ? transform(norm) : norm;
     }
 
@@ -252,8 +283,78 @@ export const loadClassesFullJson = () => loadData("./data/classesFull.json", "Cl
 
 export const loadSubclassesJson = () => loadData("./data/subclasses.json", "Subclasses");
 
-export const loadSpellsJson = () => loadData("./data/spells.json", "Spells");
-export const loadCantripsJson = () => loadData("./data/cantrips.json", "Cantrips");
+// Spells/Cantrips are tightly coupled to spell list restrictions + icon mapping.
+// The local jsons are the canonical source for ids/text used across the app.
+// If the live bundle has updated display names we can overlay them, but we
+// should never replace the local universe with bundle ids that don't match the
+// resolver lists.
+export async function loadSpellsJson() {
+  // local canonical
+  let local = { spells: [] };
+  try {
+    const res = await fetch("./data/spells.json", { cache: "no-store" });
+    if (res.ok) {
+      const j = await res.json();
+      local = Array.isArray(j) ? { spells: j } : (j && typeof j === "object" ? j : { spells: [] });
+      if (!Array.isArray(local.spells)) local = { ...local, spells: [] };
+    }
+  } catch {}
+
+  // overlay from bundle when it matches canonical ids
+  try {
+    const b = await getBundle();
+    const src = Array.isArray(b?.Spells) ? b.Spells : (Array.isArray(b?.Spells?.rows) ? b.Spells.rows : null);
+    if (src) {
+      const live = src.map(r => ({
+        id: r?.SpellId ?? r?.id,
+        name: r?.SpellName ?? r?.name,
+        text: r?.SpellText ?? r?.text ?? r?.Text ?? r?.Description ?? "",
+      })).filter(x => x.id);
+
+      const byId = new Map(live.map(x => [String(x.id), x]));
+      const merged = (local.spells || []).map(s => {
+        const o = byId.get(String(s.id));
+        return o ? { ...s, name: o.name || s.name, text: o.text || s.text } : s;
+      });
+      return { ...local, spells: merged };
+    }
+  } catch {}
+
+  return local;
+}
+
+export async function loadCantripsJson() {
+  let local = { cantrips: [] };
+  try {
+    const res = await fetch("./data/cantrips.json", { cache: "no-store" });
+    if (res.ok) {
+      const j = await res.json();
+      local = Array.isArray(j) ? { cantrips: j } : (j && typeof j === "object" ? j : { cantrips: [] });
+      if (!Array.isArray(local.cantrips)) local = { ...local, cantrips: [] };
+    }
+  } catch {}
+
+  try {
+    const b = await getBundle();
+    const src = Array.isArray(b?.Cantrips) ? b.Cantrips : (Array.isArray(b?.Cantrips?.rows) ? b.Cantrips.rows : null);
+    if (src) {
+      const live = src.map(r => ({
+        id: r?.CantripId ?? r?.id,
+        name: r?.CantripName ?? r?.name,
+        text: r?.CantripText ?? r?.text ?? r?.Text ?? r?.Description ?? "",
+      })).filter(x => x.id);
+
+      const byId = new Map(live.map(x => [String(x.id), x]));
+      const merged = (local.cantrips || []).map(c => {
+        const o = byId.get(String(c.id));
+        return o ? { ...c, name: o.name || c.name, text: o.text || c.text } : c;
+      });
+      return { ...local, cantrips: merged };
+    }
+  } catch {}
+
+  return local;
+}
 
 export const loadLevelFlowsJson = () => loadData("./data/levelFlows.json", "LevelFlows");
 export const loadTraitsJson = () => loadData("./data/traits.json", "Traits");
