@@ -581,6 +581,19 @@ export async function RadialScreen({ state }) {
   let stage = ui.stage || "race";
   const buildLevel = Number(ui.buildLevel ?? 1);
 
+  // liveData.loadData() may return either:
+  //   - an array of normalized rows (bundle path)
+  //   - an object wrapper like { races:[...], classes:[...], spells:[...] } (older/local json shape)
+  // Radial UI must tolerate both.
+  const unwrapList = (data, key) => {
+    if (Array.isArray(data)) return data;
+    const v = data?.[key];
+    if (Array.isArray(v)) return v;
+    // Some sheets ship as {rows:[...]} in a few places
+    if (Array.isArray(data?.rows)) return data.rows;
+    return [];
+  };
+
   // Core data is needed for initial navigation.
   const [racesData, classesData, classesFull] = await Promise.all([
     loadRaces(),
@@ -613,13 +626,13 @@ export async function RadialScreen({ state }) {
     ]);
   }
 
-  const races = racesData?.races ?? [];
-  const classes = classesData?.classes ?? [];
+  const races = unwrapList(racesData, "races");
+  const classes = unwrapList(classesData, "classes");
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
   const subclassesIndex = indexSubclasses(classesFull);
-  const spells = spellsData?.spells ?? [];
-  const traits = traitsData?.traits ?? traitsData ?? [];
-  const feats = featsData?.feats ?? [];
+  const spells = unwrapList(spellsData, "spells");
+  const traits = unwrapList(traitsData, "traits");
+  const feats = unwrapList(featsData, "feats");
 
   const spellsIndex = new Map(spells.map((s) => [s.id, s]));
   const featsIndex = new Map(feats.map((f) => [f.id, f]));
