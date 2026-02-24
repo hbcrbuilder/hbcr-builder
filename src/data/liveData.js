@@ -48,7 +48,16 @@ export async function loadData(path, sheetName, transform) {
         r.FeatureName ?? r.FeatName ?? r.TraitName,
 
       // UI uses `icon` when present
-      icon: r.icon ?? r.Icon,
+      // Bundle sheets aren't perfectly consistent on icon column names.
+      // Support common variants so radial/choice UIs keep rendering.
+      icon:
+        r.icon ??
+        r.Icon ??
+        r.iconUrl ?? r.IconUrl ?? r.ICON_URL ??
+        r.IconPath ?? r.iconPath ??
+        r.RaceIcon ?? r.SubraceIcon ?? r.ClassIcon ?? r.SubclassIcon ??
+        r.Image ?? r.image ??
+        null,
     }));
 
   // 1) Prefer Worker bundle

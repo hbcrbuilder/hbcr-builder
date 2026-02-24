@@ -21,6 +21,7 @@ import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
 import {
   loadRacesJson,
+  loadSubracesJson,
   loadClassesJson,
   loadData
 } from "../data/liveData.js";
@@ -28,6 +29,7 @@ import {
 // --- Hot-path caches ---
 // The UI re-renders on every click; re-fetching big JSON files can bog down the browser.
 let racesCachePromise = null;
+let subracesCachePromise = null;
 let classesCachePromise = null;
 let spellsCachePromise = null;
 let levelFlowsCachePromise = null;
@@ -42,6 +44,15 @@ async function loadRaces() {
     racesCachePromise = loadRacesJson();
   }
   return await racesCachePromise;
+}
+
+async function loadSubraces() {
+  if (!subracesCachePromise) {
+    // In live (bundle) mode this comes from bundle.Subraces.
+    // Local fallback file may not exist in older repo snapshots; loadData() will safely return [].
+    subracesCachePromise = loadSubracesJson();
+  }
+  return await subracesCachePromise;
 }
 
 async function loadClasses() {
@@ -388,8 +399,12 @@ function nodeIcon(path) {
   if (!path) return `<div class="radial-fallback">◈</div>`;
 
   const p = String(path);
-  const normalized = p.startsWith("assets/") ? `./${p}` : p;
 
+  // Some sheets may store inline SVG or prebuilt <img> HTML.
+  // If it looks like markup, trust it.
+  if (p.trim().startsWith("<")) return p;
+
+  const normalized = p.startsWith("assets/") ? `./${p}` : p;
   return `<img src="${escapeHtml(normalized)}" alt="" />`;
 }
 
@@ -595,8 +610,9 @@ export async function RadialScreen({ state }) {
   };
 
   // Core data is needed for initial navigation.
-  const [racesData, classesData, classesFull] = await Promise.all([
+  const [racesData, subracesData, classesData, classesFull] = await Promise.all([
     loadRaces(),
+    loadSubraces(),
     loadClasses(),
     loadClassesFull(),
   ]);
@@ -627,7 +643,34 @@ export async function RadialScreen({ state }) {
   }
 
   const races = unwrapList(racesData, "races");
+  const subracesFlat = unwrapList(subracesData, "subraces");
   const classes = unwrapList(classesData, "classes");
+
+  // ---- Attach subraces to races (live bundle provides Subraces as a separate sheet) ----
+  // Supports multiple possible parent-id columns.
+  const subracesByRace = new Map();
+  for (const sr of (subracesFlat || [])) {
+    const parentRaceId =
+      sr?.raceId ?? sr?.RaceId ??
+      sr?.parentRaceId ?? sr?.ParentRaceId ??
+      sr?.ownerId ?? sr?.OwnerId ??
+      sr?.Race ?? sr?.race ??
+      null;
+    const rid = parentRaceId ? String(parentRaceId) : null;
+    if (!rid) continue;
+    if (!subracesByRace.has(rid)) subracesByRace.set(rid, []);
+    subracesByRace.get(rid).push(sr);
+  }
+
+  // Mutate-in-place is OK here; we only use these objects for UI rendering.
+  for (const r of (races || [])) {
+    if (!r || typeof r !== "object") continue;
+    if (!Array.isArray(r.subraces) || r.subraces.length === 0) {
+      const list = subracesByRace.get(String(r.id)) || [];
+      if (list.length) r.subraces = list;
+    }
+  }
+
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
   const subclassesIndex = indexSubclasses(classesFull);
   const spells = unwrapList(spellsData, "spells");
