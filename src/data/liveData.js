@@ -65,3 +65,5 @@ export const loadClassFeaturesJson = () => loadData("./data/classFeatures.json",
 export const loadRaceFeaturesJson = () => loadData("./data/raceFeatures.json", "RaceFeatures");
 export const loadChoicesJson = () => loadData("./data/choices.json", "Choices");
 export const loadPickListItemsJson = () => loadData("./data/pickListItems.json", "PickListItems");
+export const loadClassesFullJson = () => loadData("./data/classesFull.json", "Classes");
+export const loadSubclassesJson   = () => loadData("./data/subclasses.json", "Subclasses");
