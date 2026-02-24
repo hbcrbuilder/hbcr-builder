@@ -25,27 +25,49 @@ export async function getBundle() {
 // 2) Fall back to local json file at `path`
 // Supports local shapes: [] OR { ok:true, rows:[...] } OR { rows:[...] }
 export async function loadData(path, sheetName, transform) {
-  // Prefer Worker bundle
+  // 1) Prefer Worker bundle
   try {
     const b = await getBundle();
     const fromBundle = b?.[sheetName];
 
+    // normalize Sheets-style columns (Id/Name/Icon) to UI-style (id/name/icon)
+    const normalize = (arr) =>
+      arr.map((r) => ({
+        ...r,
+        id: r.id ?? r.Id ?? r.ID,
+        name: r.name ?? r.Name ?? r.Label,
+        icon: r.icon ?? r.Icon,
+      }));
+
     if (Array.isArray(fromBundle)) {
-      return transform ? transform(fromBundle) : fromBundle;
+      const norm = normalize(fromBundle);
+      return transform ? transform(norm) : norm;
     }
+
     if (fromBundle?.rows && Array.isArray(fromBundle.rows)) {
-      return transform ? transform(fromBundle.rows) : fromBundle.rows;
+      const norm = normalize(fromBundle.rows);
+      return transform ? transform(norm) : norm;
     }
   } catch (e) {
     // ignore; fall back to local file
   }
 
-  // Fallback to local file
+  // 2) Fallback to local file
   const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) return [];
   const j = await res.json();
+
   const rows = Array.isArray(j) ? j : (Array.isArray(j?.rows) ? j.rows : []);
-  return transform ? transform(rows) : rows;
+
+  // local files might already be normalized, but normalize anyway (harmless)
+  const norm = rows.map((r) => ({
+    ...r,
+    id: r.id ?? r.Id ?? r.ID,
+    name: r.name ?? r.Name ?? r.Label,
+    icon: r.icon ?? r.Icon,
+  }));
+
+  return transform ? transform(norm) : norm;
 }
 
 /**
