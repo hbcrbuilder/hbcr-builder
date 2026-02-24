@@ -30,8 +30,8 @@ function isBundleEndpoint(url) {
 async function fetchBundle(bundleUrl) {
   if (_bundlePromise) return _bundlePromise;
   _bundlePromise = (async () => {
-    // Use normal caching first, but if we later discover a missing tab after a publish,
-    // we'll re-fetch with cache-busting in fetchSheetRows.
+    // IMPORTANT: do NOT append cache-busting query params here.
+    // We want Cloudflare + browser caching to make this near-instant on repeat loads.
     const res = await fetch(bundleUrl, { cache: 'default' });
     if (!res.ok) throw new Error(`Bundle fetch failed (${res.status})`);
     const json = await res.json();
@@ -39,19 +39,6 @@ async function fetchBundle(bundleUrl) {
     return json;
   })();
   return _bundlePromise;
-}
-
-async function refetchBundleNoStore(bundleUrl) {
-  // Force a re-fetch (after publish) to avoid stale-while-revalidate serving old KV values.
-  const sep = bundleUrl.includes('?') ? '&' : '?';
-  const url = `${bundleUrl}${sep}v=${Date.now()}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Bundle fetch failed (${res.status})`);
-  const json = await res.json();
-  if (!json || typeof json !== 'object') throw new Error('Bundle response invalid');
-  // Update cache for future reads.
-  _bundlePromise = Promise.resolve(json);
-  return json;
 }
 
 function tryParseCell(v) {
@@ -140,18 +127,8 @@ function normalizeRow(row) {
 async function fetchSheetRows(apiBase, sheetName) {
   // If the config points at the Cloudflare worker bundle endpoint, load once and read from it.
   if (isBundleEndpoint(apiBase)) {
-    let bundle = await fetchBundle(apiBase);
-    let rows = bundle?.[sheetName];
-
-    // If the requested tab isn't present, force-refresh once.
-    // This commonly happens right after publishing because the Worker sets
-    // stale-while-revalidate, so clients may briefly see an older bundle.
-    if (rows == null) {
-      bundle = await refetchBundleNoStore(apiBase);
-      rows = bundle?.[sheetName];
-    }
-
-    rows = rows || [];
+    const bundle = await fetchBundle(apiBase);
+    const rows = bundle?.[sheetName] || [];
     return Array.isArray(rows) ? rows.map(normalizeRow) : [];
   }
 

@@ -1,0 +1,17 @@
+[
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_black","Label":"Draconic Half-Blood: Black","Icon":"Draconic_Black","Sort":1},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_blue","Label":"Draconic Half-Blood: Blue","Icon":"Draconic_Blue","Sort":2},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_brass","Label":"Draconic Half-Blood: Brass","Icon":"Draconic_Brass","Sort":3},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_bronze","Label":"Draconic Half-Blood: Bronze","Icon":"Draconic_Bronze","Sort":4},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_copper","Label":"Draconic Half-Blood: Copper","Icon":"Draconic_Copper","Sort":5},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_gold","Label":"Draconic Half-Blood: Gold","Icon":"Draconic_Gold","Sort":6},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_green","Label":"Draconic Half-Blood: Green","Icon":"Draconic_Green","Sort":7},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_red","Label":"Draconic Half-Blood: Red","Icon":"Draconic_Red","Sort":8},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_silver","Label":"Draconic Half-Blood: Silver","Icon":"Draconic_Silver","Sort":9},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_white","Label":"Draconic Half-Blood: White","Icon":"Draconic_White","Sort":10},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_amethyst","Label":"Draconic Half-Blood: Amethyst","Icon":"Draconic_Amethyst","Sort":11},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_crystal","Label":"Draconic Half-Blood: Crystal","Icon":"Draconic_Crystal","Sort":12},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_emerald","Label":"Draconic Half-Blood: Emerald","Icon":"Draconic_Emerald","Sort":13},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_sapphire","Label":"Draconic Half-Blood: Sapphire","Icon":"Draconic_Sapphire","Sort":14},
+  {"PickType":"dragon_ancestor","ItemId":"draconic_half_blood_topaz","Label":"Draconic Half-Blood: Topaz","Icon":"Draconic_Topaz","Sort":15}
+]
