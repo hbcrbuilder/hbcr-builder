@@ -10,19 +10,14 @@ function esc(s){
 }
 
 async function loadPickListItems(){
-  // Local fallback path is optional; in live mode this reads from the Cloudflare bundle.
-  // If you don't ship a local JSON file for PickListItems, this will simply return [].
-  try{
-    const rows = await loadData("./data/picklistitems.json", "PickListItems", (r)=>r);
-    return Array.isArray(rows) ? rows : [];
-  }catch{
-    try{
-      const rows = await loadData("./data/choices.json", "PickListItems", (r)=>r);
-      return Array.isArray(rows) ? rows : [];
-    }catch{
-      return [];
-    }
-  }
+  // Load from live bundle when enabled; otherwise fall back to local JSON.
+  // Use an existing local file path to avoid 404s in local mode.
+  const data = await loadData("./data/choices.json", "PickListItems", (rows) => rows);
+
+  // Some legacy loaders might return an object shape; normalize here.
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.rows)) return data.rows;
+  return [];
 }
 
 function getBuildLevel(state){
