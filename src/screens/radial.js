@@ -855,11 +855,17 @@ const currentSubclass =
 	// Draconic Bloodline L1: Dragon Ancestor / Draconic Ancestry
 	if (k === "dragon_ancestor" || k === "draconic_ancestry" || k === "draconic ancestry") return "dragonAncestor";
 	if (k === "frontier_ballistics") return "frontierBallistics";
-  	if (k === "wildshape") return "wildshapes";
+	  	if (k === "wildshape" || k === "wildshapes") return "wildshapes";
   	if (k === "feat") return "feats";
 	if (k === "passive") return "passives";
 	if (k === "smite") return "smites";
 	if (k === "metamagic") return "metamagic";
+	// HBCR systems (data-only pickers)
+	if (k === "optimization_matrix" || k === "optimizationmatrix") return "optimizationMatrix";
+	if (k === "sabotage_matrix" || k === "sabotagematrix") return "sabotageMatrix";
+	if (k === "manoeuvres" || k === "manoeuvre" || k === "maneuvers" || k === "maneuver") return "manoeuvres";
+	if (k === "combat_techniques" || k === "combat_technique" || k === "combattechniques") return "combatTechniques";
+	if (k === "elemental_fletchings" || k === "fletching" || k === "elementalfletchings") return "elementalFletchings";
 	return null;
 	};
 
