@@ -1,3 +1,5 @@
+import { loadPickListItems } from "../data/pickListItems.js";
+
 function escapeHtml(s){
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -5,6 +7,23 @@ function escapeHtml(s){
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function getBuildLevel(state){
+  return Math.max(1, Math.min(12, Number(
+    state.ui?.picker?.level ||
+    state.ui?.radial?.buildLevel ||
+    state.character?.level ||
+    1
+  )));
+}
+
+function getPickedAtLevel(state, key){
+  const buildLevel = getBuildLevel(state);
+  const tl = Array.isArray(state.character?.build?.timeline) ? state.character.build.timeline : [];
+  const entry = tl[Math.max(0, Math.min(11, buildLevel - 1))] || {};
+  const picks = entry.picks || {};
+  return (picks[key] ?? state.character?.[key] ?? null);
 }
 
 function filterBar(total){
@@ -70,15 +89,21 @@ function filterBar(total){
   `;
 }
 
-export function CombatTechniquesScreen({ state }) {
-  const selected = state.character.combatTechniques;
+export async function CombatTechniquesScreen({ state }) {
+    const buildLevel = getBuildLevel(state);
+  const selected = String(getPickedAtLevel(state, "combatTechniques") ?? "");
+  const need = Math.max(0, Number(state.ui?.picker?.need || 0)) || 1;
+  const subtitle = `Level ${buildLevel} • Pick ${need} (${selected ? 1 : 0}/${need})`;
 
-  const options = [
-    { id: "tech-a", label: "Technique A", icon: "⚔️", desc: "" },
-    { id: "tech-b", label: "Technique B", icon: "⚔️", desc: "" },
-  ];
+  const items = await loadPickListItems("combat_techniques");
+  const options = items.map(it => ({
+    id: it.id,
+    label: it.label,
+    icon: it.icon,
+    desc: it.desc
+  }));
 
-  const rows = options.map(o => {
+const rows = options.map(o => {
     const isOn = selected === o.id;
     const hay = `${o.label} ${o.desc || ""}`.replace(/"/g, "&quot;");
     const nm  = `${o.label}`.replace(/"/g, "&quot;");

@@ -957,6 +957,52 @@ if (action === "toggle-frontierBallistics-lvl") {
         store.patchUI({ pickerFocus: { ...(ui.pickerFocus || {}), metamagic: mmId } });
       }
 
+
+      // --- Generic Build-level multi-select (data-driven pickers) ---
+      // Encoded id: "<key>|<itemId>|<buildLevel>|<limit>"
+      if (action === "toggle-multi-lvl") {
+        const raw = String(id || "");
+        const [key, itemId, lvlRaw, limitRaw] = raw.split("|");
+        const lvl = Math.max(1, Math.min(12, Number(lvlRaw || 1)));
+        const limit = Math.max(0, Number(limitRaw || 0));
+
+        const ch = store.getState().character;
+        const tl = Array.isArray(ch.build?.timeline)
+          ? ch.build.timeline.map(e => ({ ...e, picks: { ...(e?.picks || {}) } }))
+          : Array.from({ length: 12 }, (_, i) => ({ lvl: i + 1, classId: null, subclassId: null, picks: {} }));
+
+        if (!tl[lvl - 1]) tl[lvl - 1] = { lvl, classId: null, subclassId: null, picks: {} };
+        const slot = tl[lvl - 1];
+        const picks = { ...(slot.picks || {}) };
+
+        const cur = Array.isArray(picks[key]) ? picks[key].map(String) : (picks[key] ? [String(picks[key])] : []);
+        const sItem = String(itemId || "");
+        const has = cur.includes(sItem);
+
+        let next = cur;
+        if (has) {
+          next = cur.filter(x => x !== sItem);
+        } else {
+          if (limit > 0 && cur.length >= limit) {
+            // at limit, ignore
+            next = cur;
+          } else {
+            next = Array.from(new Set([...cur, sItem].filter(Boolean)));
+          }
+        }
+
+        picks[key] = next;
+        tl[lvl - 1] = { ...slot, picks };
+
+        // Keep a top-level mirror for convenience (not required for timeline display).
+        store.patchCharacter({
+          [key]: next,
+          build: { ...(ch.build || {}), timeline: tl }
+        });
+
+        maybeGoNext();
+      }
+
 if (action === "toggle-cantrip-lvl") {
         const raw = String(id || "");
         const [spellId, lvlRaw, limitRaw] = raw.split("|");

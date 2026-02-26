@@ -1,3 +1,5 @@
+import { loadPickListItems } from "../data/pickListItems.js";
+
 function escapeHtml(s){
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -5,6 +7,24 @@ function escapeHtml(s){
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function getBuildLevel(state){
+  return Math.max(1, Math.min(12, Number(
+    state.ui?.picker?.level ||
+    state.ui?.radial?.buildLevel ||
+    state.character?.level ||
+    1
+  )));
+}
+
+function getPickedArrayAtLevel(state, key){
+  const buildLevel = getBuildLevel(state);
+  const tl = Array.isArray(state.character?.build?.timeline) ? state.character.build.timeline : [];
+  const entry = tl[Math.max(0, Math.min(11, buildLevel - 1))] || {};
+  const picks = entry.picks || {};
+  const v = (picks[key] ?? state.character?.[key] ?? null);
+  return Array.isArray(v) ? v : (v ? [v] : []);
 }
 
 function filterBar(total){
@@ -70,16 +90,29 @@ function filterBar(total){
   `;
 }
 
-export function ElementalFletchingsScreen({ state }) {
-  const selected = state.character.elementalFletchings;
+export async function ElementalFletchingsScreen({ state }) {
+    const buildLevel = getBuildLevel(state);
+  const picked = getPickedArrayAtLevel(state, "elementalFletchings");
+  const need = Math.max(0, Number(state.ui?.picker?.need || 0)) || 1;
+  const subtitle = `Level ${buildLevel} • Pick ${need} (${picked.length}/${need})`;
 
-  const options = [
-    { id: "fire", label: "Fire", icon: "🔥", desc: "" },
-    { id: "ice", label: "Ice", icon: "❄️", desc: "" },
-  ];
+  // Hide already-chosen fletchings from earlier levels (no duplicates across levels)
+  const timeline = Array.isArray(state.character?.build?.timeline) ? state.character.build.timeline : [];
+  const prevPicked = new Set();
+  for(let i=0;i<Math.max(0, buildLevel-1);i++){
+    const e = timeline[i];
+    const arr = Array.isArray(e?.picks?.elementalFletchings) ? e.picks.elementalFletchings : (e?.picks?.elementalFletchings ? [e.picks.elementalFletchings] : []);
+    for(const x of arr) prevPicked.add(String(x));
+  }
 
-  const rows = options.map(o => {
-    const isOn = selected === o.id;
+  const items = await loadPickListItems("elemental_fletchings");
+  const options = items.map(it => ({ id: it.id, label: it.label, icon: it.icon, desc: it.desc }))
+    .filter(o => !prevPicked.has(String(o.id)) || picked.includes(String(o.id)));
+
+const rows = options.map(o => {
+    const isOn = picked.includes(String(o.id));
+    const disabled = need > 0 && !isOn && picked.length >= need;
+    const enc = `elementalFletchings|${o.id}|${buildLevel}|${need}`;
     const hay = `${o.label} ${o.desc || ""}`.replace(/"/g, "&quot;");
     const nm  = `${o.label}`.replace(/"/g, "&quot;");
     const ds  = `${o.desc || ""}`.replace(/"/g, "&quot;");
@@ -88,9 +121,9 @@ export function ElementalFletchingsScreen({ state }) {
       : `<span class="icon-fallback"></span>`;
 
     return `
-      <button class="card compact-row ${isOn ? "selected" : ""}"
+      <button class="card compact-row ${isOn ? "selected" : ""} ${disabled ? "disabled" : ""}"
               data-hay="${hay}" data-name="${nm}" data-desc="${ds}"
-              data-action="select-elementalFletchings" data-id="${escapeHtml(o.id)}">
+              data-action="toggle-multi-lvl" data-id="${escapeHtml(enc)}" ${disabled ? "disabled" : ""}>
         <div class="card-top compact-row-top">
           <div class="icon sm">${iconHtml}</div>
           <div class="card-copy">

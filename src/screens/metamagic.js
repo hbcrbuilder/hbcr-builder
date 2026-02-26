@@ -1,4 +1,5 @@
 import { loadData } from "../data/liveData.js";
+import { loadPickListItems } from "../data/pickListItems.js";
 
 function escapeHtml(s){
   return String(s ?? "")
@@ -10,6 +11,20 @@ function escapeHtml(s){
 }
 
 async function loadMetamagic(){
+  // Preferred: data-driven options from PickListItems (PickType=metamagic).
+  // This lets non-coders maintain the list entirely in Google Sheets.
+  try{
+    const items = await loadPickListItems("metamagic");
+    if (Array.isArray(items) && items.length){
+      return items.map(it => ({
+        id: it.id,
+        name: it.label,
+        desc: it.desc,
+        icon: it.icon,
+        cost: it.cost
+      }));
+    }
+  }catch(e){}
   try{
     // 1) Try bundle Metamagic tab.
     // If the bundle doesn't actually contain metamagic OPTIONS (often it only
