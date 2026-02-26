@@ -847,21 +847,33 @@ const currentSubclass =
       ...(sid ? getChoices("subclass", sid, lvl) : []),
     ];
 
-    const mapPickTypeToRoute = (pt) => {
-	const k = String(pt || "").toLowerCase().trim();
-	// Support common sheet variations (singular/plural)
-	if (k === "cantrip" || k === "cantrips") return "cantrips";
-	if (k === "spell" || k === "spells") return "spells";
-	// Draconic Bloodline L1: Dragon Ancestor / Draconic Ancestry
-	if (k === "dragon_ancestor" || k === "draconic_ancestry" || k === "draconic ancestry") return "dragonAncestor";
-	if (k === "frontier_ballistics") return "frontierBallistics";
-  	if (k === "wildshape") return "wildshapes";
-  	if (k === "feat") return "feats";
-	if (k === "passive") return "passives";
-	if (k === "smite") return "smites";
-	if (k === "metamagic") return "metamagic";
-	return null;
-	};
+	    const mapPickTypeToRoute = (pt) => {
+		const k = String(pt || "").toLowerCase().trim();
+
+		// core spell-ish picks
+		if (k === "cantrip" || k === "cantrips") return "cantrips";
+		if (k === "spell" || k === "spells") return "spells";
+		if (k === "frontier_ballistics" || k === "frontier ballistics" || k === "frontierballistics") return "frontierBallistics";
+		if (k === "smite" || k === "smites") return "smites";
+		if (k === "metamagic" || k === "metamagics") return "metamagic";
+
+		// feature picks
+		if (k === "passive" || k === "passives") return "passives";
+		if (k === "feat" || k === "feats") return "feats";
+
+		// new systems
+		if (k === "manoeuvre" || k === "manoeuvres" || k === "maneuver" || k === "maneuvers") return "manoeuvres";
+		if (k === "combat_technique" || k === "combat_techniques" || k === "combat technique" || k === "combat techniques") return "combatTechniques";
+		if (k === "elemental_fletching" || k === "elemental_fletchings" || k === "fletching" || k === "fletchings") return "elementalFletchings";
+		if (k === "optimization_matrix" || k === "optimization matrix" || k === "optimization matrices") return "optimizationMatrix";
+		if (k === "sabotage_matrix" || k === "sabotage matrix" || k === "sabotage matrices") return "sabotageMatrix";
+		if (k === "wildshape" || k === "wildshapes" || k === "wild shape" || k === "wild shapes") return "wildshapes";
+
+		// Draconic Bloodline L1: Dragon Ancestor / Draconic Ancestry
+		if (k === "dragon_ancestor" || k === "draconic_ancestry" || k === "draconic ancestry") return "dragonAncestor";
+
+		return null;
+		};
 
 
     const acc = new Map(); // route -> { need, ownerType, ownerId, listOverride }
@@ -925,9 +937,33 @@ const currentSubclass =
       });
     }
 
-    // Stable ordering (matches BG3-ish expectation).
-    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
-    steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
+	    // Stable ordering (matches BG3-ish expectation).
+	    const order = [
+	      // spell-ish
+	      "cantrips",
+	      "spells",
+	      "metamagic",
+	      "smites",
+	      "frontierBallistics",
+
+	      // new systems
+	      "optimizationMatrix",
+	      "sabotageMatrix",
+	      "manoeuvres",
+	      "combatTechniques",
+	      "elementalFletchings",
+	      "wildshapes",
+	      "dragonAncestor",
+
+	      // generic
+	      "passives",
+	      "feats",
+	    ];
+	    const idx = (r) => {
+	      const i = order.indexOf(r);
+	      return i === -1 ? 999 : i;
+	    };
+	    steps.sort((a,b) => idx(a.route) - idx(b.route));
 
     return steps;
   }
