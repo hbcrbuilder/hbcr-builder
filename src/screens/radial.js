@@ -1110,15 +1110,15 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
         ? `|${escapeHtml(String(meta?.ownerType || ""))}|${escapeHtml(String(meta?.ownerId || ""))}|${escapeHtml(String(meta?.listOverride || ""))}`
         : ``;
 
-      return dmWrap(`radial.tabs.${t.id}`, `
-              <button type="button"
-                class="pick-card ${done ? "is-done" : ""} ${disabled ? "is-disabled" : ""}"
-                data-action="${disabled ? "" : "radial-go"}"
-                data-id="${escapeHtml(String(route))}${showBadge ? `|${escapeHtml(String(need))}` : ""}${extra}">
+      return dmWrap(`radial.picker.card.${route}`, `
+        <button type="button"
+          class="pick-card ${done ? "is-done" : ""} ${disabled ? "is-disabled" : ""}"
+          data-action="${disabled ? "" : "radial-go"}"
+          data-id="${escapeHtml(String(route))}${showBadge ? `|${escapeHtml(String(need))}` : ""}${extra}">
           <div class="pick-card-l">${escapeHtml(label || route)}</div>
           <div class="pick-card-r">${badge}</div>
         </button>
-      `;
+      `);
     };
 
     return `
@@ -1371,13 +1371,13 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
           : "";
         const routeId = `${escapeHtml(String(s.route))}|${escapeHtml(String(need))}${extra}`;
 
-        return dmWrap(`radial.tabs.${t.id}`, `
-              <button class="pick-card pick-card--dock" type="button"
-                  data-action="radial-go" data-id="${routeId}">
+        return dmWrap(`radial.picks.dock.${s.route}`, `
+          <button class="pick-card pick-card--dock" type="button"
+              data-action="radial-go" data-id="${routeId}">
             <div class="pick-name">${escapeHtml(s.label)}</div>
             ${badge}
           </button>
-        `;
+        `);
       }).join("")}
     </div>
   `;
