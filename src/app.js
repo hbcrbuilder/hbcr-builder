@@ -1,7 +1,10 @@
 import { createStore } from "./store.js";
 import { createRouter } from "./router.js";
 
-import { LayoutScreen } from "./screens/layout.js";
+import { RaceScreen } from "./screens/race.js";
+import { SubraceScreen } from "./screens/subrace.js";
+import { ClassScreen } from "./screens/class.js";
+import { SubclassScreen } from "./screens/subclass.js";
 import { MetamagicScreen } from "./screens/metamagic.js";
 import { WildshapesScreen } from "./screens/wildshapes.js";
 import { ManoeuvresScreen } from "./screens/manoeuvres.js";
@@ -19,6 +22,7 @@ import { CantripsScreen } from "./screens/cantrips.js";
 import { SpellsScreen } from "./screens/spells.js";
 import { FeatsScreen } from "./screens/feats.js";
 import { PassivesScreen } from "./screens/passives.js";
+import { LayoutScreen } from "./screens/layout.js";
 
 // Spells/Cantrips/Feats are accessed from the radial Build pane.
 // They are routed as lightweight pickers and always return to the Build pane.
@@ -59,12 +63,13 @@ const store = createStore();
 
 const screens = {
   radial: (ctx) => RadialScreen(ctx),
-  // Option 2: layout-driven legacy screens (race/subrace/class/subclass)
-  // These screens now render from bundle.UILayout + bundle.UIBindings.
-  race: (ctx) => LayoutScreen(ctx, "race"),
-  subrace: (ctx) => LayoutScreen(ctx, "subrace"),
-  class: (ctx) => LayoutScreen(ctx, "class"),
-  subclass: (ctx) => LayoutScreen(ctx, "subclass"),
+  race: (ctx) => RaceScreen(ctx),
+  subrace: (ctx) => SubraceScreen(ctx),
+  class: (ctx) => ClassScreen(ctx),
+  subclass: (ctx) => SubclassScreen(ctx),
+
+  // Layout-driven screens (Option 2). Start with picks.
+  picks: (ctx) => LayoutScreen(ctx, "picks"),
 
   metamagic: (ctx) => MetamagicScreen(ctx),
   wildshapes: (ctx) => WildshapesScreen(ctx),
@@ -809,6 +814,44 @@ if (action === "toggle-ability-bonus") {
       if (action === "picker-close") {
         store.patchUI({ picker: { open: false, type: null, level: store.getState().ui.buildLevel ?? 1 } });
         router.go('radial');
+      }
+
+      // --- Layout-driven picks (Option 2) ---
+      // Encoded id: "<choiceId>|<count>|<label>"
+      if (action === "set-active-pick") {
+        const raw = String(id || "");
+        const [choiceId, countRaw, ...labelParts] = raw.split("|");
+        const count = Math.max(0, Number(countRaw || 0));
+        const label = labelParts.join("|") || choiceId;
+        store.patchUI({ activePickType: choiceId || null, activePickLimit: count, activePickLabel: label || null });
+      }
+
+      // Toggle an item for the currently active pick type.
+      // Encoded id: "<itemId>|<buildLevel>|<limit>"
+      if (action === "toggle-activePick-lvl") {
+        const raw = String(id || "");
+        const [itemId, lvlRaw, limitRaw] = raw.split("|");
+        const ui = store.getState().ui || {};
+        const pickKey = ui.activePickType;
+        if (!pickKey) return;
+        const lvl = Math.max(1, Math.min(12, Number(lvlRaw || ui.radial?.buildLevel || ui.buildLevel || 1)));
+        const limit = Math.max(0, Number(limitRaw || ui.activePickLimit || 0));
+
+        const ch = store.getState().character;
+        const timeline = Array.isArray(ch.build?.timeline) ? ch.build.timeline : [];
+        const nextTimeline = timeline.map((e, idx) => {
+          if (idx !== (lvl - 1)) return e;
+          const picks = { ...(e?.picks || {}) };
+          const curList = Array.isArray(picks[pickKey])
+            ? picks[pickKey]
+            : (picks[pickKey] ? [picks[pickKey]] : []);
+          const has = curList.includes(itemId);
+          const nextList = has ? curList.filter(x => x !== itemId) : [...curList, itemId].slice(0, limit);
+          picks[pickKey] = nextList;
+          return { ...e, picks };
+        });
+
+        store.patchCharacter({ build: { ...(ch.build || {}), timeline: nextTimeline } });
       }
 
       // --- Build-level Cantrips / Spells multi-select ---

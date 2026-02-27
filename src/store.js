@@ -59,6 +59,10 @@ export function createStore() {
     character: initialCharacter(),
     ui: {
       buildLevel: 1,
+      // Layout-driven pick UI state (Option 2)
+      activePickType: null,
+      activePickLimit: 0,
+      activePickLabel: null,
       radial: {
         stage: "race",            // race | subrace | class | subclass | build
         buildLevel: 1,          // current character level being edited in build timeline
