@@ -62,7 +62,14 @@ const appEl = document.getElementById("app");
 const store = createStore();
 
 const screens = {
-  radial: (ctx) => RadialScreen(ctx),
+  radial: async (ctx) => {
+    // Layout-driven main screen (if configured); fall back to legacy radial screen.
+    try {
+      const html = await LayoutScreen(ctx, "radial");
+      if (html && String(html).trim()) return html;
+    } catch (e) {}
+    return await RadialScreen(ctx);
+  },
   race: (ctx) => RaceScreen(ctx),
   subrace: (ctx) => SubraceScreen(ctx),
   class: (ctx) => ClassScreen(ctx),
