@@ -217,8 +217,8 @@ function renderOrbit(options) {
     <div class="radial-orbit">
       ${options
         .map((o, i) => {
-          return `
-            <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${o.id}">
+          return dmWrap(`radial.tabs.${t.id}`, `
+              <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${o.id}">
               <div class="radial-node-button">${o.icon ?? ""}</div>
               <div class="radial-node-label">${escapeHtml(o.label)}</div>
             </button>
@@ -1104,8 +1104,8 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
         ? `|${escapeHtml(String(meta?.ownerType || ""))}|${escapeHtml(String(meta?.ownerId || ""))}|${escapeHtml(String(meta?.listOverride || ""))}`
         : ``;
 
-      return `
-        <button type="button"
+      return dmWrap(`radial.tabs.${t.id}`, `
+              <button type="button"
                 class="pick-card ${done ? "is-done" : ""} ${disabled ? "is-disabled" : ""}"
                 data-action="${disabled ? "" : "radial-go"}"
                 data-id="${escapeHtml(String(route))}${showBadge ? `|${escapeHtml(String(need))}` : ""}${extra}">
@@ -1183,6 +1183,8 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
   const dockEntryPicks = dockActiveEntry.picks || {};
   const picksDockHtml = renderBuildStepsDock(dockClassLevel || 1, dockClassId, dockSubclassObj, dockEntryPicks);
 
+  const dmWrap = (id, html) => design ? `<div class="hbcr-dm-inner" data-ui-component="${escapeHtml(id)}">${html}</div>` : html;
+
   const stageTabsDock = `
     <div class="stage-and-picks" aria-label="Stage navigation">
       <div class="stage-tabs">
@@ -1192,7 +1194,7 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
             const isActive = stage === t.id;
             const iconSrc = t.picked ? t.icon : "";
             const iconSrcNorm = iconSrc ? normalizeAssetPath(iconSrc) : "";
-            return `
+            return dmWrap(`radial.tabs.${t.id}`, `
               <button
                 class="stage-tab ${isActive ? "active" : ""}"
                 data-action="radial-nav"
@@ -1230,7 +1232,7 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
                        "></div>`}
                 </div>
               </button>
-            `;
+            `);
           })
           .join("")}
       </div>
@@ -1363,8 +1365,8 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
           : "";
         const routeId = `${escapeHtml(String(s.route))}|${escapeHtml(String(need))}${extra}`;
 
-        return `
-          <button class="pick-card pick-card--dock" type="button"
+        return dmWrap(`radial.tabs.${t.id}`, `
+              <button class="pick-card pick-card--dock" type="button"
                   data-action="radial-go" data-id="${routeId}">
             <div class="pick-name">${escapeHtml(s.label)}</div>
             ${badge}
@@ -1583,7 +1585,7 @@ const sheet = `
         <div class="sheet-controls summary-top">
           <div class="sheet-pill" title="${NO_SUBRACE.has(String(ch.race||'')) ? 'Race' : 'Subrace'}">${escapeHtml((NO_SUBRACE.has(String(ch.race||'')) ? (currentRace?.name || ch.race) : currentSubrace?.name) || '—')}</div>
 
-          <div class="sheet-pill trait-pill" title="Trait" style="margin-left:12px">
+          ${design ? `<div class="sheet-pill trait-pill" data-ui-component="radial.summary.trait" title="Trait" style="margin-left:12px">` : `<div class="sheet-pill trait-pill" title="Trait" style="margin-left:12px">`}
             <span class="trait-label">TRAIT</span>
             <select class="trait-select" data-action="set-trait" style="width:${traitSelectWidthPx}px">
               <option value="">— None —</option>

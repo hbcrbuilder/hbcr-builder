@@ -181,6 +181,16 @@ function ensureDesignCss() {
     html.hbcr-show-zones [data-ui-component]::after{content:attr(data-ui-component);position:absolute;left:8px;top:8px;z-index:99999;display:inline-block;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.85);pointer-events:none}
     .hbcr-ui-handle{position:absolute;right:8px;top:8px;z-index:99998;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
     .hbcr-ui-handle:active{cursor:grabbing}
+    .hbcr-ui-resize{position:absolute;width:10px;height:10px;border-radius:3px;background:rgba(155,183,255,.55);border:1px solid rgba(255,255,255,.25);z-index:99998;opacity:.85}
+    .hbcr-ui-resize:hover{opacity:1}
+    .hbcr-ui-resize[data-dir="nw"]{left:-5px;top:-5px;cursor:nwse-resize}
+    .hbcr-ui-resize[data-dir="ne"]{right:-5px;top:-5px;cursor:nesw-resize}
+    .hbcr-ui-resize[data-dir="sw"]{left:-5px;bottom:-5px;cursor:nesw-resize}
+    .hbcr-ui-resize[data-dir="se"]{right:-5px;bottom:-5px;cursor:nwse-resize}
+    .hbcr-ui-resize[data-dir="n"]{left:50%;top:-5px;transform:translateX(-50%);cursor:ns-resize}
+    .hbcr-ui-resize[data-dir="s"]{left:50%;bottom:-5px;transform:translateX(-50%);cursor:ns-resize}
+    .hbcr-ui-resize[data-dir="w"]{left:-5px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+    .hbcr-ui-resize[data-dir="e"]{right:-5px;top:50%;transform:translateY(-50%);cursor:ew-resize}
   `;
   document.head.appendChild(style);
 }
@@ -198,9 +208,44 @@ function px(n) {
 function findOrCreateRow(draft, screenId, compId) {
   const row = (draft.UILayout || []).find(r => String(r.ScreenId) === String(screenId) && String(r.ComponentId) === String(compId));
   if (row) return row;
-  const base = { ScreenId: screenId, ComponentId: compId, Type: "block", ParentId: "", X: 40, Y: 40, W: 480, H: 320, Z: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" };
+  const base = { ScreenId: screenId, ComponentId: compId, Type: "block", ParentId: "", X: "", Y: "", W: "", H: "", Z: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" };
   draft.UILayout.push(base);
   return base;
+}
+
+
+function seedRowFromEl(row, el, appEl) {
+  if (!row || !el) return false;
+  const canvas =
+    document.querySelector("#hbcr-canvas") ||
+    document.querySelector("[data-ui-canvas]") ||
+    document.querySelector(".hbcr-canvas") ||
+    appEl ||
+    document.body;
+  const c = canvas.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  row.X = Math.round(r.left - c.left);
+  row.Y = Math.round(r.top - c.top);
+  row.W = Math.max(10, Math.round(r.width));
+  row.H = Math.max(10, Math.round(r.height));
+  row.Z = num(row.Z, 10);
+  return true;
+}
+
+function ensureResizers(el) {
+  if (!el) return;
+  const existing = el.querySelectorAll(":scope > .hbcr-ui-resize");
+  if (existing && existing.length >= 8) return;
+  const dirs = ["nw","n","ne","e","se","s","sw","w"];
+  for (const d of dirs) {
+    if (el.querySelector(`:scope > .hbcr-ui-resize[data-dir="${d}"]`)) continue;
+    const h = document.createElement("div");
+    h.className = "hbcr-ui-resize";
+    h.setAttribute("data-ui-resize", "true");
+    h.setAttribute("data-dir", d);
+    h.setAttribute("title", "Resize");
+    el.appendChild(h);
+  }
 }
 
 function applyRowToEl(el, row) {
@@ -228,23 +273,9 @@ function syncAllPositions(appEl, store) {
     if (!compId) continue;
     const row = findOrCreateRow(draft, screenId, compId);
 
-    // MIGRATE/SEED: if this row has no absolute coords (e.g., old ZoneId/Order schema),
-    // seed from current DOM position so the screen doesn't collapse into (0,0).
+    // MIGRATE/SEED: if this row has no absolute coords, seed from current DOM.
     if (row.X == null || row.X === "" || row.Y == null || row.Y === "") {
-      const canvas =
-        document.querySelector("#hbcr-canvas") ||
-        document.querySelector("[data-ui-canvas]") ||
-        document.querySelector(".hbcr-canvas") ||
-        appEl ||
-        document.body;
-      const c = canvas.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
-      row.X = Math.round(r.left - c.left);
-      row.Y = Math.round(r.top - c.top);
-      row.W = Math.max(10, Math.round(r.width));
-      row.H = Math.max(10, Math.round(r.height));
-      row.Z = num(row.Z, 10);
-      changed = true;
+      if (seedRowFromEl(row, el, appEl)) changed = true;
     }
 
     // Only apply if it differs from what's already on the element.
@@ -274,6 +305,7 @@ function syncAllPositions(appEl, store) {
       el.appendChild(h);
       changed = true;
     }
+    ensureResizers(el);
   }
 
   // Avoid thrashing: only persist if something actually changed.
@@ -285,51 +317,75 @@ function syncAllPositions(appEl, store) {
   }
 }
 
+
 function installPointerDrag({ appEl, store }) {
   let active = null;
 
+  const getOrInitRow = (screenId, compId, compEl) => {
+    const draft = getDraftTablesOrEmpty();
+    const current = window.__HBCR_LAST_LAYOUT__ || window.HBCR_LAST_LAYOUT;
+    if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current) && current.length && ("X" in current[0])) {
+      draft.UILayout = current.map(r => ({ ...r }));
+    }
+    const row = findOrCreateRow(draft, screenId, compId);
+    if (row.X == null || row.X === "" || row.Y == null || row.Y === "") {
+      seedRowFromEl(row, compEl, appEl);
+    }
+    return { draft, row };
+  };
+
   const onDown = (e) => {
+    const compEl = e.target?.closest?.("[data-ui-component]");
+    if (!compEl) return;
+
+    // Resize?
+    const resizeEl = e.target?.closest?.(".hbcr-ui-resize,[data-ui-resize]");
+    if (resizeEl) {
+      e.preventDefault();
+      const dir = resizeEl.getAttribute("data-dir") || "se";
+      const screenId = getCurrentScreenId(appEl);
+      if (!screenId) return;
+      const compId = compEl.getAttribute("data-ui-component");
+      if (!compId) return;
+
+      const { draft, row } = getOrInitRow(screenId, compId, compEl);
+      if (row.W == null || row.W === "") row.W = Math.max(10, Math.round(compEl.getBoundingClientRect().width));
+      if (row.H == null || row.H === "") row.H = Math.max(10, Math.round(compEl.getBoundingClientRect().height));
+      writeDesignDraft(draft);
+
+      active = {
+        mode: "resize",
+        dir,
+        compEl,
+        screenId,
+        compId,
+        startX: e.clientX,
+        startY: e.clientY,
+        baseLeft: num(row.X, 0),
+        baseTop: num(row.Y, 0),
+        baseW: num(row.W, 10),
+        baseH: num(row.H, 10),
+      };
+      return;
+    }
+
+    // Move?
     const handle = e.target?.closest?.(".hbcr-ui-handle,[data-ui-handle]");
     if (!handle) return;
-    const compEl = handle.closest?.("[data-ui-component]");
-    if (!compEl) return;
-    e.preventDefault();
 
+    e.preventDefault();
     const screenId = getCurrentScreenId(appEl);
     if (!screenId) return;
     const compId = compEl.getAttribute("data-ui-component");
     if (!compId) return;
 
-    const draft = getDraftTablesOrEmpty();
-    const current = window.__HBCR_LAST_LAYOUT__ || window.HBCR_LAST_LAYOUT;
-    if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current) && current.length && ("X" in current[0])) {
-    draft.UILayout = current.map(r => ({ ...r }));
-    }
-    const row = findOrCreateRow(draft, screenId, compId);
-
-    // MIGRATE/SEED: if this row has no absolute coords (e.g., old ZoneId/Order schema),
-    // seed from current DOM position so the screen doesn't collapse into (0,0).
-    if (row.X == null || row.X === "" || row.Y == null || row.Y === "") {
-      const canvas =
-        document.querySelector("#hbcr-canvas") ||
-        document.querySelector("[data-ui-canvas]") ||
-        document.querySelector(".hbcr-canvas") ||
-        appEl ||
-        document.body;
-      const c = canvas.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
-      row.X = Math.round(r.left - c.left);
-      row.Y = Math.round(r.top - c.top);
-      row.W = Math.max(10, Math.round(r.width));
-      row.H = Math.max(10, Math.round(r.height));
-      row.Z = num(row.Z, 10);
-      changed = true;
-    }
-
+    const { draft, row } = getOrInitRow(screenId, compId, compEl);
     row.Z = num(row.Z, 10) + 1;
     applyRowToEl(compEl, row);
+    writeDesignDraft(draft);
 
     active = {
+      mode: "move",
       compEl,
       screenId,
       compId,
@@ -338,37 +394,77 @@ function installPointerDrag({ appEl, store }) {
       baseLeft: num(row.X, 0),
       baseTop: num(row.Y, 0),
     };
+  };
 
-    const move = (ev) => {
-      if (!active) return;
-      ev.preventDefault();
-      const dx = ev.clientX - active.startX;
-      const dy = ev.clientY - active.startY;
+  const onMove = (e) => {
+    if (!active) return;
+    e.preventDefault();
+
+    const dx = e.clientX - active.startX;
+    const dy = e.clientY - active.startY;
+
+    if (active.mode === "move") {
       active.compEl.style.left = px(active.baseLeft + dx);
       active.compEl.style.top = px(active.baseTop + dy);
-    };
+      return;
+    }
 
-    const up = (ev) => {
-      if (!active) return;
-      ev.preventDefault();
-      document.removeEventListener("mousemove", move, true);
-      document.removeEventListener("mouseup", up, true);
+    const minW = 40;
+    const minH = 40;
 
-      const draft2 = getDraftTablesOrEmpty();
-      const row2 = findOrCreateRow(draft2, active.screenId, active.compId);
-      row2.X = num(parseFloat(active.compEl.style.left || "0"), active.baseLeft);
-      row2.Y = num(parseFloat(active.compEl.style.top || "0"), active.baseTop);
-      writeDesignDraft(draft2);
-      store?.patchUI?.({ __designTick: Date.now() });
-      active = null;
-    };
+    let left = active.baseLeft;
+    let top = active.baseTop;
+    let w = active.baseW;
+    let h = active.baseH;
 
-    document.addEventListener("mousemove", move, true);
-    document.addEventListener("mouseup", up, true);
+    const dir = active.dir || "se";
+    if (dir.includes("e")) w = Math.max(minW, active.baseW + dx);
+    if (dir.includes("s")) h = Math.max(minH, active.baseH + dy);
+    if (dir.includes("w")) {
+      w = Math.max(minW, active.baseW - dx);
+      left = active.baseLeft + dx;
+      if (w === minW) left = active.baseLeft + (active.baseW - minW);
+    }
+    if (dir.includes("n")) {
+      h = Math.max(minH, active.baseH - dy);
+      top = active.baseTop + dy;
+      if (h === minH) top = active.baseTop + (active.baseH - minH);
+    }
+
+    active.compEl.style.left = px(left);
+    active.compEl.style.top = px(top);
+    active.compEl.style.width = px(w);
+    active.compEl.style.height = px(h);
+  };
+
+  const onUp = (e) => {
+    if (!active) return;
+    e.preventDefault();
+
+    const draft2 = getDraftTablesOrEmpty();
+    const row2 = findOrCreateRow(draft2, active.screenId, active.compId);
+
+    row2.X = num(parseFloat(active.compEl.style.left || "0"), row2.X);
+    row2.Y = num(parseFloat(active.compEl.style.top || "0"), row2.Y);
+
+    const wStr = active.compEl.style.width;
+    const hStr = active.compEl.style.height;
+    if (wStr) row2.W = num(parseFloat(wStr), row2.W);
+    if (hStr) row2.H = num(parseFloat(hStr), row2.H);
+
+    writeDesignDraft(draft2);
+    window.__HBCR_LAST_LAYOUT__ = draft2.UILayout;
+    window.HBCR_LAST_LAYOUT = draft2.UILayout;
+
+    store?.patchUI?.({ __designTick: Date.now() });
+    active = null;
   };
 
   document.addEventListener("mousedown", onDown, true);
+  document.addEventListener("mousemove", onMove, true);
+  document.addEventListener("mouseup", onUp, true);
 }
+
 
 export function installDesignMode({ appEl, store }) {
   if (!isDesignMode()) return;
