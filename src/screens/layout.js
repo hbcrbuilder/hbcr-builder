@@ -32,7 +32,16 @@ function safeJsonParse(v, fallback) {
   }
 }
 
-function getPath
+function getPath(obj, path) {
+  if (!path) return undefined;
+  const parts = String(path).split(".").filter(Boolean);
+  let cur = obj;
+  for (const p of parts) {
+    if (cur == null) return undefined;
+    cur = cur[p];
+  }
+  return cur;
+}
 
 function escapeHtml(s) {
   return String(s ?? "")
@@ -43,7 +52,7 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
-function renderIconMaybe(val, fallback="◈") {
+function renderIconMaybe(val, fallback = "◈") {
   if (val == null || val === "") return fallback;
   const s = String(val);
   // Already HTML
@@ -54,17 +63,6 @@ function renderIconMaybe(val, fallback="◈") {
     return `<img src="${src}" alt="" style="width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">`;
   }
   return escapeHtml(s);
-}
-
-(obj, path) {
-  if (!path) return undefined;
-  const parts = String(path).split(".").filter(Boolean);
-  let cur = obj;
-  for (const p of parts) {
-    if (cur == null) return undefined;
-    cur = cur[p];
-  }
-  return cur;
 }
 
 function template(str, state) {
