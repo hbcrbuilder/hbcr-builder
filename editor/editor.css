@@ -131,3 +131,44 @@ code{font-family:var(--mono);font-size:.92em;color:#ddd}
 .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text)}
 .inspector-actions{display:flex;gap:8px;margin-top:4px}
 .msg{font-size:12px;color:var(--muted);padding:6px 2px}
+
+/* Embedded preview modal */
+.preview-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.65);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.preview-modal[aria-hidden="false"]{ display:flex; }
+.preview-modal-inner{
+  width:min(1400px, 96vw);
+  height:min(900px, 92vh);
+  background:#0f0f10;
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 20px 80px rgba(0,0,0,0.55);
+  display:flex;
+  flex-direction:column;
+}
+.preview-modal-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.10);
+  background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+.preview-modal-title{
+  font-weight:700;
+  letter-spacing:0.3px;
+}
+.preview-iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+}

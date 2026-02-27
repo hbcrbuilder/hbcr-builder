@@ -299,12 +299,12 @@ function deleteSelected(){
   renderAll();
 }
 
-function saveDraft(){
+function saveDraft(silent=false){
   try{
     localStorage.setItem(LS_KEY, JSON.stringify(draft));
-    alert("Draft saved to localStorage (hbcr_editor_draft).");
+    if (!silent) alert("Draft saved to localStorage (hbcr_editor_draft).");
   }catch(err){
-    alert("Failed to save draft: "+err.message);
+    if (!silent) alert("Failed to save draft: "+err.message);
   }
 }
 
@@ -320,10 +320,45 @@ function resetDraft(){
   renderAll();
 }
 
-function openPreview(){
-  saveDraft();
-  window.open("/?editorPreview=1", "_blank", "noopener");
+let _previewOpen = false;
+let _previewDebounce = null;
+
+function persistDraftSilently(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(draft)); }catch(_e){}
 }
+
+function refreshEmbeddedPreview(force=false){
+  if (!_previewOpen) return;
+  if (_previewDebounce) clearTimeout(_previewDebounce);
+  const delay = force ? 0 : 250;
+  _previewDebounce = setTimeout(()=>{
+    const frame = document.getElementById("previewFrame");
+    if (!frame) return;
+    // Bump query param to ensure a reload even if the URL is the same.
+    frame.src = `/?editorPreview=1&v=${Date.now()}`;
+  }, delay);
+}
+
+function setPreviewOpen(open){
+  const modal = document.getElementById("previewModal");
+  if (!modal) return;
+  _previewOpen = open;
+  modal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open){
+    persistDraftSilently();
+    refreshEmbeddedPreview(true);
+  }
+}
+
+function openPreview(){
+  // embedded preview (modal)
+  setPreviewOpen(true);
+}
+
+function closePreview(){
+  setPreviewOpen(false);
+}
+
 
 function downloadJson(){
   const blob = new Blob([JSON.stringify(draft, null, 2)], {type:"application/json"});
@@ -338,6 +373,9 @@ function renderAll(){
   rebuildScreenList();
   renderBoard();
   renderInspector();
+  // Keep draft in localStorage so preview stays in sync.
+  if (draft) persistDraftSilently();
+  refreshEmbeddedPreview(false);
 }
 
 async function reloadBundle(){
@@ -368,6 +406,10 @@ function hookUI(){
   el("#btnReset").onclick = ()=> resetDraft();
   el("#btnSaveDraft").onclick = ()=> saveDraft();
   el("#btnPreview").onclick = ()=> openPreview();
+  const closeBtn = document.getElementById("btnPreviewClose");
+  if (closeBtn) closeBtn.onclick = ()=> closePreview();
+  const refBtn = document.getElementById("btnPreviewRefresh");
+  if (refBtn) refBtn.onclick = ()=> { persistDraftSilently(); refreshEmbeddedPreview(true); };
   el("#btnDownload").onclick = ()=> downloadJson();
 
   el("#slotFilter").onchange = ()=> renderBoard();

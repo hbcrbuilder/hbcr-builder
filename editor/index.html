@@ -18,7 +18,7 @@
         <button id="btnReload" class="btn">Reload bundle</button>
         <button id="btnReset" class="btn">Reset draft</button>
         <button id="btnSaveDraft" class="btn primary">Save draft</button>
-        <button id="btnPreview" class="btn primary">Open preview</button>
+        <button id="btnPreview" class="btn primary">Preview (embedded)</button>
         <a class="btn" href="/editor/logout">Logout</a>
       </div>
     </header>
@@ -130,6 +130,20 @@
     </main>
   </div>
 
-  <script type="module" src="./editor.js"></script>
+  
+  <div id="previewModal" class="preview-modal" aria-hidden="true">
+    <div class="preview-modal-inner">
+      <div class="preview-modal-bar">
+        <div class="preview-modal-title">Live Preview (draft)</div>
+        <div class="preview-modal-actions">
+          <button id="btnPreviewRefresh" class="btn">Refresh</button>
+          <button id="btnPreviewClose" class="btn">Close</button>
+        </div>
+      </div>
+      <iframe id="previewFrame" class="preview-iframe" src="about:blank" loading="lazy"></iframe>
+    </div>
+  </div>
+
+<script type="module" src="./editor.js"></script>
 </body>
 </html>
