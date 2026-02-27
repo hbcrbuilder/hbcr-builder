@@ -3,7 +3,6 @@
 
 import { getBundle, loadRacesJson, loadClassesJson, loadClassesFullJson } from "../data/liveData.js";
 import { ChoiceScreen } from "./choice.js";
-import { renderPickerLayout } from "./pickerShared.js";
 
 // ---- helpers ----
 
@@ -41,28 +40,6 @@ function getPath(obj, path) {
     cur = cur[p];
   }
   return cur;
-}
-
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function renderIconMaybe(val, fallback = "◈") {
-  if (val == null || val === "") return fallback;
-  const s = String(val);
-  // Already HTML
-  if (s.includes("<") && s.includes(">")) return s;
-  // Looks like an image path
-  if (/\.(png|webp|jpg|jpeg|gif)$/i.test(s) || s.startsWith("./") || s.startsWith("/")) {
-    const src = escapeHtml(s);
-    return `<img src="${src}" alt="" style="width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">`;
-  }
-  return escapeHtml(s);
 }
 
 function template(str, state) {
@@ -247,151 +224,6 @@ async function renderChoiceGrid(node, state, bindingRow) {
   });
 }
 
-
-async function renderChoiceButtons(node, state, bindingRow) {
-  const items = await resolveBinding(bindingRow, state);
-
-  const labelField = String(bindingRow?.LabelField ?? "label");
-  const iconField = String(bindingRow?.IconField ?? "icon");
-  const valueField = String(bindingRow?.ValueField ?? "id");
-  // Some choice buttons need a limit/count (e.g. Choices.Count)
-  const countField = String(bindingRow?.CountField ?? "Count");
-
-  const activePath = node.props?.activePath || node.props?.activePickTypePath || "ui.activePickType";
-  const activeVal = getPath(state, activePath);
-
-  const btns = items.map((it) => {
-    const id = it?.[valueField] ?? it?.id ?? it?.Id;
-    if (id == null) return "";
-    const label = it?.[labelField] ?? it?.name ?? it?.Name ?? String(id);
-    const icon = renderIconMaybe(it?.[iconField] ?? it?.icon ?? it?.Icon ?? "");
-    const count = Number(it?.[countField] ?? it?.count ?? it?.Count ?? 0);
-    const isOn = String(activeVal ?? "") === String(id);
-    // Encode: "<choiceId>|<count>|<label>"
-    const enc = `${id}|${count}|${label}`.replace(/"/g, "&quot;");
-    return `
-      <button class="btn ${isOn ? "primary" : ""}"
-              style="padding:10px 12px;border-radius:14px"
-              data-action="set-active-pick"
-              data-id="${enc}">
-        <span style="display:inline-flex;align-items:center;gap:10px">
-          <span style="width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(0,0,0,0.22)">${icon}</span>
-          <span>${escapeHtml(label)}</span>
-          ${count ? `<span style="opacity:.75;font-size:12px">(${count})</span>` : ``}
-        </span>
-      </button>
-    `;
-  }).filter(Boolean).join("");
-
-  return `<div style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px 0">${btns}</div>`;
-}
-
-async function renderPickWindow(node, state, bindingRow) {
-  const ui = state?.ui || {};
-  const pickKey = ui.activePickType;
-  if (!pickKey) return "";
-
-  const items = await resolveBinding(bindingRow, state);
-
-  const labelField = String(bindingRow?.LabelField ?? "Name");
-  const iconField = String(bindingRow?.IconField ?? "Icon");
-  const valueField = String(bindingRow?.ValueField ?? "Id");
-  const descField = String(bindingRow?.DescField ?? "Description");
-
-  const buildLevel = Math.max(1, Math.min(12, Number(
-    state.ui?.picker?.level ||
-    state.ui?.radial?.buildLevel ||
-    state.ui?.buildLevel ||
-    state.character?.level ||
-    1
-  )));
-
-  const timeline = Array.isArray(state.character?.build?.timeline) ? state.character.build.timeline : [];
-  const entry = timeline[Math.max(0, Math.min(11, buildLevel - 1))] || {};
-  const picks = entry?.picks || {};
-  const pickedIds = Array.isArray(picks[pickKey]) ? picks[pickKey] : (picks[pickKey] ? [picks[pickKey]] : []);
-
-  const need = Math.max(0, Number(ui.activePickLimit || 0));
-  const title = node.props?.title || (ui.activePickLabel || "Choices");
-  const subtitle = ui.activePickLabel ? ui.activePickLabel : "Choose";
-
-  const pickerItems = items.map((it) => ({
-    id: String(it?.[valueField] ?? it?.id ?? it?.Id ?? ""),
-    name: String(it?.[labelField] ?? it?.name ?? it?.Name ?? ""),
-    text: String(it?.[descField] ?? it?.desc ?? it?.Description ?? ""),
-    icon: it?.[iconField] ?? it?.icon ?? it?.Icon ?? null,
-    tags: it?.tags || it?.Tags || null,
-  })).filter(x => x.id);
-
-  const topHtml = node.props?.topHtml || "";
-
-  return renderPickerLayout({
-    title,
-    subtitle,
-    buildLevel,
-    need,
-    pickedIds,
-    items: pickerItems,
-    focusId: ui.pickerFocus?.[pickKey] || "",
-    toggleAction: "toggle-activePick-lvl",
-    focusAction: "",
-    emptyHint: "No options available.",
-    topHtml
-  });
-}
-
-function renderOrbit(options) {
-  return `
-    <div class="radial-orbit">
-      ${options.map((o, i) => `
-        <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${escapeHtml(o.id)}">
-          <div class="radial-node-button">${o.icon ?? ""}</div>
-          <div class="radial-node-label">${escapeHtml(o.label ?? "")}</div>
-        </button>
-      `).join("")}
-    </div>
-  `;
-}
-
-async function renderRadial(node, state, bindingRow) {
-  const props = node.props || {};
-  const items = await resolveBinding(bindingRow, state);
-
-  const labelField = String(bindingRow?.LabelField ?? "name");
-  const iconField = String(bindingRow?.IconField ?? "icon");
-  const valueField = String(bindingRow?.ValueField ?? "id");
-
-  const options = items.map((it) => {
-    const id = it?.[valueField] ?? it?.id ?? it?.Id;
-    if (id == null) return null;
-    const label = it?.[labelField] ?? it?.name ?? it?.Name ?? String(id);
-    const iconVal = it?.[iconField] ?? it?.icon ?? it?.Icon ?? "";
-    const icon = renderIconMaybe(iconVal, "◈");
-    const action = props.selectAction || "";
-    return { id: String(id), label: String(label), icon, action };
-  }).filter(Boolean);
-
-  const title = props.title || "";
-  const selectedPath = props.selectedPath;
-  const selectedId = selectedPath ? getPath(state, selectedPath) : null;
-
-  // Mark selected (CSS: add .selected maybe)
-  const orbitOptions = options.map(o => ({ ...o, action: props.selectAction || "" }));
-
-  const centerSubtitle = selectedId ? options.find(o => o.id === String(selectedId))?.label : "";
-
-  return `
-    <div class="radial-stage" data-stage="${escapeHtml(node.ComponentId)}" style="position:relative;z-index:1;min-height:420px;margin:10px 0;">
-      <div class="radial-center">
-        <div class="radial-center-title">${escapeHtml(title)}</div>
-        ${centerSubtitle ? `<div class="radial-center-sub">${escapeHtml(centerSubtitle)}</div>` : ``}
-      </div>
-      ${renderOrbit(orbitOptions)}
-    </div>
-  `;
-}
-
-
 function buildTree(nodes) {
   const byId = new Map(nodes.map((n) => [n.ComponentId, n]));
   for (const n of nodes) n.children = [];
@@ -416,18 +248,6 @@ async function renderNode(node, state, bindingsById) {
   if (t === "choiceGrid") {
     const binding = node.BindingId ? bindingsById.get(node.BindingId) : null;
     return await renderChoiceGrid(node, state, binding);
-  }
-  if (t === "choiceButtons") {
-    const binding = node.BindingId ? bindingsById.get(node.BindingId) : null;
-    return await renderChoiceButtons(node, state, binding);
-  }
-  if (t === "pickWindow") {
-    const binding = node.BindingId ? bindingsById.get(node.BindingId) : null;
-    return await renderPickWindow(node, state, binding);
-  }
-  if (t === "radial") {
-    const binding = node.BindingId ? bindingsById.get(node.BindingId) : null;
-    return await renderRadial(node, state, binding);
   }
   // Unknown component type: render children (so layouts don't hard-break)
   return childrenHtml;
