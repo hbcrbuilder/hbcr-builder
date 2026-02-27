@@ -1681,37 +1681,114 @@ const sheet = `
 
   // (Left nav removed; stageTabsDock handles navigation.)
   // ------------------------------
-  // Design Mode: expose a small, movable layout for the editor.
-  // This does NOT change the runtime UI in normal mode.
+  // Design Mode: make the radial screen layout-driven inside the real Builder UI.
+  // - Renders zones from UIZones (draft override if present)
+  // - Places blocks based on UILayout (draft override if present)
+  // - Enables drag/drop between zones + TSV export
   // ------------------------------
+
   const defaultZones = [
-    { ScreenId: "radial", ZoneId: "root",    ParentZoneId: "",      Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "row" }),    StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "left",    ParentZoneId: "root",  Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "right",   ParentZoneId: "root",  Order: 20, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "overlay", ParentZoneId: "root",  Order: 30, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "root",    ParentZoneId: "",      Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "row", gap: 12 }),    StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "left",    ParentZoneId: "root",  Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "column", gap: 12 }), StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "right",   ParentZoneId: "root",  Order: 20, Enabled: true, PropsJson: JSON.stringify({ direction: "column", gap: 12 }), StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "overlay", ParentZoneId: "root",  Order: 30, Enabled: true, PropsJson: JSON.stringify({ direction: "column", gap: 12 }), StyleJson: "{}" },
   ];
 
   const defaultLayoutRows = [
-    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", ZoneId: "left",    Slot: "center",  Order: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
-    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", ZoneId: "right",   Slot: "center",  Order: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", ZoneId: "left",    Slot: "left",    Order: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", ZoneId: "right",   Slot: "right",   Order: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
     { ScreenId: "radial", ComponentId: "radial.picker",  Type: "block", ParentId: "", ZoneId: "overlay", Slot: "overlay", Order: 30, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
   ];
 
-  if (design && typeof window !== "undefined") {
-    window.__HBCR_LAST_ZONES__ = defaultZones;
-    window.__HBCR_LAST_LAYOUT__ = defaultLayoutRows;
-  }
+  const ensureDesignCss = () => {
+    if (!design || typeof document === "undefined") return;
+    if (document.getElementById("hbcr-design-css")) return;
+    const style = document.createElement("style");
+    style.id = "hbcr-design-css";
+    style.textContent = `
+      .hbcr-ui-wrap{position:relative}
+      .hbcr-ui-handle{position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
+      html.hbcr-show-zones [data-ui-zone]{outline:1px dashed rgba(255,255,255,.22);outline-offset:6px}
+      [data-ui-zone].hbcr-drop-hot{outline:2px solid rgba(155,183,255,.8)!important}
+      html.hbcr-show-zones [data-ui-zone]::before{content:attr(data-ui-zone);position:sticky;top:0;display:inline-block;margin:0 0 6px 0;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.8)}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const safeJsonParse = (raw, fallback = {}) => {
+    try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+  };
+
+  const toBool = (v) => {
+    if (typeof v === "boolean") return v;
+    const s = String(v ?? "").trim().toLowerCase();
+    if (s === "") return false;
+    if (["1","true","yes","y","on"].includes(s)) return true;
+    if (["0","false","no","n","off"].includes(s)) return false;
+    return !!v;
+  };
+
+  const normalizeZoneRow = (r) => {
+    const ScreenId = String(r?.ScreenId || r?.screenId || "");
+    const ZoneId = String(r?.ZoneId || r?.zoneId || "");
+    const ParentZoneId = String(r?.ParentZoneId || r?.parentZoneId || "");
+    const Order = Number(r?.Order ?? r?.order ?? 0);
+    const Enabled = toBool(r?.Enabled ?? r?.enabled ?? true);
+    const PropsJson = String(r?.PropsJson || r?.propsJson || "{}");
+    const StyleJson = String(r?.StyleJson || r?.styleJson || "{}");
+    const props = safeJsonParse(PropsJson, {});
+    const style = safeJsonParse(StyleJson, {});
+    return { ScreenId, ZoneId, ParentZoneId, Order, Enabled, props, style, PropsJson, StyleJson, children: [] };
+  };
+
+  const buildZoneTree = (zones) => {
+    const byId = new Map();
+    zones.forEach(z => byId.set(z.ZoneId, z));
+    zones.forEach(z => { z.children = []; });
+    const roots = [];
+    zones.forEach(z => {
+      const pid = z.ParentZoneId || "";
+      if (pid && byId.has(pid) && pid !== z.ZoneId) byId.get(pid).children.push(z);
+      else roots.push(z);
+    });
+    const sortRec = (arr) => {
+      arr.sort((a,b)=>(Number(a.Order)||0)-(Number(b.Order)||0));
+      arr.forEach(ch => sortRec(ch.children || []));
+    };
+    sortRec(roots);
+    return roots;
+  };
+
+  const zoneStyle = (z) => {
+    const dir = String(z?.props?.direction || "column").toLowerCase();
+    const gap = Number(z?.props?.gap ?? 12);
+    const parts = [
+      "display:flex",
+      `flex-direction:${dir === "row" ? "row" : "column"}`,
+      `gap:${Number.isFinite(gap) ? gap : 12}px`,
+      "min-width:0",
+      "min-height:0",
+    ];
+    // allow per-zone style overrides
+    if (z?.style && typeof z.style === "object") {
+      for (const [k,v] of Object.entries(z.style)) {
+        if (v == null || v === "") continue;
+        const cssKey = String(k).replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+        parts.push(`${cssKey}:${v}`);
+      }
+    }
+    return parts.join(";");
+  };
 
   const wrapComponent = (componentId, innerHtml) => {
     if (!design) return innerHtml;
     return `
-      <div class="hbcr-ui-wrap" data-ui-component="${escapeHtml(componentId)}" style="position:relative;">
+      <div class="hbcr-ui-wrap" data-ui-component="${escapeHtml(componentId)}" draggable="true" style="position:relative;">
         <div class="hbcr-ui-handle" data-ui-handle title="Drag">${escapeHtml(componentId)}</div>
         ${innerHtml}
       </div>
     `;
   };
-
   const pickerHtml = await renderPickerDrawer(state);
 
   return `
