@@ -212,6 +212,15 @@ function onDrop(e, appEl, store) {
   e.preventDefault();
   zone.classList.remove("hbcr-drop-hot");
 
+  // Immediate visual feedback: move the DOM node now.
+  // Some screens are still partially layout-driven, so a state patch alone
+  // won't necessarily relocate elements in the DOM.
+  try {
+    const safeId = (typeof CSS !== "undefined" && CSS.escape) ? CSS.escape(compId) : compId.replace(/"/g, "\\\"");
+    const compEl = document.querySelector(`[data-ui-component="${safeId}"]`);
+    if (compEl && compEl.parentElement !== zone) zone.appendChild(compEl);
+  } catch {}
+
   const screenId = getCurrentScreenId(appEl);
   const zoneId = zone.getAttribute("data-ui-zone");
   const draft = getDraftTablesOrEmpty();
