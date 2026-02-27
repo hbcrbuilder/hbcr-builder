@@ -47,6 +47,52 @@ export function readDesignDraft() {
 export function writeDesignDraft(next) {
   if (!isDesignMode()) return;
   localStorage.setItem(DRAFT_KEY, JSON.stringify(next || {}));
+
+const SAVE_URL_KEY = "hbcr_design_save_url";
+
+function getSaveUrl() {
+  try {
+    const v = localStorage.getItem(SAVE_URL_KEY);
+    return v ? String(v) : "";
+  } catch {
+    return "";
+  }
+}
+
+function setSaveUrl(url) {
+  try {
+    if (!url) localStorage.removeItem(SAVE_URL_KEY);
+    else localStorage.setItem(SAVE_URL_KEY, String(url));
+  } catch {}
+}
+
+async function saveTsvToSheet({ table, tsv }) {
+  const existing = getSaveUrl();
+  const url = existing || prompt("Paste your Google Apps Script Web App URL (the /exec URL) to save UILayout into Sheets:", "") || "";
+  if (!url) return { ok: false, error: "Missing Apps Script URL" };
+  if (!existing) setSaveUrl(url);
+
+  const payload = { table, tsv };
+
+  const res = await fetch(url, {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { json = null; }
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, error: (json && (json.error || json.message)) || text || `HTTP ${res.status}` };
+  }
+  if (json && json.ok === false) {
+    return { ok: false, error: json.error || json.message || "Save failed" };
+  }
+  return { ok: true, status: res.status, response: json || text };
+}
 }
 
 function toTsv(rows, headers) {
@@ -130,7 +176,11 @@ function ensureToolbar() {
   btnCopyLayout.dataset.action = "dm-copy-uilayout";
   el.appendChild(btnCopyLayout);
 
-  const btnCopyZones = mkBtn("Copy UIZones TSV");
+  
+  const btnSaveLayout = mkBtn("Save to Sheet");
+  btnSaveLayout.dataset.action = "dm-save-uilayout";
+  el.appendChild(btnSaveLayout);
+const btnCopyZones = mkBtn("Copy UIZones TSV");
   btnCopyZones.dataset.action = "dm-copy-uizones";
   el.appendChild(btnCopyZones);
 
@@ -490,7 +540,7 @@ export function installDesignMode({ appEl, store }) {
   // Observe only the builder root to reduce noise.
   mo.observe(appEl || document.body, { childList: true, subtree: true });
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const btn = e.target?.closest?.("[data-action]");
     if (!btn) return;
     const action = btn.getAttribute("data-action");
@@ -523,6 +573,26 @@ export function installDesignMode({ appEl, store }) {
       alert("Copied UILayout TSV. Paste into the UILayout sheet tab (starting at A1).\n\nThen run: HBCR → Publish Builder Data");
       return;
     }
+
+    if (action === "dm-save-uilayout") {
+      const draft = getDraftTablesOrEmpty();
+      const rows = (draft.UILayout && draft.UILayout.length) ? draft.UILayout : (window.__HBCR_LAST_LAYOUT__ || window.HBCR_LAST_LAYOUT || []);
+      const text = toTsv(rows, ABS_HEADERS);
+
+      try {
+        btn?.blur?.();
+        const result = await saveTsvToSheet({ table: "UILayout", tsv: text });
+        if (!result.ok) {
+          alert("Save failed: " + (result.error || "Unknown error"));
+          return;
+        }
+        alert("Saved UILayout to Sheets.\n\nNow run: HBCR → Publish Builder Data");
+      } catch (err) {
+        alert("Save failed: " + (err?.message || String(err)));
+      }
+      return;
+    }
+
 
     if (action === "dm-copy-uizones") {
       alert("UIZones is not used in Absolute Layout mode.");
