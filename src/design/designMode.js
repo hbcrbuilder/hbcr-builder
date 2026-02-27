@@ -217,8 +217,8 @@ function syncAllPositions(appEl, store) {
   const screenId = getCurrentScreenId(appEl);
   if (!screenId) return;
   const draft = getDraftTablesOrEmpty();
-  const current = window.__HBCR_LAST_LAYOUT__;
-  if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current)) {
+  const current = window.__HBCR_LAST_LAYOUT__ || window.HBCR_LAST_LAYOUT;
+  if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current) && current.length && ("X" in current[0])) {
     draft.UILayout = current.map(r => ({ ...r }));
   }
   const comps = Array.from(document.querySelectorAll("[data-ui-component]"));
@@ -227,6 +227,25 @@ function syncAllPositions(appEl, store) {
     const compId = el.getAttribute("data-ui-component");
     if (!compId) continue;
     const row = findOrCreateRow(draft, screenId, compId);
+
+    // MIGRATE/SEED: if this row has no absolute coords (e.g., old ZoneId/Order schema),
+    // seed from current DOM position so the screen doesn't collapse into (0,0).
+    if (row.X == null || row.X === "" || row.Y == null || row.Y === "") {
+      const canvas =
+        document.querySelector("#hbcr-canvas") ||
+        document.querySelector("[data-ui-canvas]") ||
+        document.querySelector(".hbcr-canvas") ||
+        appEl ||
+        document.body;
+      const c = canvas.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      row.X = Math.round(r.left - c.left);
+      row.Y = Math.round(r.top - c.top);
+      row.W = Math.max(10, Math.round(r.width));
+      row.H = Math.max(10, Math.round(r.height));
+      row.Z = num(row.Z, 10);
+      changed = true;
+    }
 
     // Only apply if it differs from what's already on the element.
     const wantLeft = px(row.X);
@@ -258,7 +277,12 @@ function syncAllPositions(appEl, store) {
   }
 
   // Avoid thrashing: only persist if something actually changed.
-  if (changed) writeDesignDraft(draft);
+  if (changed) {
+    writeDesignDraft(draft);
+    // debug-friendly alias
+    window.__HBCR_LAST_LAYOUT__ = draft.UILayout;
+    window.HBCR_LAST_LAYOUT = draft.UILayout;
+  }
 }
 
 function installPointerDrag({ appEl, store }) {
@@ -277,11 +301,30 @@ function installPointerDrag({ appEl, store }) {
     if (!compId) return;
 
     const draft = getDraftTablesOrEmpty();
-    const current = window.__HBCR_LAST_LAYOUT__;
-    if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current)) {
-      draft.UILayout = current.map(r => ({ ...r }));
+    const current = window.__HBCR_LAST_LAYOUT__ || window.HBCR_LAST_LAYOUT;
+    if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current) && current.length && ("X" in current[0])) {
+    draft.UILayout = current.map(r => ({ ...r }));
     }
     const row = findOrCreateRow(draft, screenId, compId);
+
+    // MIGRATE/SEED: if this row has no absolute coords (e.g., old ZoneId/Order schema),
+    // seed from current DOM position so the screen doesn't collapse into (0,0).
+    if (row.X == null || row.X === "" || row.Y == null || row.Y === "") {
+      const canvas =
+        document.querySelector("#hbcr-canvas") ||
+        document.querySelector("[data-ui-canvas]") ||
+        document.querySelector(".hbcr-canvas") ||
+        appEl ||
+        document.body;
+      const c = canvas.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      row.X = Math.round(r.left - c.left);
+      row.Y = Math.round(r.top - c.top);
+      row.W = Math.max(10, Math.round(r.width));
+      row.H = Math.max(10, Math.round(r.height));
+      row.Z = num(row.Z, 10);
+      changed = true;
+    }
 
     row.Z = num(row.Z, 10) + 1;
     applyRowToEl(compEl, row);
