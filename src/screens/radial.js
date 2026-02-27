@@ -206,6 +206,20 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+// Design Mode wrapper helper.
+// IMPORTANT: This must be available to helpers like renderOrbit() which live
+// at module scope (outside the main render function).
+function dmWrap(id, html) {
+  try {
+    const design = typeof window !== "undefined" && window.__HBCR_DESIGN__ === true;
+    return design
+      ? `<div class="hbcr-dm-inner" data-ui-component="${escapeHtml(id)}">${html}</div>`
+      : html;
+  } catch (_e) {
+    return html;
+  }
+}
+
 function pill(text) {
   return `<span class="sheet-pill">${escapeHtml(text)}</span>`;
 }
