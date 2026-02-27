@@ -579,13 +579,9 @@ html,body{
 
 .radial-shell{
   width: 100%;
-  height: 100%;
-  display: grid;
-  /* Left pane stays a controlled width; the summary fills the rest
-     and reaches the far right edge. */
-  grid-template-columns: 760px 1fr;
-  gap: 18px;
-  align-items: stretch;
+  min-height: 860px;
+  position: relative;
+  display: block;
   max-width: none;
   margin: 0;
 }
@@ -848,7 +844,7 @@ html,body{
 
 
 @media (max-width: 980px){
-  .radial-shell{ grid-template-columns: 1fr; }
+  .radial-shell{ min-height: 860px; }
   .leftnav{ display:none; }
   /* orbit node positions are computed in JS; no transform override needed */
 }

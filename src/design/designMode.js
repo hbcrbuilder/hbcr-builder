@@ -5,20 +5,27 @@
 
 const DRAFT_KEY = "hbcr_design_draft";
 
+// Absolute layout v1 (permanent):
+// We store pixel positions for each ComponentId on a ScreenId.
+// Draft.UILayout rows may include: X, Y, W, H, Z.
+// The live screens apply these via inline styles on [data-ui-component].
 
-function ensureDesignCss() {
-  if (document.getElementById("hbcr-design-css")) return;
-  const style = document.createElement("style");
-  style.id = "hbcr-design-css";
-  style.textContent = `
-    .hbcr-ui-wrap{position:relative}
-    .hbcr-ui-handle{position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
-    html.hbcr-show-zones [data-ui-zone]{outline:1px dashed rgba(255,255,255,.22);outline-offset:6px}
-    [data-ui-zone].hbcr-drop-hot{outline:2px solid rgba(155,183,255,.8)!important}
-    html.hbcr-show-zones [data-ui-zone]::before{content:attr(data-ui-zone);position:sticky;top:0;display:inline-block;margin:0 0 6px 0;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.8)}
-  `;
-  document.head.appendChild(style);
-}
+const ABS_HEADERS = [
+  "ScreenId",
+  "ComponentId",
+  "Type",
+  "ParentId",
+  "X",
+  "Y",
+  "W",
+  "H",
+  "Z",
+  "Enabled",
+  "BindingId",
+  "PropsJson",
+  "StyleJson",
+  "VisibilityJson",
+];
 
 export function isDesignMode() {
   return typeof window !== "undefined" && window.__HBCR_DESIGN__ === true;
@@ -164,92 +171,153 @@ function setZonesVisible(on) {
   document.documentElement.classList.toggle("hbcr-show-zones", !!on);
 }
 
-function nextOrderForZone(layoutRows, screenId, zoneId) {
-  const max = layoutRows
-    .filter(r => String(r.ScreenId) === String(screenId) && String(r.ZoneId || r.Slot || "") === String(zoneId))
-    .reduce((m, r) => Math.max(m, Number(r.Order) || 0), 0);
-  return max + 10;
+function ensureDesignCss() {
+  if (document.getElementById("hbcr-design-css")) return;
+  const style = document.createElement("style");
+  style.id = "hbcr-design-css";
+  style.textContent = `
+    /* Absolute design canvas helpers */
+    html.hbcr-show-zones [data-ui-component]{outline:1px dashed rgba(155,183,255,.45);outline-offset:3px}
+    html.hbcr-show-zones [data-ui-component]::after{content:attr(data-ui-component);position:absolute;left:8px;top:8px;z-index:99999;display:inline-block;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.85);pointer-events:none}
+    .hbcr-ui-handle{position:absolute;right:8px;top:8px;z-index:99998;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
+    .hbcr-ui-handle:active{cursor:grabbing}
+  `;
+  document.head.appendChild(style);
 }
 
-
-function enableDraggableComponents(root=document) {
-  try{
-    root.querySelectorAll?.("[data-ui-component]")?.forEach?.((el)=>{
-      if (!el.getAttribute("draggable")) el.setAttribute("draggable","true");
-    });
-  }catch{}
+function num(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-function onDragStart(e) {
-  const comp = e.target?.closest?.("[data-ui-component]");
-  if (!comp) return;
-  const id = comp.getAttribute("data-ui-component");
-  if (!id) return;
-  e.dataTransfer.setData("text/hbcr-component", id);
-  e.dataTransfer.effectAllowed = "move";
+function px(n) {
+  const v = Math.round(num(n, 0));
+  return `${v}px`;
 }
 
-function onDragOver(e) {
-  const zone = e.target?.closest?.("[data-ui-zone]");
-  if (!zone) return;
-  if (!e.dataTransfer.types.includes("text/hbcr-component")) return;
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-  zone.classList.add("hbcr-drop-hot");
+function findOrCreateRow(draft, screenId, compId) {
+  const row = (draft.UILayout || []).find(r => String(r.ScreenId) === String(screenId) && String(r.ComponentId) === String(compId));
+  if (row) return row;
+  const base = { ScreenId: screenId, ComponentId: compId, Type: "block", ParentId: "", X: 40, Y: 40, W: 480, H: 320, Z: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" };
+  draft.UILayout.push(base);
+  return base;
 }
 
-function onDragLeave(e) {
-  const zone = e.target?.closest?.("[data-ui-zone]");
-  if (!zone) return;
-  zone.classList.remove("hbcr-drop-hot");
+function applyRowToEl(el, row) {
+  if (!el || !row) return;
+  el.style.position = "absolute";
+  el.style.left = px(row.X);
+  el.style.top = px(row.Y);
+  if (row.W != null && row.W !== "") el.style.width = px(row.W);
+  if (row.H != null && row.H !== "") el.style.height = px(row.H);
+  el.style.zIndex = String(num(row.Z, 10));
 }
 
-function onDrop(e, appEl, store) {
-  const zone = e.target?.closest?.("[data-ui-zone]");
-  if (!zone) return;
-  const compId = e.dataTransfer.getData("text/hbcr-component");
-  if (!compId) return;
-  e.preventDefault();
-  zone.classList.remove("hbcr-drop-hot");
-
-  // Immediate visual feedback: move the DOM node now.
-  // Some screens are still partially layout-driven, so a state patch alone
-  // won't necessarily relocate elements in the DOM.
-  try {
-    const safeId = (typeof CSS !== "undefined" && CSS.escape) ? CSS.escape(compId) : compId.replace(/"/g, "\\\"");
-    const compEl = document.querySelector(`[data-ui-component="${safeId}"]`);
-    if (compEl && compEl.parentElement !== zone) zone.appendChild(compEl);
-  } catch {}
-
+function syncAllPositions(appEl, store) {
   const screenId = getCurrentScreenId(appEl);
-  const zoneId = zone.getAttribute("data-ui-zone");
+  if (!screenId) return;
   const draft = getDraftTablesOrEmpty();
-
   const current = window.__HBCR_LAST_LAYOUT__;
   if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current)) {
     draft.UILayout = current.map(r => ({ ...r }));
   }
-
-  const row = draft.UILayout.find(r => String(r.ComponentId) === String(compId) && String(r.ScreenId) === String(screenId));
-  if (!row) return;
-  row.ZoneId = zoneId;
-  row.Slot = zoneId; // back-compat
-  row.Order = nextOrderForZone(draft.UILayout, screenId, zoneId);
+  const comps = Array.from(document.querySelectorAll("[data-ui-component]"));
+  for (const el of comps) {
+    const compId = el.getAttribute("data-ui-component");
+    if (!compId) continue;
+    const row = findOrCreateRow(draft, screenId, compId);
+    applyRowToEl(el, row);
+    // ensure handle exists
+    if (!el.querySelector(":scope > .hbcr-ui-handle")) {
+      const h = document.createElement("div");
+      h.className = "hbcr-ui-handle";
+      h.textContent = "⋮⋮";
+      h.setAttribute("data-ui-handle", "true");
+      h.setAttribute("title", "Drag");
+      el.appendChild(h);
+    }
+  }
   writeDesignDraft(draft);
-  store.patchUI({ __designTick: Date.now() });
+  store?.patchUI?.({ __designTick: Date.now() });
+}
+
+function installPointerDrag({ appEl, store }) {
+  let active = null;
+
+  const onDown = (e) => {
+    const handle = e.target?.closest?.(".hbcr-ui-handle,[data-ui-handle]");
+    if (!handle) return;
+    const compEl = handle.closest?.("[data-ui-component]");
+    if (!compEl) return;
+    e.preventDefault();
+
+    const screenId = getCurrentScreenId(appEl);
+    if (!screenId) return;
+    const compId = compEl.getAttribute("data-ui-component");
+    if (!compId) return;
+
+    const draft = getDraftTablesOrEmpty();
+    const current = window.__HBCR_LAST_LAYOUT__;
+    if ((!draft.UILayout || draft.UILayout.length === 0) && Array.isArray(current)) {
+      draft.UILayout = current.map(r => ({ ...r }));
+    }
+    const row = findOrCreateRow(draft, screenId, compId);
+
+    row.Z = num(row.Z, 10) + 1;
+    applyRowToEl(compEl, row);
+
+    active = {
+      compEl,
+      screenId,
+      compId,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseLeft: num(row.X, 0),
+      baseTop: num(row.Y, 0),
+    };
+
+    const move = (ev) => {
+      if (!active) return;
+      ev.preventDefault();
+      const dx = ev.clientX - active.startX;
+      const dy = ev.clientY - active.startY;
+      active.compEl.style.left = px(active.baseLeft + dx);
+      active.compEl.style.top = px(active.baseTop + dy);
+    };
+
+    const up = (ev) => {
+      if (!active) return;
+      ev.preventDefault();
+      document.removeEventListener("mousemove", move, true);
+      document.removeEventListener("mouseup", up, true);
+
+      const draft2 = getDraftTablesOrEmpty();
+      const row2 = findOrCreateRow(draft2, active.screenId, active.compId);
+      row2.X = num(parseFloat(active.compEl.style.left || "0"), active.baseLeft);
+      row2.Y = num(parseFloat(active.compEl.style.top || "0"), active.baseTop);
+      writeDesignDraft(draft2);
+      store?.patchUI?.({ __designTick: Date.now() });
+      active = null;
+    };
+
+    document.addEventListener("mousemove", move, true);
+    document.addEventListener("mouseup", up, true);
+  };
+
+  document.addEventListener("mousedown", onDown, true);
 }
 
 export function installDesignMode({ appEl, store }) {
   if (!isDesignMode()) return;
-  ensureDesignCss();
   ensureToolbar();
   setZonesVisible(true);
 
-  document.addEventListener("dragstart", onDragStart, true);
-  document.addEventListener("dragover", onDragOver, true);
-  document.addEventListener("dragleave", onDragLeave, true);
-  document.addEventListener("drop", (e) => onDrop(e, appEl, store), true);
-  enableDraggableComponents(appEl || document);
+  ensureDesignCss();
+  syncAllPositions(appEl, store);
+  installPointerDrag({ appEl, store });
+
+  const mo = new MutationObserver(() => syncAllPositions(appEl, store));
+  mo.observe(document.body, { childList: true, subtree: true });
 
   document.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-action]");
@@ -272,53 +340,21 @@ export function installDesignMode({ appEl, store }) {
     }
 
     if (action === "dm-add-zone") {
-      const screenId = getCurrentScreenId(appEl) || prompt("ScreenId? (e.g. picks)") || "";
-      if (!screenId) return;
-      const zoneId = prompt("ZoneId? (e.g. leftPanel)");
-      if (!zoneId) return;
-      const parentZoneId = prompt("ParentZoneId? (blank for root)") || "";
-      const direction = (prompt("Direction? row/column", "column") || "column").toLowerCase();
-      const draft = getDraftTablesOrEmpty();
-      const currentZones = window.__HBCR_LAST_ZONES__;
-      if ((!draft.UIZones || draft.UIZones.length === 0) && Array.isArray(currentZones)) {
-        draft.UIZones = currentZones.map(z => ({ ...z }));
-      }
-      const exists = draft.UIZones.some(z => String(z.ScreenId) === String(screenId) && String(z.ZoneId) === String(zoneId));
-      if (exists) { alert("Zone already exists"); return; }
-      const order = draft.UIZones
-        .filter(z => String(z.ScreenId) === String(screenId) && String(z.ParentZoneId || "") === String(parentZoneId))
-        .reduce((m, z) => Math.max(m, Number(z.Order) || 0), 0) + 10;
-      draft.UIZones.push({
-        ScreenId: screenId,
-        ZoneId: zoneId,
-        ParentZoneId: parentZoneId || "",
-        Order: order,
-        Enabled: true,
-        PropsJson: JSON.stringify({ direction }),
-        StyleJson: "{}",
-      });
-      writeDesignDraft(draft);
-      store.patchUI({ __designTick: Date.now() });
+      alert("Zones are disabled in Absolute Layout mode. Drag components freely on the canvas instead.");
       return;
     }
 
     if (action === "dm-copy-uilayout") {
       const draft = getDraftTablesOrEmpty();
       const rows = (draft.UILayout && draft.UILayout.length) ? draft.UILayout : (window.__HBCR_LAST_LAYOUT__ || []);
-      const headers = ["ScreenId","ComponentId","Type","ParentId","ZoneId","Slot","Order","Enabled","BindingId","PropsJson","StyleJson","VisibilityJson"];
-      const text = toTsv(rows, headers);
+      const text = toTsv(rows, ABS_HEADERS);
       copyText(text);
       alert("Copied UILayout TSV. Paste into the UILayout sheet tab (starting at A1).\n\nThen run: HBCR → Publish Builder Data");
       return;
     }
 
     if (action === "dm-copy-uizones") {
-      const draft = getDraftTablesOrEmpty();
-      const rows = (draft.UIZones && draft.UIZones.length) ? draft.UIZones : (window.__HBCR_LAST_ZONES__ || []);
-      const headers = ["ScreenId","ZoneId","ParentZoneId","Order","Enabled","PropsJson","StyleJson"];
-      const text = toTsv(rows, headers);
-      copyText(text);
-      alert("Copied UIZones TSV. Create/replace a UIZones sheet tab and paste at A1.\n\nThen run: HBCR → Publish Builder Data");
+      alert("UIZones is not used in Absolute Layout mode.");
       return;
     }
   }, true);

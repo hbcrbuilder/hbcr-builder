@@ -19,7 +19,7 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
-import { isDesignMode } from "../design/designMode.js";
+import { isDesignMode, readDesignDraft } from "../design/designMode.js";
 
 import {
   loadRacesJson,
@@ -1684,29 +1684,44 @@ const sheet = `
   // Design Mode: expose a small, movable layout for the editor.
   // This does NOT change the runtime UI in normal mode.
   // ------------------------------
-  const defaultZones = [
-    { ScreenId: "radial", ZoneId: "root",    ParentZoneId: "",      Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "row" }),    StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "left",    ParentZoneId: "root",  Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "right",   ParentZoneId: "root",  Order: 20, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
-    { ScreenId: "radial", ZoneId: "overlay", ParentZoneId: "root",  Order: 30, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
-  ];
-
+  // Absolute layout defaults (pixel-based). This is now the permanent layout system.
   const defaultLayoutRows = [
-    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", ZoneId: "left",    Slot: "center",  Order: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
-    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", ZoneId: "right",   Slot: "center",  Order: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
-    { ScreenId: "radial", ComponentId: "radial.picker",  Type: "block", ParentId: "", ZoneId: "overlay", Slot: "overlay", Order: 30, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", X: 24,  Y: 24,  W: 760, H: 760, Z: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", X: 820, Y: 24,  W: 520, H: 760, Z: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.picker",  Type: "block", ParentId: "", X: 220, Y: 120, W: 920, H: 700, Z: 90, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
   ];
 
-  if (design && typeof window !== "undefined") {
-    window.__HBCR_LAST_ZONES__ = defaultZones;
+  if (typeof window !== "undefined") {
     window.__HBCR_LAST_LAYOUT__ = defaultLayoutRows;
+    window.__HBCR_LAST_ZONES__ = [];
   }
 
+  const getLayoutRows = () => {
+    const draft = (design ? readDesignDraft() : null);
+    const draftRows = Array.isArray(draft?.UILayout) ? draft.UILayout : null;
+    const rows = (draftRows && draftRows.length)
+      ? draftRows.filter(r => String(r?.ScreenId || "") === "radial")
+      : defaultLayoutRows;
+    return rows;
+  };
+
+  const styleFor = (componentId) => {
+    const rows = getLayoutRows();
+    const row = rows.find(r => String(r?.ComponentId) === String(componentId));
+    const n = (v, f=0) => {
+      const x = Number(v);
+      return Number.isFinite(x) ? x : f;
+    };
+    const px = (v) => `${Math.round(n(v, 0))}px`;
+    if (!row) return "position:absolute;left:24px;top:24px;z-index:10";
+    return `position:absolute;left:${px(row.X)};top:${px(row.Y)};width:${px(row.W)};height:${px(row.H)};z-index:${Math.round(n(row.Z, 10))}`;
+  };
+
   const wrapComponent = (componentId, innerHtml) => {
-    if (!design) return innerHtml;
+    // Always wrap: absolute layout is the permanent renderer.
+    const extraClass = componentId === "radial.pane" ? "radial-pane" : (componentId === "radial.summary" ? "radial-summary" : (componentId === "radial.picker" ? "radial-overlay" : ""));
     return `
-      <div class="hbcr-ui-wrap" data-ui-component="${escapeHtml(componentId)}" draggable="true" style="position:relative;">
-        <div class="hbcr-ui-handle" data-ui-handle title="Drag">${escapeHtml(componentId)}</div>
+      <div class="hbcr-ui-wrap ${extraClass}" data-ui-component="${escapeHtml(componentId)}" style="${styleFor(componentId)}">
         ${innerHtml}
       </div>
     `;
@@ -1715,9 +1730,8 @@ const sheet = `
   const pickerHtml = await renderPickerDrawer(state);
 
   return `
-    <div class="radial-shell" data-ui-zone="root">
-      <div class="radial-pane" data-ui-zone="left" style="position:relative;z-index:2;pointer-events:auto;">
-        ${wrapComponent("radial.pane", `
+    <div class="radial-shell" style="position:relative;">
+      ${wrapComponent("radial.pane", `
           ${stageTabsDock}
           ${stage === "build" ? `
           ${levelStripDock}
@@ -1846,13 +1860,9 @@ const sheet = `
           </div>
           `}
         `)}
-      </div>
-      <div class="radial-summary" data-ui-zone="right">
-        ${wrapComponent("radial.summary", sheet)}
-      </div>
-      <div data-ui-zone="overlay">
-        ${wrapComponent("radial.picker", pickerHtml)}
-      </div>
+
+      ${wrapComponent("radial.summary", sheet)}
+      ${wrapComponent("radial.picker", pickerHtml)}
     </div>
     `;
 }
