@@ -5,6 +5,21 @@
 
 const DRAFT_KEY = "hbcr_design_draft";
 
+
+function ensureDesignCss() {
+  if (document.getElementById("hbcr-design-css")) return;
+  const style = document.createElement("style");
+  style.id = "hbcr-design-css";
+  style.textContent = `
+    .hbcr-ui-wrap{position:relative}
+    .hbcr-ui-handle{position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
+    html.hbcr-show-zones [data-ui-zone]{outline:1px dashed rgba(255,255,255,.22);outline-offset:6px}
+    [data-ui-zone].hbcr-drop-hot{outline:2px solid rgba(155,183,255,.8)!important}
+    html.hbcr-show-zones [data-ui-zone]::before{content:attr(data-ui-zone);position:sticky;top:0;display:inline-block;margin:0 0 6px 0;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.8)}
+  `;
+  document.head.appendChild(style);
+}
+
 export function isDesignMode() {
   return typeof window !== "undefined" && window.__HBCR_DESIGN__ === true;
 }
@@ -149,122 +164,20 @@ function setZonesVisible(on) {
   document.documentElement.classList.toggle("hbcr-show-zones", !!on);
 }
 
-
-function safeJsonParse(raw, fallback = {}) {
-  try {
-    if (raw == null || raw === "") return fallback;
-    return JSON.parse(String(raw));
-  } catch {
-    return fallback;
-  }
-}
-
-function cssFromStyleObj(styleObj) {
-  if (!styleObj || typeof styleObj !== "object") return "";
-  const parts = [];
-  for (const [k, v] of Object.entries(styleObj)) {
-    if (v == null || v === "") continue;
-    const cssKey = String(k).replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
-    parts.push(`${cssKey}:${v}`);
-  }
-  return parts.join(";");
-}
-
-function applyDesignDraftToDom(appEl) {
-  if (!isDesignMode()) return;
-  if (!appEl || typeof document === "undefined") return;
-
-  const screenId = getCurrentScreenId(appEl);
-  if (!screenId) return;
-
-  const draft = getDraftTablesOrEmpty();
-  const currentLayout = Array.isArray(window.__HBCR_LAST_LAYOUT__) ? window.__HBCR_LAST_LAYOUT__ : [];
-  const currentZones = Array.isArray(window.__HBCR_LAST_ZONES__) ? window.__HBCR_LAST_ZONES__ : [];
-
-  const layoutRows = (draft.UILayout && draft.UILayout.length) ? draft.UILayout : currentLayout;
-  const zoneRows = (draft.UIZones && draft.UIZones.length) ? draft.UIZones : currentZones;
-
-  const screenLayout = (layoutRows || []).filter(r => String(r.ScreenId || r.screenId || "") === String(screenId));
-  const screenZonesRaw = (zoneRows || []).filter(z => String(z.ScreenId || z.screenId || "") === String(screenId));
-
-  const screenZones = (screenZonesRaw.length ? screenZonesRaw : [{ ScreenId: screenId, ZoneId: "root", ParentZoneId: "", Order: 0, Enabled: true, PropsJson: '{"direction":"column","gap":12}', StyleJson: "{}" }])
-    .map(z => ({
-      ScreenId: String(z.ScreenId || z.screenId || ""),
-      ZoneId: String(z.ZoneId || z.zoneId || ""),
-      ParentZoneId: String(z.ParentZoneId || z.parentZoneId || ""),
-      Order: Number(z.Order ?? z.order ?? 0),
-      Enabled: z.Enabled ?? z.enabled ?? true,
-      props: safeJsonParse(z.PropsJson ?? z.propsJson ?? "{}", {}),
-      style: safeJsonParse(z.StyleJson ?? z.styleJson ?? "{}", {}),
-    }))
-    .filter(z => z.ZoneId);
-
-  const ensureZoneEl = (zoneId, parentZoneId, z) => {
-    let el = document.querySelector(`[data-ui-zone="${CSS.escape(zoneId)}"]`);
-    const dir = String(z?.props?.direction || "column").toLowerCase();
-    const gap = Number(z?.props?.gap ?? 12);
-    const flexParts = [
-      "display:flex",
-      `flex-direction:${dir === "row" ? "row" : "column"}`,
-      `gap:${Number.isFinite(gap) ? gap : 12}px`,
-      "min-width:0",
-      "min-height:0",
-    ];
-    const extra = cssFromStyleObj(z?.style);
-
-    if (el) {
-      // Update flex style in case the draft changed
-      el.setAttribute("style", [el.getAttribute("style") || "", flexParts.join(";"), extra].filter(Boolean).join(";"));
-      return el;
-    }
-
-    el = document.createElement("div");
-    el.className = "hbcr-zone";
-    el.setAttribute("data-ui-zone", zoneId);
-    el.setAttribute("style", [flexParts.join(";"), extra].filter(Boolean).join(";"));
-
-    const parentId = parentZoneId || "";
-    const parent = parentId
-      ? document.querySelector(`[data-ui-zone="${CSS.escape(parentId)}"]`)
-      : document.querySelector(`[data-ui-zone="root"]`) || appEl;
-
-    (parent || appEl).appendChild(el);
-    return el;
-  };
-
-  // Create parents before children
-  const zoneSorted = [...screenZones].sort((a,b) => (a.ParentZoneId || "").localeCompare(b.ParentZoneId || "") || (a.Order||0)-(b.Order||0));
-  for (const z of zoneSorted) {
-    ensureZoneEl(z.ZoneId, z.ParentZoneId, z);
-  }
-
-  // Move components into their zones in Order
-  const byZone = new Map();
-  for (const r of screenLayout) {
-    const zoneId = String(r.ZoneId || r.zoneId || r.Slot || r.slot || "root") || "root";
-    if (!byZone.has(zoneId)) byZone.set(zoneId, []);
-    byZone.get(zoneId).push(r);
-  }
-  for (const arr of byZone.values()) arr.sort((a,b) => (Number(a.Order)||0)-(Number(b.Order)||0));
-
-  for (const [zoneId, rows] of byZone.entries()) {
-    const zoneEl = document.querySelector(`[data-ui-zone="${CSS.escape(zoneId)}"]`);
-    if (!zoneEl) continue;
-    for (const r of rows) {
-      const compId = String(r.ComponentId || r.componentId || "");
-      if (!compId) continue;
-      const compEl = document.querySelector(`[data-ui-component="${CSS.escape(compId)}"]`);
-      if (!compEl) continue;
-      if (compEl.parentElement !== zoneEl) zoneEl.appendChild(compEl);
-    }
-  }
-}
-
 function nextOrderForZone(layoutRows, screenId, zoneId) {
   const max = layoutRows
     .filter(r => String(r.ScreenId) === String(screenId) && String(r.ZoneId || r.Slot || "") === String(zoneId))
     .reduce((m, r) => Math.max(m, Number(r.Order) || 0), 0);
   return max + 10;
+}
+
+
+function enableDraggableComponents(root=document) {
+  try{
+    root.querySelectorAll?.("[data-ui-component]")?.forEach?.((el)=>{
+      if (!el.getAttribute("draggable")) el.setAttribute("draggable","true");
+    });
+  }catch{}
 }
 
 function onDragStart(e) {
@@ -314,41 +227,20 @@ function onDrop(e, appEl, store) {
   row.Slot = zoneId; // back-compat
   row.Order = nextOrderForZone(draft.UILayout, screenId, zoneId);
   writeDesignDraft(draft);
-  try { applyDesignDraftToDom(appEl); } catch {}
   store.patchUI({ __designTick: Date.now() });
 }
 
 export function installDesignMode({ appEl, store }) {
   if (!isDesignMode()) return;
+  ensureDesignCss();
   ensureToolbar();
   setZonesVisible(true);
-
-
-  // Keep DOM in sync with draft layout without requiring every screen to be fully converted.
-  // This is especially important for legacy screens (like radial) that are mid-migration.
-  const scheduleApply = (() => {
-    let raf = 0;
-    return () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        applyDesignDraftToDom(appEl);
-      });
-    };
-  })();
-
-  scheduleApply();
-
-  try {
-    const mo = new MutationObserver(() => scheduleApply());
-    mo.observe(appEl, { childList: true, subtree: true });
-    window.addEventListener("focus", scheduleApply);
-  } catch {}
 
   document.addEventListener("dragstart", onDragStart, true);
   document.addEventListener("dragover", onDragOver, true);
   document.addEventListener("dragleave", onDragLeave, true);
   document.addEventListener("drop", (e) => onDrop(e, appEl, store), true);
+  enableDraggableComponents(appEl || document);
 
   document.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-action]");
