@@ -1,10 +1,7 @@
 import { createStore } from "./store.js";
 import { createRouter } from "./router.js";
 
-import { RaceScreen } from "./screens/race.js";
-import { SubraceScreen } from "./screens/subrace.js";
-import { ClassScreen } from "./screens/class.js";
-import { SubclassScreen } from "./screens/subclass.js";
+import { LayoutScreen } from "./screens/layout.js";
 import { MetamagicScreen } from "./screens/metamagic.js";
 import { WildshapesScreen } from "./screens/wildshapes.js";
 import { ManoeuvresScreen } from "./screens/manoeuvres.js";
@@ -62,10 +59,12 @@ const store = createStore();
 
 const screens = {
   radial: (ctx) => RadialScreen(ctx),
-  race: (ctx) => RaceScreen(ctx),
-  subrace: (ctx) => SubraceScreen(ctx),
-  class: (ctx) => ClassScreen(ctx),
-  subclass: (ctx) => SubclassScreen(ctx),
+  // Option 2: layout-driven legacy screens (race/subrace/class/subclass)
+  // These screens now render from bundle.UILayout + bundle.UIBindings.
+  race: (ctx) => LayoutScreen(ctx, "race"),
+  subrace: (ctx) => LayoutScreen(ctx, "subrace"),
+  class: (ctx) => LayoutScreen(ctx, "class"),
+  subclass: (ctx) => LayoutScreen(ctx, "subclass"),
 
   metamagic: (ctx) => MetamagicScreen(ctx),
   wildshapes: (ctx) => WildshapesScreen(ctx),
