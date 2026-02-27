@@ -217,12 +217,18 @@ function renderOrbit(options) {
     <div class="radial-orbit">
       ${options
         .map((o, i) => {
-          return dmWrap(`radial.tabs.${t.id}`, `
+          // Orbit nodes are part of the radial wheel (not the top tabs row).
+          // Wrap them with a stable id so Design Mode can target them later.
+          const nodeId = o?.id ?? i;
+          return dmWrap(
+            `radial.orbit.node.${nodeId}`,
+            `
               <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${o.id}">
-              <div class="radial-node-button">${o.icon ?? ""}</div>
-              <div class="radial-node-label">${escapeHtml(o.label)}</div>
-            </button>
-          `;
+                <div class="radial-node-button">${o.icon ?? ""}</div>
+                <div class="radial-node-label">${escapeHtml(o.label)}</div>
+              </button>
+            `
+          );
         })
         .join("")}
     </div>
