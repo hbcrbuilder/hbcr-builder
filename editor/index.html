@@ -1,149 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>HBCR Editor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Cinzel:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./editor.css"/>
+  <link rel="icon" type="image/png" href="/assets/ui/hbcr-icon.png"/>
+  <link rel="stylesheet" href="/src/ui.css"/>
 </head>
 <body>
-  <div class="editor-shell">
-    <header class="editor-topbar">
-      <div class="brand">
-        <div class="brand-title">HBCR Editor</div>
-        <div class="brand-sub">Layout + bindings (draft). Drag, edit, export, preview.</div>
+  <div class="app-root" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <div class="screen" style="max-width:820px">
+      <div class="h1">HBCR Editor</div>
+      <div class="p" style="opacity:.8">Design mode runs inside the real Builder UI (same assets/components). Only authenticated users can access it.</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px">
+        <a class="btn" href="/editor/builder/">Open Builder (Design Mode)</a>
+        <a class="btn" href="/editor/logout" style="opacity:.85">Logout</a>
       </div>
-      <div class="top-actions">
-        <button id="btnReload" class="btn">Reload bundle</button>
-        <button id="btnReset" class="btn">Reset draft</button>
-        <button id="btnSaveDraft" class="btn primary">Save draft</button>
-        <button id="btnPreview" class="btn primary">Preview (embedded)</button>
-        <a class="btn" href="/editor/logout">Logout</a>
+      <div class="p" style="margin-top:16px;opacity:.75">
+        Tip: edits are saved as a <b>draft</b> in your browser until you export TSV and paste into Sheets.
       </div>
-    </header>
-
-    <main class="editor-main">
-      <aside class="pane left">
-        <div class="pane-title">Screens</div>
-        <div id="screenList" class="list"></div>
-
-        <div class="pane-title" style="margin-top:14px;">Export</div>
-        <div class="export-actions">
-          <button id="btnExportUILayout" class="btn">Copy UILayout TSV</button>
-          <button id="btnExportUIBindings" class="btn">Copy UIBindings TSV</button>
-          <button id="btnDownload" class="btn">Download draft JSON</button>
-        </div>
-
-        <div class="hint">
-          <div><b>Preview</b> opens the live Builder with <code>?editorPreview=1</code>, using your draft from localStorage.</div>
-          <div style="margin-top:6px;">Publishing is still done from the Google Sheet menu.</div>
-        </div>
-      </aside>
-
-      <section class="pane center">
-        <div class="pane-title-row">
-          <div class="pane-title">Layout</div>
-          <div class="seg">
-            <span class="seg-label">Slot:</span>
-            <select id="slotFilter">
-              <option value="(all)">(all)</option>
-              <option value="left">left</option>
-              <option value="center">center</option>
-              <option value="right">right</option>
-              <option value="top">top</option>
-              <option value="bottom">bottom</option>
-              <option value="overlay">overlay</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="board" class="board"></div>
-      </section>
-
-      <aside class="pane right">
-        <div class="pane-title">Inspector</div>
-        <div id="inspectorEmpty" class="hint">Select a component card to edit.</div>
-
-        <form id="inspector" class="inspector hidden">
-          <div class="field">
-            <label>ComponentId</label>
-            <input id="fComponentId" type="text" readonly />
-          </div>
-          <div class="field">
-            <label>Type</label>
-            <input id="fType" type="text" />
-          </div>
-          <div class="field">
-            <label>BindingId</label>
-            <input id="fBindingId" type="text" />
-          </div>
-          <div class="field">
-            <label>Slot</label>
-            <select id="fSlot">
-              <option value="left">left</option>
-              <option value="center">center</option>
-              <option value="right">right</option>
-              <option value="top">top</option>
-              <option value="bottom">bottom</option>
-              <option value="overlay">overlay</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>ParentId</label>
-            <input id="fParentId" type="text" placeholder="(blank = top-level)" />
-          </div>
-          <div class="field">
-            <label>Order</label>
-            <input id="fOrder" type="number" step="10" />
-          </div>
-          <div class="field row">
-            <label class="chk">
-              <input id="fEnabled" type="checkbox" />
-              Enabled
-            </label>
-          </div>
-
-          <div class="field">
-            <label>PropsJson</label>
-            <textarea id="fProps" rows="6" spellcheck="false"></textarea>
-          </div>
-
-          <div class="field">
-            <label>StyleJson</label>
-            <textarea id="fStyle" rows="4" spellcheck="false"></textarea>
-          </div>
-
-          <div class="field">
-            <label>VisibilityJson</label>
-            <textarea id="fVisibility" rows="4" spellcheck="false"></textarea>
-          </div>
-
-          <div class="inspector-actions">
-            <button id="btnApply" type="button" class="btn primary">Apply</button>
-            <button id="btnDelete" type="button" class="btn danger">Delete</button>
-          </div>
-
-          <div id="inspectorMsg" class="msg"></div>
-        </form>
-      </aside>
-    </main>
-  </div>
-
-  
-  <div id="previewModal" class="preview-modal" aria-hidden="true">
-    <div class="preview-modal-inner">
-      <div class="preview-modal-bar">
-        <div class="preview-modal-title">Live Preview (draft)</div>
-        <div class="preview-modal-actions">
-          <button id="btnPreviewRefresh" class="btn">Refresh</button>
-          <button id="btnPreviewClose" class="btn">Close</button>
-        </div>
-      </div>
-      <iframe id="previewFrame" class="preview-iframe" src="about:blank" loading="lazy"></iframe>
     </div>
   </div>
-
-<script type="module" src="./editor.js"></script>
 </body>
 </html>

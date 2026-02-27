@@ -56,6 +56,8 @@ function applyPaladinDivineSmite(timeline){
 
 import { RadialScreen, installRadialLayout } from "./screens/radial.js";
 
+import { installDesignMode } from "./design/designMode.js";
+
 
 const appEl = document.getElementById("app");
 
@@ -246,6 +248,9 @@ async function loadFlowsConfig(){
 
 async function render() {
   const state = store.getState();
+
+  try { appEl.setAttribute("data-screen", router.getRoute()); } catch {}
+
 
   const screenFn = router.resolve();
   const ctx = {
@@ -1234,6 +1239,7 @@ if (action === "toggle-cantrip-lvl") {
   await loadModMeta();
   await loadFlowsConfig();
   wireEvents();
+  installDesignMode({ appEl, store });
   await render();
   store.subscribe(render);
 })();

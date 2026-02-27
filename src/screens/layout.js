@@ -3,6 +3,7 @@
 
 import { getBundle, loadRacesJson, loadClassesJson, loadClassesFullJson } from "../data/liveData.js";
 import { ChoiceScreen } from "./choice.js";
+import { isDesignMode, readDesignDraft } from "../design/designMode.js";
 
 // ---- helpers ----
 
@@ -241,16 +242,107 @@ function buildTree(nodes) {
   return roots;
 }
 
+// ---- zones (UIZones sheet tab) ----
+
+function normalizeZoneRow(z) {
+  return {
+    ScreenId: String(z.ScreenId ?? z.screenId ?? "").trim(),
+    ZoneId: String(z.ZoneId ?? z.zoneId ?? "").trim(),
+    ParentZoneId: String(z.ParentZoneId ?? z.parentZoneId ?? "").trim(),
+    Order: Number(z.Order ?? z.order ?? 0) || 0,
+    Enabled: toBool(z.Enabled ?? z.enabled ?? true),
+    PropsJson: z.PropsJson ?? z.propsJson ?? "{}",
+    StyleJson: z.StyleJson ?? z.styleJson ?? "{}",
+  };
+}
+
+function buildZoneTree(zones) {
+  const byId = new Map(zones.map(z => [z.ZoneId, z]));
+  for (const z of zones) z.children = [];
+  const roots = [];
+  for (const z of zones) {
+    const p = z.ParentZoneId;
+    if (p && byId.has(p)) byId.get(p).children.push(z);
+    else roots.push(z);
+  }
+  const sortRec = (arr) => {
+    arr.sort((a,b) => (a.Order - b.Order));
+    for (const z of arr) sortRec(z.children);
+  };
+  sortRec(roots);
+  return roots;
+}
+
+function zoneStyle(zone) {
+  const props = safeJsonParse(zone?.PropsJson, {});
+  const style = safeJsonParse(zone?.StyleJson, {});
+  const direction = String(props.direction || props.flexDirection || "column");
+  const gap = props.gap ?? 12;
+  const wrap = props.wrap ? "wrap" : "nowrap";
+  const justify = props.justify || "flex-start";
+  const align = props.align || "stretch";
+  const grow = props.grow;
+  const basis = props.basis;
+  const width = props.width;
+  const maxWidth = props.maxWidth;
+  const minWidth = props.minWidth;
+
+  const parts = [
+    "display:flex",
+    `flex-direction:${direction}`,
+    `gap:${Number(gap) || 0}px`,
+    `flex-wrap:${wrap}`,
+    `justify-content:${justify}`,
+    `align-items:${align}`,
+  ];
+  if (grow != null) parts.push(`flex-grow:${Number(grow)}`);
+  if (basis != null) parts.push(`flex-basis:${basis}`);
+  if (width != null) parts.push(`width:${width}`);
+  if (maxWidth != null) parts.push(`max-width:${maxWidth}`);
+  if (minWidth != null) parts.push(`min-width:${minWidth}`);
+  for (const [k,v] of Object.entries(style || {})) {
+    if (v == null || v === "") continue;
+    const cssKey = String(k).replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+    parts.push(`${cssKey}:${v}`);
+  }
+  return parts.join(";");
+}
+
+function wrapComponentHtml(componentId, innerHtml) {
+  const drag = isDesignMode() ? "draggable=\"true\"" : "";
+  return `
+    <div class="hbcr-ui-wrap" data-ui-component="${componentId}" ${drag}>
+      ${isDesignMode() ? `<div class="hbcr-ui-handle" title="Drag" aria-hidden="true">⋮⋮</div>` : ""}
+      ${innerHtml}
+    </div>
+  `;
+}
+
+function ensureDesignCss() {
+  if (!isDesignMode()) return;
+  if (document.getElementById("hbcr-design-css")) return;
+  const style = document.createElement("style");
+  style.id = "hbcr-design-css";
+  style.textContent = `
+    .hbcr-ui-wrap{position:relative}
+    .hbcr-ui-handle{position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab;user-select:none}
+    html.hbcr-show-zones [data-ui-zone]{outline:1px dashed rgba(255,255,255,.22);outline-offset:6px}
+    [data-ui-zone].hbcr-drop-hot{outline:2px solid rgba(155,183,255,.8)!important}
+    html.hbcr-show-zones [data-ui-zone]::before{content:attr(data-ui-zone);position:sticky;top:0;display:inline-block;margin:0 0 6px 0;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.8)}
+  `;
+  document.head.appendChild(style);
+}
+
 async function renderNode(node, state, bindingsById) {
   const childrenHtml = (await Promise.all(node.children.map((ch) => renderNode(ch, state, bindingsById)))).join("");
   const t = String(node.Type || "").trim();
-  if (t === "panel") return renderPanel(node, childrenHtml);
+  if (t === "panel") return wrapComponentHtml(node.ComponentId, renderPanel(node, childrenHtml));
   if (t === "choiceGrid") {
     const binding = node.BindingId ? bindingsById.get(node.BindingId) : null;
-    return await renderChoiceGrid(node, state, binding);
+    return wrapComponentHtml(node.ComponentId, await renderChoiceGrid(node, state, binding));
   }
   // Unknown component type: render children (so layouts don't hard-break)
-  return childrenHtml;
+  return wrapComponentHtml(node.ComponentId, childrenHtml);
 }
 
 /**
@@ -259,10 +351,17 @@ async function renderNode(node, state, bindingsById) {
  */
 export async function LayoutScreen(ctx, screenId) {
   const state = ctx?.state;
-  const b = await getBundle();
+  const b0 = await getBundle();
+
+  // Draft override (design mode only)
+  const draft = readDesignDraft();
+  const b = (draft && typeof draft === "object")
+    ? { ...b0, UILayout: draft.UILayout || b0?.UILayout, UIBindings: draft.UIBindings || b0?.UIBindings, UIZones: draft.UIZones || b0?.UIZones }
+    : b0;
 
   const layoutRowsRaw = asRows(b?.UILayout);
   const bindingRowsRaw = asRows(b?.UIBindings);
+  const zoneRowsRaw = asRows(b?.UIZones);
 
   const bindingsById = new Map(
     bindingRowsRaw
@@ -280,6 +379,7 @@ export async function LayoutScreen(ctx, screenId) {
         ComponentId: String(r?.ComponentId || r?.componentId || ""),
         Type: String(r?.Type || r?.type || ""),
         ParentId: String(r?.ParentId || r?.parentId || ""),
+        ZoneId: String(r?.ZoneId || r?.zoneId || r?.Slot || r?.slot || "root"),
         Slot: String(r?.Slot || r?.slot || ""),
         Order: Number(r?.Order ?? r?.order ?? 0),
         BindingId: String(r?.BindingId || r?.bindingId || ""),
@@ -293,7 +393,49 @@ export async function LayoutScreen(ctx, screenId) {
   const visibleNodes = nodes.filter((n) => evalVisibility(n.visibilityJson, state));
   const roots = buildTree(visibleNodes);
 
-  const htmlParts = [];
-  for (const r of roots) htmlParts.push(await renderNode(r, state, bindingsById));
-  return htmlParts.join("");
+  // Zones
+  const zones = zoneRowsRaw
+    .map(normalizeZoneRow)
+    .filter(z => z.ScreenId === screen)
+    .filter(z => z.Enabled && z.ZoneId);
+
+  const finalZones = zones.length ? zones : [{ ScreenId: screen, ZoneId: "root", ParentZoneId: "", Order: 0, Enabled: true, PropsJson: JSON.stringify({ direction: "column", gap: 12 }), StyleJson: "{}" }];
+  const zoneRoots = buildZoneTree(finalZones);
+
+  const rootsByZone = new Map();
+  for (const r of roots) {
+    const zid = String(r.ZoneId || r.Slot || "root") || "root";
+    if (!rootsByZone.has(zid)) rootsByZone.set(zid, []);
+    rootsByZone.get(zid).push(r);
+  }
+  for (const [zid, arr] of rootsByZone) arr.sort((a,b)=>a.Order-b.Order);
+
+  const renderZoneRec = async (z) => {
+    const childrenZonesHtml = (await Promise.all((z.children || []).map(renderZoneRec))).join("");
+    const comps = rootsByZone.get(z.ZoneId) || [];
+    const compsHtml = (await Promise.all(comps.map(n => renderNode(n, state, bindingsById)))).join("");
+    return `
+      <div class="hbcr-zone" data-ui-zone="${z.ZoneId}" style="${zoneStyle(z)}">
+        ${childrenZonesHtml}
+        ${compsHtml}
+      </div>
+    `;
+  };
+
+  ensureDesignCss();
+
+  // Expose current rows for export
+  window.__HBCR_LAST_LAYOUT__ = layoutRowsRaw.filter(r => String(r?.ScreenId || r?.screenId) === screen);
+  window.__HBCR_LAST_ZONES__ = finalZones.filter(z => z.ScreenId === screen).map(z => ({
+    ScreenId: z.ScreenId,
+    ZoneId: z.ZoneId,
+    ParentZoneId: z.ParentZoneId,
+    Order: z.Order,
+    Enabled: z.Enabled,
+    PropsJson: z.PropsJson,
+    StyleJson: z.StyleJson,
+  }));
+
+  const body = (await Promise.all(zoneRoots.map(renderZoneRec))).join("");
+  return `<div class="hbcr-layout-root">${body}</div>`;
 }

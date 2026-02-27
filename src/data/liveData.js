@@ -12,29 +12,7 @@ async function fetchBundle() {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Bundle fetch failed: ${res.status}`);
-  const bundle = await res.json();
-
-  // Editor preview override: allow the /editor app to store a draft layout in localStorage and
-  // preview it in the live Builder without publishing.
-  try {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search || "");
-      if (params.has("editorPreview")) {
-        const raw = window.localStorage && window.localStorage.getItem("hbcr_editor_draft");
-        if (raw) {
-          const draft = JSON.parse(raw);
-          if (draft && typeof draft === "object") {
-            if (Array.isArray(draft.UILayout)) bundle.UILayout = draft.UILayout;
-            if (Array.isArray(draft.UIBindings)) bundle.UIBindings = draft.UIBindings;
-          }
-        }
-      }
-    }
-  } catch (err) {
-    // ignore draft parsing errors
-  }
-
-  return bundle;
+  return await res.json();
 }
 
 export async function getBundle() {
