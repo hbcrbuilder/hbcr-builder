@@ -222,11 +222,29 @@ function syncAllPositions(appEl, store) {
     draft.UILayout = current.map(r => ({ ...r }));
   }
   const comps = Array.from(document.querySelectorAll("[data-ui-component]"));
+  let changed = false;
   for (const el of comps) {
     const compId = el.getAttribute("data-ui-component");
     if (!compId) continue;
     const row = findOrCreateRow(draft, screenId, compId);
-    applyRowToEl(el, row);
+
+    // Only apply if it differs from what's already on the element.
+    const wantLeft = px(row.X);
+    const wantTop = px(row.Y);
+    const wantW = (row.W != null && row.W !== "") ? px(row.W) : "";
+    const wantH = (row.H != null && row.H !== "") ? px(row.H) : "";
+    const wantZ = String(num(row.Z, 10));
+    if (
+      el.style.position !== "absolute" ||
+      el.style.left !== wantLeft ||
+      el.style.top !== wantTop ||
+      (wantW && el.style.width !== wantW) ||
+      (wantH && el.style.height !== wantH) ||
+      el.style.zIndex !== wantZ
+    ) {
+      applyRowToEl(el, row);
+      changed = true;
+    }
     // ensure handle exists
     if (!el.querySelector(":scope > .hbcr-ui-handle")) {
       const h = document.createElement("div");
@@ -235,10 +253,12 @@ function syncAllPositions(appEl, store) {
       h.setAttribute("data-ui-handle", "true");
       h.setAttribute("title", "Drag");
       el.appendChild(h);
+      changed = true;
     }
   }
-  writeDesignDraft(draft);
-  store?.patchUI?.({ __designTick: Date.now() });
+
+  // Avoid thrashing: only persist if something actually changed.
+  if (changed) writeDesignDraft(draft);
 }
 
 function installPointerDrag({ appEl, store }) {
@@ -316,8 +336,20 @@ export function installDesignMode({ appEl, store }) {
   syncAllPositions(appEl, store);
   installPointerDrag({ appEl, store });
 
-  const mo = new MutationObserver(() => syncAllPositions(appEl, store));
-  mo.observe(document.body, { childList: true, subtree: true });
+  // The app re-renders frequently; a naive MutationObserver causes a tight
+  // loop (observer -> sync -> DOM writes -> observer...). Throttle to one
+  // sync per animation frame and never call patchUI from sync.
+  let scheduled = false;
+  const mo = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      syncAllPositions(appEl, store);
+    });
+  });
+  // Observe only the builder root to reduce noise.
+  mo.observe(appEl || document.body, { childList: true, subtree: true });
 
   document.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-action]");
