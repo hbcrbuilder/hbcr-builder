@@ -19,6 +19,8 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
+import { isDesignMode } from "../design/designMode.js";
+
 import {
   loadRacesJson,
   loadSubracesJson,
@@ -593,6 +595,7 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 export async function RadialScreen({ state }) {
   const ch = state.character;
   const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
+  const design = isDesignMode();
   let stage = ui.stage || "race";
   const buildLevel = Number(ui.buildLevel ?? 1);
 
@@ -1677,11 +1680,46 @@ const sheet = `
 
 
   // (Left nav removed; stageTabsDock handles navigation.)
+  // ------------------------------
+  // Design Mode: expose a small, movable layout for the editor.
+  // This does NOT change the runtime UI in normal mode.
+  // ------------------------------
+  const defaultZones = [
+    { ScreenId: "radial", ZoneId: "root",    ParentZoneId: "",      Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "row" }),    StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "left",    ParentZoneId: "root",  Order: 10, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "right",   ParentZoneId: "root",  Order: 20, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
+    { ScreenId: "radial", ZoneId: "overlay", ParentZoneId: "root",  Order: 30, Enabled: true, PropsJson: JSON.stringify({ direction: "column" }), StyleJson: "{}" },
+  ];
+
+  const defaultLayoutRows = [
+    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", ZoneId: "left",    Slot: "center",  Order: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", ZoneId: "right",   Slot: "center",  Order: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.picker",  Type: "block", ParentId: "", ZoneId: "overlay", Slot: "overlay", Order: 30, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+  ];
+
+  if (design && typeof window !== "undefined") {
+    window.__HBCR_LAST_ZONES__ = defaultZones;
+    window.__HBCR_LAST_LAYOUT__ = defaultLayoutRows;
+  }
+
+  const wrapComponent = (componentId, innerHtml) => {
+    if (!design) return innerHtml;
+    return `
+      <div class="hbcr-ui-wrap" data-ui-component="${escapeHtml(componentId)}" style="position:relative;">
+        <div class="hbcr-ui-handle" data-ui-handle title="Drag">${escapeHtml(componentId)}</div>
+        ${innerHtml}
+      </div>
+    `;
+  };
+
+  const pickerHtml = await renderPickerDrawer(state);
+
   return `
-    <div class="radial-shell">
-      <div class="radial-pane" style="position:relative;z-index:2;pointer-events:auto;">
-        ${stageTabsDock}
-        ${stage === "build" ? `
+    <div class="radial-shell" data-ui-zone="root">
+      <div class="radial-pane" data-ui-zone="left" style="position:relative;z-index:2;pointer-events:auto;">
+        ${wrapComponent("radial.pane", `
+          ${stageTabsDock}
+          ${stage === "build" ? `
           ${levelStripDock}
           <div class="build-panel" style="margin-top:10px">
             <div class="sheet-section-title">CLASS AT THIS LEVEL</div>
@@ -1798,7 +1836,7 @@ const sheet = `
               `;
             })()}
           </div>
-        ` : `
+          ` : `
           <div class="radial-stage" data-stage="${escapeHtml(stage)}" data-race="${escapeHtml(ch.race ?? "")}" style="position:relative;z-index:1;">
             <div class="radial-center">
               <div class="radial-center-title">${escapeHtml(centerTitle)}</div>
@@ -1806,12 +1844,15 @@ const sheet = `
             </div>
             ${renderOrbit(orbitOptions)}
           </div>
-        `}
+          `}
+        `)}
       </div>
-      <div class="radial-summary">
-        ${sheet}
+      <div class="radial-summary" data-ui-zone="right">
+        ${wrapComponent("radial.summary", sheet)}
       </div>
-      ${await renderPickerDrawer(state)}
+      <div data-ui-zone="overlay">
+        ${wrapComponent("radial.picker", pickerHtml)}
+      </div>
     </div>
     `;
 }
