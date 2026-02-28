@@ -19,7 +19,7 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
-import { isDesignMode, isSlotEditor, readDesignDraft } from "../design/designMode.js";
+import { isDesignMode, readDesignDraft } from "../design/designMode.js";
 
 import {
   loadRacesJson,
@@ -615,11 +615,8 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 export async function RadialScreen({ state }) {
   const ch = state.character;
   const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
-    // In slot-editor, we keep routing stages intact; the Build shell is always visible and pickers open as overlays.
-  const effectiveStage = (ui.stage || "race");
-
   const design = isDesignMode();
-  let stage = effectiveStage;
+  let stage = ui.stage || "race";
   const buildLevel = Number(ui.buildLevel ?? 1);
 
   // liveData.loadData() may return either:
@@ -1731,10 +1728,6 @@ const sheet = `
   };
 
   const styleFor = (componentId) => {
-    // Special full-screen overlay for the radial orbit picker (Race/Subrace/Class/Subclass).
-    if (String(componentId) === "radial.orbit") {
-      return "position:absolute;left:0;top:0;right:0;bottom:0;z-index:6000;pointer-events:auto;";
-    }
     const rows = getLayoutRows();
     const row = rows.find(r => String(r?.ComponentId) === String(componentId));
     const n = (v, f=0) => {
@@ -1748,7 +1741,7 @@ const sheet = `
 
   const wrapComponent = (componentId, innerHtml) => {
     // Always wrap: absolute layout is the permanent renderer.
-    const extraClass = componentId === "radial.pane" ? "radial-pane" : (componentId === "radial.summary" ? "radial-summary" : (componentId === "radial.picker" ? "radial-overlay" : (componentId === "radial.orbit" ? "radial-orbit" : "")));
+    const extraClass = componentId === "radial.pane" ? "radial-pane" : (componentId === "radial.summary" ? "radial-summary" : (componentId === "radial.picker" ? "radial-overlay" : ""));
     return `
       <div class="hbcr-ui-wrap ${extraClass}" data-ui-component="${escapeHtml(componentId)}" style="${styleFor(componentId)}">
         ${innerHtml}
@@ -1758,39 +1751,11 @@ const sheet = `
 
   const pickerHtml = await renderPickerDrawer(state);
 
-  const orbitOverlayHtml = (stage === "build") ? "" : `
-    <div class="radial-orbit-overlay" style="
-         position:absolute;left:0;top:0;right:0;bottom:0;
-         display:grid;place-items:center;
-         background:rgba(0,0,0,0.35);
-         backdrop-filter: blur(2px);
-         ">
-      <div style="position:relative;width:min(880px,92vw);height:min(720px,82vh);">
-        <button type="button" data-action="radial-close" aria-label="Close"
-                style="position:absolute;right:10px;top:10px;z-index:10;
-                       width:34px;height:34px;border-radius:999px;
-                       border:1px solid rgba(255,215,128,0.25);
-                       background:rgba(0,0,0,0.55);
-                       color:rgba(233,215,184,0.95);
-                       cursor:pointer;">✕</button>
-        <div style="position:absolute;left:0;top:0;right:0;bottom:0;">
-          <div class="radial-stage" data-stage="${escapeHtml(stage)}" data-race="${escapeHtml(ch.race ?? "")}" style="position:absolute;left:0;top:0;right:0;bottom:0;">
-            <div class="radial-center">
-              <div class="radial-center-title">${escapeHtml(centerTitle)}</div>
-              ${centerSubtitle ? `<div class="radial-center-sub">${escapeHtml(centerSubtitle)}</div>` : ``}
-            </div>
-            ${renderOrbit(orbitOptions)}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
   return `
     <div class="radial-shell" style="position:relative;">
       ${wrapComponent("radial.pane", `
           ${stageTabsDock}
-          
+          ${stage === "build" ? `
           ${levelStripDock}
           <div class="build-panel" style="margin-top:10px">
             <div class="sheet-section-title">CLASS AT THIS LEVEL</div>
@@ -1842,10 +1807,81 @@ const sheet = `
                     return `<option value="${escapeHtml(s.id)}" ${sel}>${escapeHtml(s.name)}</option>`;
                   }).join("")}
                 </select>
-                ${isLocked ? `<div class="sheet-muted" style="margin-top:6px;">Locked to subclass chosen at character level ${firstIdx+1}.</div>
+                ${isLocked ? `<div class="sheet-muted" style="margin-top:6px;">Locked to subclass chosen at character level ${firstIdx+1}.</div>` : ``}
+              `;
+            })()}
 
+            ${(() => {
+              const charLvl = Number(ui.buildLevel ?? 1);
+              const timeline = ch.build?.timeline || [];
+              const entry = timeline[charLvl-1] || {};
+              const classId = entry.classId || "";
+              const subclassId = (() => {
+                if (!classId) return "";
+                for (let k = charLvl - 1; k >= 0; k--) {
+                  const e = timeline[k];
+                  if (!e) continue;
+                  if (String(e.classId || "") !== String(classId)) continue;
+                  if (e.subclassId) return String(e.subclassId);
+                }
+                return "";
+              })();
 
-      ${wrapComponent("radial.orbit", orbitOverlayHtml)}
+              const classLevel = classId
+                ? timeline.slice(0, charLvl).filter(e => (e?.classId || "") === classId).length
+                : 0;
+              const subclassObj = classId && subclassId ? (subclassesIndex.get(classId)?.get(subclassId) || null) : null;
+              return `
+                <div style="margin-top:10px;opacity:.9;font-size:12px;">
+                  ${classId ? `${escapeHtml((classMap.get(classId)?.name || classId))} Class Level: <b>${classLevel}</b>` : ""}
+                </div>
+                <!-- Picks (this level) moved to the top-right dock -->
+                ${(() => {
+                  let feats = featureNamesAtLevel(classId, subclassObj, classLevel || 1);
+
+                  // Also show Race/Subrace features when editing Level 1.
+                  if (Number(buildLevel) === 1) {
+                    const raceId = String(ch.race || "").trim();
+                    const subraceId = String(ch.subrace || "").trim();
+                    const raceFeats = [
+                      ...getFeatures("race", raceId, 1),
+                      ...getFeatures("subrace", subraceId, 1),
+                    ].filter(Boolean);
+
+                    const merged = [];
+                    for (const n of [...raceFeats, ...feats]) {
+                      const nm = String(n || "").trim();
+                      if (nm && !merged.includes(nm)) merged.push(nm);
+                    }
+                    feats = merged;
+                  }
+                  if (!feats.length) return ``;
+                  return `
+                    <div style="margin-top:12px">
+                      <div class="sheet-section-title">FEATURES (THIS LEVEL)</div>
+                      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+                        ${feats.map(n => `
+                          <div style="padding:10px 12px;border-radius:14px;border:1px solid rgba(255,215,128,0.12);background:rgba(0,0,0,0.18);opacity:.95;">
+                            ${escapeHtml(n)}
+                          </div>
+                        `).join("")}
+                      </div>
+                    </div>
+                  `;
+                })()}
+              `;
+            })()}
+          </div>
+          ` : `
+          <div class="radial-stage" data-stage="${escapeHtml(stage)}" data-race="${escapeHtml(ch.race ?? "")}" style="position:relative;z-index:1;">
+            <div class="radial-center">
+              <div class="radial-center-title">${escapeHtml(centerTitle)}</div>
+              ${centerSubtitle ? `<div class="radial-center-sub">${escapeHtml(centerSubtitle)}</div>` : ``}
+            </div>
+            ${renderOrbit(orbitOptions)}
+          </div>
+          `}
+        `)}
 
       ${wrapComponent("radial.summary", sheet)}
       ${wrapComponent("radial.picker", pickerHtml)}
