@@ -19,7 +19,7 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
-import { isDesignMode, isSlotEditor, readDesignDraft, getDraftComponentsFor } from "../design/designMode.js";
+import { isDesignMode, readDesignDraft } from "../design/designMode.js";
 
 import {
   loadRacesJson,
@@ -1369,47 +1369,6 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
     return Array.isArray(v) ? v.length : (v ? 1 : 0);
   };
 
-  const renderDockExtrasHtml = () => {
-    try {
-      const d = readDesignDraft() || {};
-      const rows = Array.isArray(d.UIComponents) ? d.UIComponents : [];
-      const extras = rows
-        .filter(r => String(r.ScreenId||"")==="radial" && String(r.SlotId||"")==="picksDock")
-        .sort((a,b)=>Number(a.Order||0)-Number(b.Order||0));
-      if (!extras.length) return "";
-      return extras.map((r) => {
-        if (String(r.Type||"") !== "PickCard") return "";
-        let props = {};
-        try { props = r.PropsJson ? JSON.parse(String(r.PropsJson)) : {}; } catch { props = {}; }
-        const label = String(props.label || "Custom");
-        const route = String(props.route || "");
-        const need = Math.max(0, Number(props.need || 0));
-        if (!route) return "";
-        const extra = (route === "spells" || route === "cantrips")
-          ? `|${escapeHtml(String(props.ownerType || ""))}|${escapeHtml(String(props.ownerId || ""))}|${escapeHtml(String(props.listOverride || ""))}`
-          : "";
-        const routeId = `${escapeHtml(route)}|${escapeHtml(String(need))}${extra}`;
-        return dmWrap(`radial.picks.dock.custom.${escapeHtml(String(r.ComponentId||route))}`, `
-          <button class="pick-card pick-card--dock" type="button"
-              data-action="radial-go" data-id="${routeId}">
-            <div class="pick-name">${escapeHtml(label)}</div>
-          </button>
-        `);
-      }).join("");
-    } catch {
-      return "";
-    }
-  };
-
-  const renderDockAddButton = () => {
-    return dmWrap("radial.picks.dock.add", `
-      <button class="pick-card pick-card--dock" type="button"
-        data-action="dm-add-dock-pick" data-id="picksDock">
-        <div class="pick-name">+ Add</div>
-      </button>
-    `);
-  };
-
   return `
     <div class="pick-grid pick-grid--dock" aria-label="Picks this level">
       ${steps.map((s) => {
@@ -1434,9 +1393,6 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
           </button>
         `);
       }).join("")}
-      ${renderDockExtrasHtml()}
-      ${design && isSlotEditor() ? renderDockAddButton() : ""}
-
     </div>
   `;
 }

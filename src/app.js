@@ -361,64 +361,6 @@ function wireEvents() {
   // Allow native <select> interactions without triggering a re-render on click.
   if (el && el.tagName === "SELECT") return;
 
-      
-      // Design Mode (slot editor): add a pick card into the dock slot
-      if (action === "dm-add-dock-pick") {
-        try {
-          if (!(window && window.__HBCR_DESIGN__ === true)) return;
-        } catch {}
-        const slotId = id || "picksDock";
-        // Quick template menu (keep no-code): pick an existing route/screen.
-        const routes = [
-          "cantrips",
-          "spells",
-          "feats",
-          "passives",
-          "metamagic",
-          "wildshapes",
-          "manoeuvres",
-          "smites",
-          "frontierBallistics",
-          "dragonAncestor",
-          "pactBinding",
-          "steelforgedFlourishes",
-          "combatTechniques",
-          "elementalFletchings",
-          "gatheredSwarm",
-          "optimizationMatrix",
-          "sabotageMatrix",
-        ];
-        const route = prompt("Add Pick Card\n\nChoose route:\n" + routes.join("\n"), "cantrips") || "";
-        if (!route) return;
-        const label = prompt("Label for this button:", route) || route;
-        const needStr = prompt("Need count (0 for no badge):", "0") || "0";
-        const need = Math.max(0, Number(needStr || 0));
-        const props = { route: String(route).trim(), label: String(label).trim(), need };
-        // Store in draft UIComponents (localStorage).
-        const key = "hbcr_design_draft";
-        const raw = localStorage.getItem(key);
-        let d = {};
-        try { d = raw ? JSON.parse(raw) : {}; } catch { d = {}; }
-        d.UIComponents = Array.isArray(d.UIComponents) ? d.UIComponents : [];
-        const now = Date.now();
-        const compId = "custom." + props.route + "." + now;
-        d.UIComponents.push({
-          ScreenId: "radial",
-          SlotId: slotId,
-          ComponentId: compId,
-          Type: "PickCard",
-          Order: d.UIComponents.length + 1,
-          Enabled: "true",
-          PropsJson: JSON.stringify(props),
-          VisibilityJson: ""
-        });
-        localStorage.setItem(key, JSON.stringify(d));
-        // Force re-render by nudging UI state
-        const ui = store.getState().ui || {};
-        store.patchUI({ __dmTick: (ui.__dmTick || 0) + 1 });
-        return;
-      }
-
       // Trait dropdown (custom menu)
       if (action === "toggle-trait-menu") {
         const ui = store.getState().ui || {};

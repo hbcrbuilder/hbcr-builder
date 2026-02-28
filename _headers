@@ -1,2 +1,2 @@
 /*
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; connect-src 'self' https://hbcr-api.hbcrbuilder.workers.dev; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self';
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://hbcr-api.hbcrbuilder.workers.dev https://cloudflareinsights.com https://www.googletagmanager.com https://cdn.cookielaw.org https://geolocation.onetrust.com; img-src 'self' data: https:; script-src 'self' https://www.googletagmanager.com https://cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self';

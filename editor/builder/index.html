@@ -12,11 +12,17 @@
 
 <link rel="icon" type="image/png" href="assets/ui/hbcr-icon.png"/>
   <link rel="stylesheet" href="src/ui.css"/>
-  <link rel="stylesheet" href="editor/builder/designMode.css"/>
+  <style>
+    .hbcr-design-toolbar { position: fixed; z-index: 9999; }
+  </style>
 </head>
 <body>
-  <script src="editor/builder/designFlags.js"></script>
-<div id="app" class="app-root" aria-label="HBCR Character Builder (Design Mode)"></div>
+  <script>
+    // Enables in-app design tools. Protected by /editor/* invite auth.
+    window.__HBCR_DESIGN__ = true;
+    window.__HBCR_DESIGN_KIND__ = "slots";
+  </script>
+  <div id="app" class="app-root" aria-label="HBCR Character Builder (Design Mode)"></div>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>
