@@ -1,7 +1,7 @@
 /* ===== LOCK TYPOGRAPHY ===== */
 
 html, body, .sheet{
-  font-family: "Source Serif 4", serif !important;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
   font-weight: 550 !important;
   letter-spacing: 0.01em !important;
   line-height: 1.55 !important;
@@ -9,7 +9,7 @@ html, body, .sheet{
 
 .sheet-title,
 .sheet-section-title{
-  font-family: "Cinzel", serif !important;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
   font-weight: 700 !important;
 }
 /* HBCR Builder - BG3-inspired UI shell (style-first starter)
@@ -40,7 +40,7 @@ html, body, .sheet{
 html,body{
   height:100%;
   margin:0;
-  font-family: "Cinzel", "Georgia", serif;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   color: var(--text);
   overflow:auto;
 
@@ -790,7 +790,7 @@ html,body{
 .radial-glyph{ font-size: 20px; opacity: .9; }
 
 .sheet{
-  font-family: "Cinzel", "Georgia", serif;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 .sheet-title{
