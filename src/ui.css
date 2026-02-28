@@ -1,7 +1,7 @@
 /* ===== LOCK TYPOGRAPHY ===== */
 
 html, body, .sheet{
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-family: "Source Serif 4", serif !important;
   font-weight: 550 !important;
   letter-spacing: 0.01em !important;
   line-height: 1.55 !important;
@@ -9,7 +9,7 @@ html, body, .sheet{
 
 .sheet-title,
 .sheet-section-title{
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-family: "Cinzel", serif !important;
   font-weight: 700 !important;
 }
 /* HBCR Builder - BG3-inspired UI shell (style-first starter)
@@ -40,7 +40,7 @@ html, body, .sheet{
 html,body{
   height:100%;
   margin:0;
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: "Cinzel", "Georgia", serif;
   color: var(--text);
   overflow:auto;
 
@@ -579,9 +579,13 @@ html,body{
 
 .radial-shell{
   width: 100%;
-  min-height: 860px;
-  position: relative;
-  display: block;
+  height: 100%;
+  display: grid;
+  /* Left pane stays a controlled width; the summary fills the rest
+     and reaches the far right edge. */
+  grid-template-columns: 760px 1fr;
+  gap: 18px;
+  align-items: stretch;
   max-width: none;
   margin: 0;
 }
@@ -790,7 +794,7 @@ html,body{
 .radial-glyph{ font-size: 20px; opacity: .9; }
 
 .sheet{
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: "Cinzel", "Georgia", serif;
 }
 
 .sheet-title{
@@ -844,7 +848,7 @@ html,body{
 
 
 @media (max-width: 980px){
-  .radial-shell{ min-height: 860px; }
+  .radial-shell{ grid-template-columns: 1fr; }
   .leftnav{ display:none; }
   /* orbit node positions are computed in JS; no transform override needed */
 }
