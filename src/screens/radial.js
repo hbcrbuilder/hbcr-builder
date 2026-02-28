@@ -19,8 +19,11 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
+import { isDesignMode, readDesignDraft } from "../design/designMode.js";
+
 import {
   loadRacesJson,
+  loadSubracesJson,
   loadClassesJson,
   loadData
 } from "../data/liveData.js";
@@ -28,6 +31,7 @@ import {
 // --- Hot-path caches ---
 // The UI re-renders on every click; re-fetching big JSON files can bog down the browser.
 let racesCachePromise = null;
+let subracesCachePromise = null;
 let classesCachePromise = null;
 let spellsCachePromise = null;
 let levelFlowsCachePromise = null;
@@ -42,6 +46,15 @@ async function loadRaces() {
     racesCachePromise = loadRacesJson();
   }
   return await racesCachePromise;
+}
+
+async function loadSubraces() {
+  if (!subracesCachePromise) {
+    // In live (bundle) mode this comes from bundle.Subraces.
+    // Local fallback file may not exist in older repo snapshots; loadData() will safely return [].
+    subracesCachePromise = loadSubracesJson();
+  }
+  return await subracesCachePromise;
 }
 
 async function loadClasses() {
@@ -97,14 +110,20 @@ async function loadChoices() {
       const count = row.count ?? row.Count ?? row.pickCount ?? row.pick_count ?? row.pickcount ?? 0;
       const listOverride = row.listOverride ?? row.ListOverride ?? row.list_override ?? row.listoverride ?? null;
 
+
+      const nOwnerType = String(ownerType || "").trim().toLowerCase();
+      const nOwnerId = String(ownerId || "").trim().toLowerCase();
+      const nPickType = String(pickType || "").trim().toLowerCase();
+      const nListOverride = listOverride == null ? null : String(listOverride || "").trim().toLowerCase();
+
       return {
         ...row,
-        ownerType,
-        ownerId,
+        ownerType: nOwnerType,
+        ownerId: nOwnerId,
         level,
-        pickType,
+        pickType: nPickType,
         count,
-        listOverride
+        listOverride: nListOverride
       };
     };
 
@@ -187,6 +206,52 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+// Design Mode wrapper helper.
+// IMPORTANT: This must be available to helpers like renderOrbit() which live
+// at module scope (outside the main render function).
+function dmWrap(id, html) {
+  try {
+    const design = typeof window !== "undefined" && window.__HBCR_DESIGN__ === true;
+    return design
+      ? `<div class="hbcr-dm-inner" data-ui-component="${escapeHtml(id)}">${html}</div>`
+      : html;
+  } catch (_e) {
+    return html;
+  }
+}
+
+
+// ---- Editor-only UIComponent draft helpers (localStorage) ----
+const __HBCR_IS_EDITOR = (typeof location !== "undefined") && location.pathname.includes("/editor");
+
+function __hbcrPinsKey(classId) {
+  return `hbcr_ui_pins_subclass:${classId || ""}`;
+}
+
+function __hbcrGetPinnedSubclassIds(classId) {
+  try {
+    const raw = localStorage.getItem(__hbcrPinsKey(classId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function __hbcrPinSubclass(classId, subclassId) {
+  const cur = __hbcrGetPinnedSubclassIds(classId);
+  const next = [subclassId, ...cur.filter(x => x !== subclassId)];
+  try { localStorage.setItem(__hbcrPinsKey(classId), JSON.stringify(next)); } catch {}
+  return next;
+}
+
+function __hbcrUnpinSubclass(classId, subclassId) {
+  const cur = __hbcrGetPinnedSubclassIds(classId);
+  const next = cur.filter(x => x !== subclassId);
+  try { localStorage.setItem(__hbcrPinsKey(classId), JSON.stringify(next)); } catch {}
+  return next;
+}
 function pill(text) {
   return `<span class="sheet-pill">${escapeHtml(text)}</span>`;
 }
@@ -198,12 +263,18 @@ function renderOrbit(options) {
     <div class="radial-orbit">
       ${options
         .map((o, i) => {
-          return `
-            <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${o.id}">
-              <div class="radial-node-button">${o.icon ?? ""}</div>
-              <div class="radial-node-label">${escapeHtml(o.label)}</div>
-            </button>
-          `;
+          // Orbit nodes are part of the radial wheel (not the top tabs row).
+          // Wrap them with a stable id so Design Mode can target them later.
+          const nodeId = o?.id ?? i;
+          return dmWrap(
+            `radial.orbit.node.${nodeId}`,
+            `
+              <button class="radial-node" data-idx="${i}" data-action="${o.action}" data-id="${o.id}">
+                <div class="radial-node-button">${o.icon ?? ""}</div>
+                <div class="radial-node-label">${escapeHtml(o.label)}</div>
+              </button>
+            `
+          );
         })
         .join("")}
     </div>
@@ -382,8 +453,12 @@ function nodeIcon(path) {
   if (!path) return `<div class="radial-fallback">◈</div>`;
 
   const p = String(path);
-  const normalized = p.startsWith("assets/") ? `./${p}` : p;
 
+  // Some sheets may store inline SVG or prebuilt <img> HTML.
+  // If it looks like markup, trust it.
+  if (p.trim().startsWith("<")) return p;
+
+  const normalized = p.startsWith("assets/") ? `./${p}` : p;
   return `<img src="${escapeHtml(normalized)}" alt="" />`;
 }
 
@@ -496,7 +571,7 @@ function formatSpellsBySpellLevel(cantripIds, spellIds, spells) {
     groups.get(key).push(s.name);
   }
   if (groups.size === 0) return '—';
-  const order = ["cantrips","spells","metamagic","dragonAncestor","manoeuvres","wildshapes","frontierBallistics","smites","passives","feats","pactBinding","steelforgedFlourishes","combatTechniques","elementalFletchings","gatheredSwarm","optimizationMatrix","sabotageMatrix"];
+  const order = ['Cantrips','Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'];
   const keys = [...groups.keys()].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
   return keys.map(k => `<div style="margin-bottom:6px"><b>${k}:</b> ${groups.get(k).join(', ')}</div>`).join('');
 }
@@ -570,34 +645,99 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
-  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
+  const ch = state.character;
+  const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
+  const designOpen = !!ui.designAddSubclassOpen;
+  const design = isDesignMode();
+  let stage = ui.stage || "race";
+  const buildLevel = Number(ui.buildLevel ?? 1);
+
+  // liveData.loadData() may return either:
+  //   - an array of normalized rows (bundle path)
+  //   - an object wrapper like { races:[...], classes:[...], spells:[...] } (older/local json shape)
+  // Radial UI must tolerate both.
+  const unwrapList = (data, key) => {
+    if (Array.isArray(data)) return data;
+    const v = data?.[key];
+    if (Array.isArray(v)) return v;
+    // Some sheets ship as {rows:[...]} in a few places
+    if (Array.isArray(data?.rows)) return data.rows;
+    return [];
+  };
+
+  // Core data is needed for initial navigation.
+  const [racesData, subracesData, classesData, classesFull] = await Promise.all([
     loadRaces(),
+    loadSubraces(),
     loadClasses(),
     loadClassesFull(),
-    loadSpells(),
-    loadLevelFlows(),
-    loadTraits(),
-    loadFeats(),
-    loadClassFeatures(),
-    loadRaceFeatures(),
-    loadChoices()
   ]);
 
-  const races = racesData?.races ?? [];
-  const classes = classesData?.classes ?? [];
+  // Heavy build data (spells/flows/features/choices) is only needed once you're in Build
+  // or actively opening a picker. This cuts first-load latency drastically in live mode.
+  const pickerOpen = Boolean(state.ui?.picker?.open);
+  const needBuildData = stage === "build" || pickerOpen;
+
+  let spellsData = null;
+  let levelFlows = null;
+  let traitsData = null;
+  let featsData = null;
+  let classFeaturesRaw = null;
+  let raceFeaturesRaw = null;
+  let choicesRaw = null;
+
+  if (needBuildData) {
+    [spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
+      loadSpells(),
+      loadLevelFlows(),
+      loadTraits(),
+      loadFeats(),
+      loadClassFeatures(),
+      loadRaceFeatures(),
+      loadChoices(),
+    ]);
+  }
+
+  const races = unwrapList(racesData, "races");
+  const subracesFlat = unwrapList(subracesData, "subraces");
+  const classes = unwrapList(classesData, "classes");
+
+  // ---- Attach subraces to races (live bundle provides Subraces as a separate sheet) ----
+  // Supports multiple possible parent-id columns.
+  const subracesByRace = new Map();
+  for (const sr of (subracesFlat || [])) {
+    const parentRaceId =
+      sr?.raceId ?? sr?.RaceId ??
+      sr?.parentRaceId ?? sr?.ParentRaceId ??
+      sr?.ownerId ?? sr?.OwnerId ??
+      sr?.Race ?? sr?.race ??
+      null;
+    const rid = parentRaceId ? String(parentRaceId) : null;
+    if (!rid) continue;
+    if (!subracesByRace.has(rid)) subracesByRace.set(rid, []);
+    subracesByRace.get(rid).push(sr);
+  }
+
+  // Mutate-in-place is OK here; we only use these objects for UI rendering.
+  for (const r of (races || [])) {
+    if (!r || typeof r !== "object") continue;
+    if (!Array.isArray(r.subraces) || r.subraces.length === 0) {
+      const list = subracesByRace.get(String(r.id)) || [];
+      if (list.length) r.subraces = list;
+    }
+  }
+
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
   const subclassesIndex = indexSubclasses(classesFull);
-  const spells = spellsData?.spells ?? [];
-  const traits = traitsData?.traits ?? traitsData ?? [];
-  const feats = featsData?.feats ?? [];
+  const spells = unwrapList(spellsData, "spells");
+  const traits = unwrapList(traitsData, "traits");
+  const feats = unwrapList(featsData, "feats");
 
   const spellsIndex = new Map(spells.map((s) => [s.id, s]));
   const featsIndex = new Map(feats.map((f) => [f.id, f]));
 
-  const ch = state.character;
-  const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
-  let stage = ui.stage || "race";
-  const buildLevel = Number(ui.buildLevel ?? 1);
+  
+  // Character/UI context (set near top)
 
   // Load only the class progression files currently used in the multiclass timeline.
   const usedClassIds = Array.from(new Set((ch.build?.timeline || []).map(e => e?.classId).filter(Boolean)));
@@ -733,14 +873,14 @@ const currentSubclass =
   }
 
   const getFeatures = (ownerType, ownerId, level) => {
-    const key = `${String(ownerType||"").toLowerCase()}|${String(ownerId||"")}`;
+    const key = `${String(ownerType||"").toLowerCase().trim()}|${String(ownerId||"").toLowerCase().trim()}`;
     const byLvl = featureIndex.get(key);
     if (!byLvl) return [];
     return byLvl.get(Number(level)) || [];
   };
 
   const getChoices = (ownerType, ownerId, level) => {
-    const key = `${String(ownerType||"").toLowerCase()}|${String(ownerId||"")}`;
+    const key = `${String(ownerType||"").toLowerCase().trim()}|${String(ownerId||"").toLowerCase().trim()}`;
     const byLvl = choiceIndex.get(key);
     if (!byLvl) return [];
     return byLvl.get(Number(level)) || [];
@@ -754,41 +894,42 @@ const currentSubclass =
     const sid = String(subclassObj?.id || "").trim();
     const lvl = Number(classLevel);
 
-    if (!cid || !sid || !Number.isFinite(lvl)) return steps;
+    // Subclass is optional: many classes gain picks before a subclass is chosen,
+    // and multiclass timelines can include levels without a subclass.
+    if (!cid || !Number.isFinite(lvl)) return steps;
 
     const buckets = [
       ...getChoices("class", cid, lvl),
-      ...getChoices("subclass", sid, lvl),
+      ...(sid ? getChoices("subclass", sid, lvl) : []),
     ];
 
-    const mapPickTypeToRoute = (pt) => {
-	const k = String(pt || "").toLowerCase().trim();
+	    const mapPickTypeToRoute = (pt) => {
+		const k = String(pt || "").toLowerCase().trim();
 
-	// core
-	if (k === "cantrip" || k === "cantrips") return "cantrips";
-	if (k === "spell" || k === "spells") return "spells";
-	if (k === "feat" || k === "feats") return "feats";
-	if (k === "passive" || k === "passives") return "passives";
+		// core spell-ish picks
+		if (k === "cantrip" || k === "cantrips") return "cantrips";
+		if (k === "spell" || k === "spells") return "spells";
+		if (k === "frontier_ballistics" || k === "frontier ballistics" || k === "frontierballistics") return "frontierBallistics";
+		if (k === "smite" || k === "smites") return "smites";
+		if (k === "metamagic" || k === "metamagics") return "metamagic";
 
-	// existing extras
-	if (k === "frontier_ballistics" || k === "frontierballistics") return "frontierBallistics";
-	if (k === "wildshape" || k === "wildshapes") return "wildshapes";
-	if (k === "smite" || k === "smites") return "smites";
-	if (k === "metamagic") return "metamagic";
+		// feature picks
+		if (k === "passive" || k === "passives") return "passives";
+		if (k === "feat" || k === "feats") return "feats";
 
-	// HBCR extras (sheet pickType values vary a bit, accept aliases)
-	if (k === "dragonancestor" || k === "dragon_ancestor" || k === "dragon-ancestor") return "dragonAncestor";
-	if (k === "manoeuvre" || k === "manoeuvres" || k === "maneuver" || k === "maneuvers") return "manoeuvres";
-	if (k === "pactbinding" || k === "pact_binding" || k === "pact-binding") return "pactBinding";
-	if (k === "steelforgedflourishes" || k === "steelforged_flourishes" || k === "steelforged-flourishes") return "steelforgedFlourishes";
-	if (k === "combattechniques" || k === "combat_techniques" || k === "combat-techniques" || k === "combattechnique") return "combatTechniques";
-	if (k === "elementalfletchings" || k === "elemental_fletchings" || k === "elemental-fletchings") return "elementalFletchings";
-	if (k === "gatheredswarm" || k === "gathered_swarm" || k === "gathered-swarm") return "gatheredSwarm";
-	if (k === "optimizationmatrix" || k === "optimization_matrix" || k === "optimization-matrix") return "optimizationMatrix";
-	if (k === "sabotagematrix" || k === "sabotage_matrix" || k === "sabotage-matrix") return "sabotageMatrix";
+		// new systems
+		if (k === "manoeuvre" || k === "manoeuvres" || k === "maneuver" || k === "maneuvers") return "manoeuvres";
+		if (k === "combat_technique" || k === "combat_techniques" || k === "combat technique" || k === "combat techniques") return "combatTechniques";
+		if (k === "elemental_fletching" || k === "elemental_fletchings" || k === "fletching" || k === "fletchings") return "elementalFletchings";
+		if (k === "optimization_matrix" || k === "optimization matrix" || k === "optimization matrices") return "optimizationMatrix";
+		if (k === "sabotage_matrix" || k === "sabotage matrix" || k === "sabotage matrices") return "sabotageMatrix";
+		if (k === "wildshape" || k === "wildshapes" || k === "wild shape" || k === "wild shapes") return "wildshapes";
 
-	return null;
-};
+		// Draconic Bloodline L1: Dragon Ancestor / Draconic Ancestry
+		if (k === "dragon_ancestor" || k === "draconic_ancestry" || k === "draconic ancestry") return "dragonAncestor";
+
+		return null;
+		};
 
 
     const acc = new Map(); // route -> { need, ownerType, ownerId, listOverride }
@@ -834,11 +975,11 @@ const currentSubclass =
     // double-counting or mismatches.
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("cantrips")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "cantripsKnownByLevel");
-      if (Number(scNeed) > 0) acc.set("cantrips", Number(scNeed));
+      if (Number(scNeed) > 0) acc.set("cantrips", { need: Number(scNeed), listOverride: "any" });
     }
     if (CLASS_WIDE_SPELLCASTERS.has(cid) && !acc.has("spells")) {
       const scNeed = deltaFromSpellcasting(cid, lvl, "spellsKnownByLevel");
-      if (Number(scNeed) > 0) acc.set("spells", Number(scNeed));
+      if (Number(scNeed) > 0) acc.set("spells", { need: Number(scNeed), listOverride: "class" });
     }
 
     for (const [route, meta] of acc.entries()) {
@@ -852,9 +993,33 @@ const currentSubclass =
       });
     }
 
-    // Stable ordering (matches BG3-ish expectation).
-    const order = ["cantrips", "spells", "frontierBallistics", "smites", "passives", "feats"];
-    steps.sort((a,b) => order.indexOf(a.route) - order.indexOf(b.route));
+	    // Stable ordering (matches BG3-ish expectation).
+	    const order = [
+	      // spell-ish
+	      "cantrips",
+	      "spells",
+	      "metamagic",
+	      "smites",
+	      "frontierBallistics",
+
+	      // new systems
+	      "optimizationMatrix",
+	      "sabotageMatrix",
+	      "manoeuvres",
+	      "combatTechniques",
+	      "elementalFletchings",
+	      "wildshapes",
+	      "dragonAncestor",
+
+	      // generic
+	      "passives",
+	      "feats",
+	    ];
+	    const idx = (r) => {
+	      const i = order.indexOf(r);
+	      return i === -1 ? 999 : i;
+	    };
+	    steps.sort((a,b) => idx(a.route) - idx(b.route));
 
     return steps;
   }
@@ -992,15 +1157,15 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
         ? `|${escapeHtml(String(meta?.ownerType || ""))}|${escapeHtml(String(meta?.ownerId || ""))}|${escapeHtml(String(meta?.listOverride || ""))}`
         : ``;
 
-      return `
+      return dmWrap(`radial.picker.card.${route}`, `
         <button type="button"
-                class="pick-card ${done ? "is-done" : ""} ${disabled ? "is-disabled" : ""}"
-                data-action="${disabled ? "" : "radial-go"}"
-                data-id="${escapeHtml(String(route))}${showBadge ? `|${escapeHtml(String(need))}` : ""}${extra}">
+          class="pick-card ${done ? "is-done" : ""} ${disabled ? "is-disabled" : ""}"
+          data-action="${disabled ? "" : "radial-go"}"
+          data-id="${escapeHtml(String(route))}${showBadge ? `|${escapeHtml(String(need))}` : ""}${extra}">
           <div class="pick-card-l">${escapeHtml(label || route)}</div>
           <div class="pick-card-r">${badge}</div>
         </button>
-      `;
+      `);
     };
 
     return `
@@ -1071,6 +1236,8 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
   const dockEntryPicks = dockActiveEntry.picks || {};
   const picksDockHtml = renderBuildStepsDock(dockClassLevel || 1, dockClassId, dockSubclassObj, dockEntryPicks);
 
+  const dmWrap = (id, html) => design ? `<div class="hbcr-dm-inner" data-ui-component="${escapeHtml(id)}">${html}</div>` : html;
+
   const stageTabsDock = `
     <div class="stage-and-picks" aria-label="Stage navigation">
       <div class="stage-tabs">
@@ -1080,7 +1247,7 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
             const isActive = stage === t.id;
             const iconSrc = t.picked ? t.icon : "";
             const iconSrcNorm = iconSrc ? normalizeAssetPath(iconSrc) : "";
-            return `
+            return dmWrap(`radial.tabs.${t.id}`, `
               <button
                 class="stage-tab ${isActive ? "active" : ""}"
                 data-action="radial-nav"
@@ -1118,7 +1285,7 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
                        "></div>`}
                 </div>
               </button>
-            `;
+            `);
           })
           .join("")}
       </div>
@@ -1162,6 +1329,7 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
     : ``;
 
   // Determine options for current stage
+  let editorSubclassList = null;
   let centerTitle = "Race";
   let centerSubtitle = "";
   let orbitOptions = [];
@@ -1205,6 +1373,18 @@ function renderBuildSteps(classLevel, classId, subclassObj) {
     centerSubtitle = currentClass ? `for ${currentClass.name}` : "Select a subclass";
     const scMap = subclassesIndex.get(ch.class);
     const scList = scMap ? Array.from(scMap.values()) : [];
+    // Editor-only: allow pinning subclasses to the front (per class)
+    const pinnedIds = __HBCR_IS_EDITOR ? __hbcrGetPinnedSubclassIds(ch.class) : [];
+    if (pinnedIds.length) {
+      const order = new Map(pinnedIds.map((id, i) => [id, i]));
+      scList.sort((a, b) => {
+        const ai = order.has(a.id) ? order.get(a.id) : 1e9;
+        const bi = order.has(b.id) ? order.get(b.id) : 1e9;
+        if (ai !== bi) return ai - bi;
+        return String(a.name).localeCompare(String(b.name));
+      });
+    }
+    editorSubclassList = scList;
     orbitOptions = scList.map((s) => ({
       id: s.id,
       label: s.name,
@@ -1251,13 +1431,13 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
           : "";
         const routeId = `${escapeHtml(String(s.route))}|${escapeHtml(String(need))}${extra}`;
 
-        return `
+        return dmWrap(`radial.picks.dock.${s.route}`, `
           <button class="pick-card pick-card--dock" type="button"
-                  data-action="radial-go" data-id="${routeId}">
+              data-action="radial-go" data-id="${routeId}">
             <div class="pick-name">${escapeHtml(s.label)}</div>
             ${badge}
           </button>
-        `;
+        `);
       }).join("")}
     </div>
   `;
@@ -1471,7 +1651,7 @@ const sheet = `
         <div class="sheet-controls summary-top">
           <div class="sheet-pill" title="${NO_SUBRACE.has(String(ch.race||'')) ? 'Race' : 'Subrace'}">${escapeHtml((NO_SUBRACE.has(String(ch.race||'')) ? (currentRace?.name || ch.race) : currentSubrace?.name) || '—')}</div>
 
-          <div class="sheet-pill trait-pill" title="Trait" style="margin-left:12px">
+          ${design ? `<div class="sheet-pill trait-pill" data-ui-component="radial.summary.trait" title="Trait" style="margin-left:12px">` : `<div class="sheet-pill trait-pill" title="Trait" style="margin-left:12px">`}
             <span class="trait-label">TRAIT</span>
             <select class="trait-select" data-action="set-trait" style="width:${traitSelectWidthPx}px">
               <option value="">— None —</option>
@@ -1568,11 +1748,60 @@ const sheet = `
 
 
   // (Left nav removed; stageTabsDock handles navigation.)
+  // ------------------------------
+  // Design Mode: expose a small, movable layout for the editor.
+  // This does NOT change the runtime UI in normal mode.
+  // ------------------------------
+  // Absolute layout defaults (pixel-based). This is now the permanent layout system.
+  const defaultLayoutRows = [
+    { ScreenId: "radial", ComponentId: "radial.pane",    Type: "block", ParentId: "", X: 24,  Y: 24,  W: 760, H: 760, Z: 10, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.summary", Type: "block", ParentId: "", X: 820, Y: 24,  W: 520, H: 760, Z: 20, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+    { ScreenId: "radial", ComponentId: "radial.picker",  Type: "block", ParentId: "", X: 220, Y: 120, W: 920, H: 700, Z: 90, Enabled: true, BindingId: "", PropsJson: "{}", StyleJson: "{}", VisibilityJson: "" },
+  ];
+
+  if (typeof window !== "undefined") {
+    window.__HBCR_LAST_LAYOUT__ = defaultLayoutRows;
+    window.__HBCR_LAST_ZONES__ = [];
+  }
+
+  const getLayoutRows = () => {
+    const draft = (design ? readDesignDraft() : null);
+    const draftRows = Array.isArray(draft?.UILayout) ? draft.UILayout : null;
+    const rows = (draftRows && draftRows.length)
+      ? draftRows.filter(r => String(r?.ScreenId || "") === "radial")
+      : defaultLayoutRows;
+    return rows;
+  };
+
+  const styleFor = (componentId) => {
+    const rows = getLayoutRows();
+    const row = rows.find(r => String(r?.ComponentId) === String(componentId));
+    const n = (v, f=0) => {
+      const x = Number(v);
+      return Number.isFinite(x) ? x : f;
+    };
+    const px = (v) => `${Math.round(n(v, 0))}px`;
+    if (!row) return "position:absolute;left:24px;top:24px;z-index:10";
+    return `position:absolute;left:${px(row.X)};top:${px(row.Y)};width:${px(row.W)};height:${px(row.H)};z-index:${Math.round(n(row.Z, 10))}`;
+  };
+
+  const wrapComponent = (componentId, innerHtml) => {
+    // Always wrap: absolute layout is the permanent renderer.
+    const extraClass = componentId === "radial.pane" ? "radial-pane" : (componentId === "radial.summary" ? "radial-summary" : (componentId === "radial.picker" ? "radial-overlay" : ""));
+    return `
+      <div class="hbcr-ui-wrap ${extraClass}" data-ui-component="${escapeHtml(componentId)}" style="${styleFor(componentId)}">
+        ${innerHtml}
+      </div>
+    `;
+  };
+
+  const pickerHtml = await renderPickerDrawer(state);
+
   return `
-    <div class="radial-shell">
-      <div class="radial-pane" style="position:relative;z-index:2;pointer-events:auto;">
-        ${stageTabsDock}
-        ${stage === "build" ? `
+    <div class="radial-shell" style="position:relative;">
+      ${wrapComponent("radial.pane", `
+          ${stageTabsDock}
+          ${stage === "build" ? `
           ${levelStripDock}
           <div class="build-panel" style="margin-top:10px">
             <div class="sheet-section-title">CLASS AT THIS LEVEL</div>
@@ -1689,20 +1918,57 @@ const sheet = `
               `;
             })()}
           </div>
-        ` : `
+          ` : `
           <div class="radial-stage" data-stage="${escapeHtml(stage)}" data-race="${escapeHtml(ch.race ?? "")}" style="position:relative;z-index:1;">
             <div class="radial-center">
               <div class="radial-center-title">${escapeHtml(centerTitle)}</div>
               ${centerSubtitle ? `<div class="radial-center-sub">${escapeHtml(centerSubtitle)}</div>` : ``}
+              ${(__HBCR_IS_EDITOR && stage === "subclass") ? `
+                <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
+                  <button data-action="design-open-subclass-add" class="hbcr-design-add-btn" type="button">+ Add Subclass</button>
+                </div>
+              ` : ``}
             </div>
             ${renderOrbit(orbitOptions)}
+            ${(__HBCR_IS_EDITOR && stage === "subclass" && designOpen) ? (() => {
+              const cls = ch.class || "";
+              const list = (editorSubclassList || []).slice();
+              const pinned = __hbcrGetPinnedSubclassIds(cls);
+              const options = list.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join("");
+              return `
+                <div class="hbcr-design-modal" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:50;">
+                  <div style="min-width:320px;max-width:520px;padding:14px;border-radius:14px;border:1px solid rgba(255,215,128,0.22);background:rgba(20,16,12,0.95);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                      <div style="font-family:serif;color:rgba(233,215,184,0.95);font-size:16px;">Add subclass to radial order</div>
+                      <button data-action="design-close-subclass-add" type="button" style="border:0;background:transparent;color:rgba(233,215,184,0.8);font-size:18px;cursor:pointer;">×</button>
+                    </div>
+                    <div style="margin-top:10px;color:rgba(233,215,184,0.85);font-size:13px;">Pick a subclass to pin to the front for this class.</div>
+                    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+                      <select data-design-subclass-select="1" style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,215,128,0.18);background:rgba(0,0,0,0.25);color:rgba(233,215,184,0.95);">
+                        ${options}
+                      </select>
+                      <button data-action="design-pin-subclass" type="button" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,215,128,0.18);background:rgba(255,215,128,0.08);color:rgba(233,215,184,0.95);cursor:pointer;">Pin</button>
+                    </div>
+                    ${pinned.length ? `
+                      <div style="margin-top:12px;color:rgba(233,215,184,0.85);font-size:12px;">Pinned:</div>
+                      <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;">
+                        ${pinned.map(id => {
+                          const s = list.find(x => x.id === id);
+                          const name = s ? s.name : id;
+                          return `<button data-action="design-unpin-subclass" data-id="${escapeHtml(id)}" type="button" style="padding:6px 10px;border-radius:999px;border:1px solid rgba(255,215,128,0.16);background:rgba(0,0,0,0.22);color:rgba(233,215,184,0.9);cursor:pointer;">${escapeHtml(name)} ×</button>`;
+                        }).join("")}
+                      </div>
+                    ` : ``}
+                  </div>
+                </div>
+              `;
+            })() : ``}
           </div>
-        `}
-      </div>
-      <div class="radial-summary">
-        ${sheet}
-      </div>
-      ${await renderPickerDrawer(state)}
+          `}
+        `)}
+
+      ${wrapComponent("radial.summary", sheet)}
+      ${wrapComponent("radial.picker", pickerHtml)}
     </div>
     `;
 }
