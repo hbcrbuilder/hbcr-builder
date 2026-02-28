@@ -496,7 +496,7 @@ function formatSpellsBySpellLevel(cantripIds, spellIds, spells) {
     groups.get(key).push(s.name);
   }
   if (groups.size === 0) return '—';
-  const order = ['Cantrips','Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'];
+  const order = ["cantrips","spells","metamagic","dragonAncestor","manoeuvres","wildshapes","frontierBallistics","smites","passives","feats","pactBinding","steelforgedFlourishes","combatTechniques","elementalFletchings","gatheredSwarm","optimizationMatrix","sabotageMatrix"];
   const keys = [...groups.keys()].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
   return keys.map(k => `<div style="margin-bottom:6px"><b>${k}:</b> ${groups.get(k).join(', ')}</div>`).join('');
 }
@@ -762,17 +762,33 @@ const currentSubclass =
     ];
 
     const mapPickTypeToRoute = (pt) => {
-  	const k = String(pt || "").toLowerCase();
-  	if (k === "cantrip") return "cantrips";
-  	if (k === "spell") return "spells";
-	if (k === "frontier_ballistics") return "frontierBallistics";
-  	if (k === "wildshape") return "wildshapes";
-  	if (k === "feat") return "feats";
-	if (k === "passive") return "passives";
-	if (k === "smite") return "smites";
+	const k = String(pt || "").toLowerCase().trim();
+
+	// core
+	if (k === "cantrip" || k === "cantrips") return "cantrips";
+	if (k === "spell" || k === "spells") return "spells";
+	if (k === "feat" || k === "feats") return "feats";
+	if (k === "passive" || k === "passives") return "passives";
+
+	// existing extras
+	if (k === "frontier_ballistics" || k === "frontierballistics") return "frontierBallistics";
+	if (k === "wildshape" || k === "wildshapes") return "wildshapes";
+	if (k === "smite" || k === "smites") return "smites";
 	if (k === "metamagic") return "metamagic";
+
+	// HBCR extras (sheet pickType values vary a bit, accept aliases)
+	if (k === "dragonancestor" || k === "dragon_ancestor" || k === "dragon-ancestor") return "dragonAncestor";
+	if (k === "manoeuvre" || k === "manoeuvres" || k === "maneuver" || k === "maneuvers") return "manoeuvres";
+	if (k === "pactbinding" || k === "pact_binding" || k === "pact-binding") return "pactBinding";
+	if (k === "steelforgedflourishes" || k === "steelforged_flourishes" || k === "steelforged-flourishes") return "steelforgedFlourishes";
+	if (k === "combattechniques" || k === "combat_techniques" || k === "combat-techniques" || k === "combattechnique") return "combatTechniques";
+	if (k === "elementalfletchings" || k === "elemental_fletchings" || k === "elemental-fletchings") return "elementalFletchings";
+	if (k === "gatheredswarm" || k === "gathered_swarm" || k === "gathered-swarm") return "gatheredSwarm";
+	if (k === "optimizationmatrix" || k === "optimization_matrix" || k === "optimization-matrix") return "optimizationMatrix";
+	if (k === "sabotagematrix" || k === "sabotage_matrix" || k === "sabotage-matrix") return "sabotageMatrix";
+
 	return null;
-	};
+};
 
 
     const acc = new Map(); // route -> { need, ownerType, ownerId, listOverride }
