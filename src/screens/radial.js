@@ -19,7 +19,7 @@ import { GatheredSwarmScreen } from "./gatheredSwarm.js";
 import { OptimizationMatrixScreen } from "./optimizationMatrix.js";
 import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 
-import { isDesignMode, readDesignDraft } from "../design/designMode.js";
+import { isDesignMode, isSlotEditor, readDesignDraft } from "../design/designMode.js";
 
 import {
   loadRacesJson,
@@ -615,8 +615,11 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 export async function RadialScreen({ state }) {
   const ch = state.character;
   const ui = state.ui?.radial ?? { stage: "race", breadcrumbs: [] };
+  // Slot-editor should always show the main Build shell (locked), not the radial pick screens.
+  const effectiveStage = (isSlotEditor() ? "build" : (ui.stage || "race"));
+
   const design = isDesignMode();
-  let stage = ui.stage || "race";
+  let stage = effectiveStage;
   const buildLevel = Number(ui.buildLevel ?? 1);
 
   // liveData.loadData() may return either:
