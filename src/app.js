@@ -411,16 +411,7 @@ function wireEvents() {
       const goNext = () => router.go(order[Math.min(idx+1, order.length-1)]);
       const goBack = () => router.go(order[Math.max(idx-1, 0)]);
 
-      
-      if (action === "radial-close") {
-        if (isRadial) {
-          // Close orbit picker overlay back to the main Build shell.
-          setRadial({ stage: "build" });
-        }
-        return;
-      }
-
-if (action === "select-origin") { 
+      if (action === "select-origin") { 
         store.patchCharacter({ origin: id });
         if (!isRadial) goNext();
       }
@@ -942,6 +933,47 @@ if (action === "toggle-smite-lvl") {
     smites: Array.from(all)
   });
 }
+
+      // --- Slot editor: Subclass + menu ---
+      if (action === "picker-open-add-subclass") {
+        store.patchUI({ picker: { open: true, type: "add-subclass", level: store.getState().ui.buildLevel ?? 1, selectedId: null } });
+        router.go('radial');
+      }
+
+      if (action === "picker-select-add-subclass") {
+        const sel = (target && (target.value || target.getAttribute("data-value"))) || "";
+        const cur = store.getState().ui.picker || {};
+        store.patchUI({ picker: { ...cur, selectedId: sel } });
+      }
+
+      if (action === "picker-add-subclass") {
+        const st = store.getState();
+        const ch = st.character;
+        const cur = st.ui.picker || {};
+        const subclassId = String(cur.selectedId || "");
+        const classId = String(ch.class || "");
+        if (classId && subclassId && typeof localStorage !== "undefined") {
+          const key = "hbcr_uiComponents";
+          let arr = [];
+          try { arr = JSON.parse(localStorage.getItem(key) || "[]"); } catch {}
+          // keep only valid array
+          if (!Array.isArray(arr)) arr = [];
+          // remove duplicates
+          arr = arr.filter(r => !(r && r.slotId === "subclassOptions" && String(r.classId||"")===classId && String(r.subclassId||"")===subclassId));
+          arr.push({
+            screenId: "radial",
+            slotId: "subclassOptions",
+            classId,
+            subclassId,
+            order: Date.now()
+          });
+          localStorage.setItem(key, JSON.stringify(arr));
+        }
+        // close picker
+        store.patchUI({ picker: { open: false, type: null, level: st.ui.buildLevel ?? 1 } });
+        router.go('radial');
+      }
+
 
 // --- Build-level Frontier Ballistics (Ranger) ---
 // Encoded id: "<arrowId>|<buildLevel>|<limit>"
