@@ -1755,7 +1755,7 @@ const sheet = `
     <div class="radial-shell" style="position:relative;">
       ${wrapComponent("radial.pane", `
           ${stageTabsDock}
-          ${stage === "build" ? `
+          
           ${levelStripDock}
           <div class="build-panel" style="margin-top:10px">
             <div class="sheet-section-title">CLASS AT THIS LEVEL</div>
@@ -1872,7 +1872,18 @@ const sheet = `
               `;
             })()}
           </div>
-          ` : `
+          ${stage !== "build" ? `
+          <div class="radial-stage-overlay" style="position:absolute;inset:0;z-index:6000;pointer-events:auto;">
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>
+            <button type="button" class="radial-overlay-close"
+                    data-action="radial-nav" data-id="build"
+                    style="position:absolute;top:10px;right:10px;z-index:6002;width:34px;height:34px;border-radius:12px;
+                           border:1px solid rgba(255,215,128,0.25);background:rgba(0,0,0,0.45);color:rgba(255,235,190,0.92);
+                           cursor:pointer;">
+              ✕
+            </button>
+            <div style="position:absolute;inset:0;padding:96px 18px 18px 18px;z-index:6001;">
+
           <div class="radial-stage" data-stage="${escapeHtml(stage)}" data-race="${escapeHtml(ch.race ?? "")}" style="position:relative;z-index:1;">
             <div class="radial-center">
               <div class="radial-center-title">${escapeHtml(centerTitle)}</div>
@@ -1880,8 +1891,10 @@ const sheet = `
             </div>
             ${renderOrbit(orbitOptions)}
           </div>
-          `}
-        `)}
+          
+            </div>
+          </div>
+          ` : ``}
 
       ${wrapComponent("radial.summary", sheet)}
       ${wrapComponent("radial.picker", pickerHtml)}
