@@ -29,11 +29,30 @@
   }
 
   async function fetchBundle() {
-    // Use same endpoint the app uses
-    const res = await fetch("/api/bundle", { cache: "no-store" });
-    if (!res.ok) throw new Error("bundle fetch failed");
-    return await res.json();
+    // Use the same endpoint the app uses (Cloudflare Worker), not the Pages origin.
+    const DEFAULT_BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
+    const base = (window.__HBCR_BUNDLE_URL__ || DEFAULT_BUNDLE_URL);
+    const url = base + (base.includes("?") ? "&" : "?") + "t=" + Date.now();
+
+    const res = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+      cache: "no-store",
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`bundle fetch failed: ${res.status} ${text.slice(0, 120)}`);
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      // Most common cause: HTML 404 page (wrong URL). Show a useful snippet.
+      throw new Error(`bundle JSON parse failed: ${String(e)} | head=${text.slice(0, 120)}`);
+    }
   }
+
 
   function el(tag, attrs = {}, html = "") {
     const n = document.createElement(tag);
