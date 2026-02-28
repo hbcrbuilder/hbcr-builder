@@ -3,7 +3,7 @@
 
 import { getBundle, loadRacesJson, loadClassesJson, loadClassesFullJson } from "../data/liveData.js";
 import { ChoiceScreen } from "./choice.js";
-import { isDesignMode, readDesignDraft } from "../design/designMode.js";
+import { isDesignMode, isSlotEditor, readDesignDraft } from "../design/designMode.js";
 
 // ---- helpers ----
 

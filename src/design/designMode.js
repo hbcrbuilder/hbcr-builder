@@ -27,9 +27,26 @@ const ABS_HEADERS = [
   "VisibilityJson",
 ];
 
+// Slot-based composition (recommended):
+const COMPONENT_HEADERS = [
+  "ScreenId",
+  "SlotId",
+  "ComponentId",
+  "Type",
+  "Order",
+  "Enabled",
+  "PropsJson",
+  "VisibilityJson",
+];
+
 export function isDesignMode() {
   return typeof window !== "undefined" && window.__HBCR_DESIGN__ === true;
 }
+
+export function isSlotEditor() {
+  return isDesignMode() && typeof window !== "undefined" && String(window.__HBCR_DESIGN_KIND__ || "") === "slots";
+}
+
 
 export function readDesignDraft() {
   if (!isDesignMode()) return null;
@@ -206,6 +223,7 @@ function getDraftTablesOrEmpty() {
   d.UILayout = Array.isArray(d.UILayout) ? d.UILayout : [];
   d.UIBindings = Array.isArray(d.UIBindings) ? d.UIBindings : [];
   d.UIZones = Array.isArray(d.UIZones) ? d.UIZones : [];
+  d.UIComponents = Array.isArray(d.UIComponents) ? d.UIComponents : [];
   return d;
 }
 
@@ -599,4 +617,25 @@ export function installDesignMode({ appEl, store }) {
       return;
     }
   }, true);
+}
+
+
+// --- Slot-based draft helpers ---
+export function getDraftComponentsFor(screenId, slotId) {
+  const d = getDraftTablesOrEmpty();
+  return (d.UIComponents || []).filter(r => String(r.ScreenId||"")===String(screenId||"") && String(r.SlotId||"")===String(slotId||""))
+    .sort((a,b)=>Number(a.Order||0)-Number(b.Order||0));
+}
+
+export function addDraftComponent(row) {
+  const d = getDraftTablesOrEmpty();
+  d.UIComponents = Array.isArray(d.UIComponents) ? d.UIComponents : [];
+  d.UIComponents.push(row);
+  writeDesignDraft(d);
+  return row;
+}
+
+export function uiComponentsToTsv() {
+  const d = getDraftTablesOrEmpty();
+  return toTsv(d.UIComponents || [], COMPONENT_HEADERS);
 }
