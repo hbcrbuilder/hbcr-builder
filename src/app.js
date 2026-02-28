@@ -361,58 +361,6 @@ function wireEvents() {
   // Allow native <select> interactions without triggering a re-render on click.
   if (el && el.tagName === "SELECT") return;
 
-
-      // -------------------------------
-      // Editor: Subclass + pinning (MVP)
-      // -------------------------------
-      if (action === "design-open-subclass-add") {
-        if (!(typeof location !== "undefined" && location.pathname.includes("/editor"))) return;
-        const cur = store.getState().ui?.radial || {};
-        store.patchUI({ radial: { ...cur, designAddSubclassOpen: true } });
-        return;
-      }
-      if (action === "design-close-subclass-add") {
-        const cur = store.getState().ui?.radial || {};
-        store.patchUI({ radial: { ...cur, designAddSubclassOpen: false } });
-        return;
-      }
-      if (action === "design-pin-subclass") {
-        if (!(typeof location !== "undefined" && location.pathname.includes("/editor"))) return;
-        const modal = el.closest?.(".hbcr-design-modal") || document;
-        const sel = modal.querySelector?.("[data-design-subclass-select]") || document.querySelector?.("[data-design-subclass-select]");
-        const subclassId = sel?.value || "";
-        const classId = store.getState().character?.class || "";
-        if (subclassId) {
-          try {
-            const key = `hbcr_ui_pins_subclass:${classId || ""}`;
-            const curPins = JSON.parse(localStorage.getItem(key) || "[]");
-            const nextPins = [subclassId, ...(Array.isArray(curPins) ? curPins.filter(x => x !== subclassId) : [])];
-            localStorage.setItem(key, JSON.stringify(nextPins));
-          } catch {}
-        }
-        const cur = store.getState().ui?.radial || {};
-        store.patchUI({ radial: { ...cur, designAddSubclassOpen: false } });
-        // Re-render happens via state notify
-        return;
-      }
-      if (action === "design-unpin-subclass") {
-        if (!(typeof location !== "undefined" && location.pathname.includes("/editor"))) return;
-        const classId = store.getState().character?.class || "";
-        const subclassId = id || "";
-        if (subclassId) {
-          try {
-            const key = `hbcr_ui_pins_subclass:${classId || ""}`;
-            const curPins = JSON.parse(localStorage.getItem(key) || "[]");
-            const nextPins = (Array.isArray(curPins) ? curPins : []).filter(x => x !== subclassId);
-            localStorage.setItem(key, JSON.stringify(nextPins));
-          } catch {}
-        }
-        // keep modal open
-        const cur = store.getState().ui?.radial || {};
-        store.patchUI({ radial: { ...cur, designAddSubclassOpen: true } });
-        return;
-      }
-
       // Trait dropdown (custom menu)
       if (action === "toggle-trait-menu") {
         const ui = store.getState().ui || {};
@@ -463,7 +411,16 @@ function wireEvents() {
       const goNext = () => router.go(order[Math.min(idx+1, order.length-1)]);
       const goBack = () => router.go(order[Math.max(idx-1, 0)]);
 
-      if (action === "select-origin") { 
+      
+      if (action === "radial-close") {
+        if (isRadial) {
+          // Close orbit picker overlay back to the main Build shell.
+          setRadial({ stage: "build" });
+        }
+        return;
+      }
+
+if (action === "select-origin") { 
         store.patchCharacter({ origin: id });
         if (!isRadial) goNext();
       }
