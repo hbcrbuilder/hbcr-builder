@@ -1755,7 +1755,7 @@ const sheet = `
     <div class="radial-shell" style="position:relative;">
       ${wrapComponent("radial.pane", `
           ${stageTabsDock}
-          
+          ${
           ${levelStripDock}
           <div class="build-panel" style="margin-top:10px">
             <div class="sheet-section-title">CLASS AT THIS LEVEL</div>
@@ -1872,6 +1872,7 @@ const sheet = `
               `;
             })()}
           </div>
+          
           ${stage !== "build" ? `
           <div class="radial-stage-overlay" style="position:absolute;inset:0;z-index:6000;pointer-events:auto;">
             <div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>
@@ -1895,6 +1896,7 @@ const sheet = `
             </div>
           </div>
           ` : ``}
+        `)}
 
       ${wrapComponent("radial.summary", sheet)}
       ${wrapComponent("radial.picker", pickerHtml)}
