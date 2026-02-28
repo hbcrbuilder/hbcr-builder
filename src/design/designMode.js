@@ -124,6 +124,13 @@ export function installDesignMode({ appEl, store }) {
   // drag handlers, or zone outlines. Also ensure zones class is OFF.
   if (isSlotEditor()) {
     setZonesVisible(false);
+    // Start in the main Build shell; pickers (Race/Subrace/Class/Subclass) open as overlays.
+    try {
+      const cur = store?.getState?.().ui?.radial || { stage: "race", breadcrumbs: [], buildLevel: 1 };
+      if (cur.stage !== "build") {
+        store?.patchUI?.({ radial: { ...cur, stage: "build" } });
+      }
+    } catch {}
     return;
   }
 

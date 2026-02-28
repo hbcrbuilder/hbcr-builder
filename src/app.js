@@ -411,7 +411,16 @@ function wireEvents() {
       const goNext = () => router.go(order[Math.min(idx+1, order.length-1)]);
       const goBack = () => router.go(order[Math.max(idx-1, 0)]);
 
-      if (action === "select-origin") { 
+      
+      if (action === "radial-close") {
+        if (isRadial) {
+          // Close orbit picker overlay back to the main Build shell.
+          setRadial({ stage: "build" });
+        }
+        return;
+      }
+
+if (action === "select-origin") { 
         store.patchCharacter({ origin: id });
         if (!isRadial) goNext();
       }
