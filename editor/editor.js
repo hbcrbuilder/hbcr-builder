@@ -433,3 +433,92 @@ function hookUI(){
 
 hookUI();
 reloadBundle();
+
+
+// ===============================
+// HBCR Mod Updates System
+// ===============================
+
+const MOD_SOURCE = "hbcr";
+const BASELINE_ENDPOINT = "/api/mod-baseline";
+
+function buildModSnapshot(bundle) {
+  const snapshot = [];
+
+  const map = {
+    Classes: "ClassId",
+    Subclasses: "SubclassId",
+    Spells: "SpellId",
+    Weapons: "WeaponId",
+    Equipment: "ItemId",
+  };
+
+  for (const [tab, idField] of Object.entries(map)) {
+    const rows = bundle[tab] || [];
+    for (const row of rows) {
+      if (!row.source) continue;
+      if (String(row.source).toLowerCase() !== MOD_SOURCE) continue;
+      const id = row[idField];
+      if (!id) continue;
+      snapshot.push({ type: tab, id: String(id) });
+    }
+  }
+
+  return snapshot;
+}
+
+function diffSnapshots(current, baseline) {
+  const baseSet = new Set(baseline.map(x => `${x.type}:${x.id}`));
+  const currentSet = new Set(current.map(x => `${x.type}:${x.id}`));
+
+  const added = current.filter(
+    x => !baseSet.has(`${x.type}:${x.id}`)
+  );
+
+  const removed = baseline.filter(
+    x => !currentSet.has(`${x.type}:${x.id}`)
+  );
+
+  return { added, removed };
+}
+
+async function loadBaseline() {
+  const res = await fetch(BASELINE_ENDPOINT);
+  const data = await res.json();
+  return data.baseline || [];
+}
+
+async function saveBaseline(snapshot) {
+  await fetch(BASELINE_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + (window.SAVE_TOKEN || "")
+    },
+    body: JSON.stringify({ snapshot }),
+  });
+}
+
+async function runModUpdates() {
+  if (!bundle) {
+    console.warn("Bundle not loaded yet.");
+    return;
+  }
+
+  const baseline = await loadBaseline();
+  const current = buildModSnapshot(bundle);
+  const { added, removed } = diffSnapshots(current, baseline);
+
+  console.log("HBCR Mod Updates:");
+  console.log("NEW:", added);
+  console.log("REMOVED:", removed);
+
+  alert(
+    "Mod Updates:\n\nNEW:\n" +
+    added.map(x => `${x.type}: ${x.id}`).join("\n") +
+    "\n\nREMOVED:\n" +
+    removed.map(x => `${x.type}: ${x.id}`).join("\n")
+  );
+}
+
+window.runModUpdates = runModUpdates;
