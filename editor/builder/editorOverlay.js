@@ -19,6 +19,9 @@
   const DRAFT_KEY = "hbcr_design_draft";
   const LAST_SEEN_KEY = "hbcr_editor_lastSeenRowKeys";
 
+  // Mod snapshot (diff vs previous)
+  const MOD_SNAPSHOT_PREV_KEY = "hbcr_mod_snapshot_prev_v1";
+
   // IMPORTANT: We only READ the bundle (same published JSON). We do not modify the app pipeline.
   const DEFAULT_BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
 
@@ -138,8 +141,23 @@
   // ------------------------------------------------------------
   // Embedded Dock Mounting (NOT an overlay)
   // ------------------------------------------------------------
-  const ui = { dock: null, results: null, search: null, filterAll: null, filterNew: null };
-  const state = { open: false, filter: 'all', query: '' };
+  const ui = {
+    dock: null,
+    results: null,
+    search: null,
+    filterAll: null,
+    filterNew: null,
+    btnAdd: null,
+    btnUpdates: null,
+  };
+  const state = {
+    open: false,
+    view: "add", // add | updates
+    filter: 'all',
+    query: '',
+    bundleIndex: null,
+    mod: { loading: false, prev: null, cur: null, diff: null, sel: new Set() },
+  };
 
   function ensureRightGroup(topbar) {
     if (!topbar) return null;
@@ -196,7 +214,27 @@
       addBtn.style.border = '1px solid rgba(212,175,55,0.22)';
       addBtn.style.background = 'rgba(0,0,0,0.22)';
       addBtn.style.fontWeight = '700';
-      addBtn.addEventListener('click', () => toggleOpen(true));
+      addBtn.addEventListener('click', () => {
+        state.view = 'add';
+        toggleOpen(true);
+        renderResults();
+      });
+
+      const updatesBtn = document.createElement('button');
+      updatesBtn.type = 'button';
+      updatesBtn.textContent = 'Mod Updates';
+      updatesBtn.style.all = 'unset';
+      updatesBtn.style.cursor = 'pointer';
+      updatesBtn.style.padding = '4px 8px';
+      updatesBtn.style.borderRadius = '10px';
+      updatesBtn.style.border = '1px solid rgba(212,175,55,0.22)';
+      updatesBtn.style.background = 'rgba(0,0,0,0.18)';
+      updatesBtn.style.fontWeight = '700';
+      updatesBtn.addEventListener('click', () => {
+        state.view = 'updates';
+        toggleOpen(true);
+        renderResults();
+      });
 
       const search = document.createElement('input');
       search.id = 'hbcr_editor_search';
@@ -250,6 +288,7 @@
       closeBtn.addEventListener('click', () => toggleOpen(false));
 
       dock.appendChild(addBtn);
+      dock.appendChild(updatesBtn);
       dock.appendChild(search);
       dock.appendChild(pillWrap);
       dock.appendChild(closeBtn);
@@ -295,7 +334,103 @@
     ui.search = document.getElementById('hbcr_editor_search');
     ui.filterAll = document.getElementById('hbcr_editor_filter_all');
     ui.filterNew = document.getElementById('hbcr_editor_filter_new');
+    ui.btnAdd = dock?.querySelector('button') || null;
+    ui.btnUpdates = dock?.querySelector('button:nth-child(2)') || null;
     return ui;
+  }
+
+  // -------------------------
+  // Mod Snapshot (auto from `source=hbcr`)
+  // -------------------------
+  function normalizeSource(v) {
+    return String(v ?? "").trim().toLowerCase();
+  }
+
+  function sheetToContentType(sheetName) {
+    const s = String(sheetName || "").toLowerCase();
+    if (s.includes("subclass")) return "subclass";
+    if (s.includes("class")) return "class";
+    if (s.includes("weapon")) return "weapon";
+    if (s.includes("equip")) return "equipment";
+    if (s.includes("spell")) return "spell";
+    if (s.includes("systemenum")) return "pickType";
+    return "other";
+  }
+
+  function buildCurrentModSnapshot(bundleIndex) {
+    const items = [];
+    if (!bundleIndex?.rowsBySheet) return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
+    for (const [sheet, rows] of bundleIndex.rowsBySheet.entries()) {
+      const type = sheetToContentType(sheet);
+      if (!['class','subclass','weapon','equipment','spell','pickType'].includes(type)) continue;
+      for (const r of rows) {
+        const row = r.row;
+        const src = normalizeSource(row?.source ?? row?.Source ?? row?.SOURCE);
+        if (src !== 'hbcr') continue;
+        const id = stableRowKey(row);
+        if (!id) continue;
+        items.push({ type, id, sheet });
+      }
+    }
+    items.sort((a,b) => (a.type + '|' + a.id).localeCompare(b.type + '|' + b.id));
+    return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
+  }
+
+  function readPrevSnapshot() {
+    return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
+  }
+  function writePrevSnapshot(snap) {
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+  }
+
+  function diffSnapshots(prev, cur) {
+    const key = (x) => `${x.type}|${x.id}`;
+    const p = new Map();
+    const c = new Map();
+    for (const it of (prev?.items || [])) p.set(key(it), it);
+    for (const it of (cur?.items || [])) c.set(key(it), it);
+    const added = [];
+    const removed = [];
+    for (const [k, it] of c.entries()) if (!p.has(k)) added.push(it);
+    for (const [k, it] of p.entries()) if (!c.has(k)) removed.push(it);
+    const group = (arr) => {
+      const m = new Map();
+      for (const it of arr) {
+        if (!m.has(it.type)) m.set(it.type, []);
+        m.get(it.type).push(it);
+      }
+      for (const v of m.values()) v.sort((a,b) => a.id.localeCompare(b.id));
+      return m;
+    };
+    return { added, removed, addedByType: group(added), removedByType: group(removed) };
+  }
+
+  async function ensureBundleIndex() {
+    if (state.bundleIndex) return state.bundleIndex;
+    const b = await fetchBundle();
+    state.bundleIndex = buildBundleIndex(b);
+    return state.bundleIndex;
+  }
+
+  async function ensureModDiff() {
+    if (state.mod.loading) return;
+    state.mod.loading = true;
+    try {
+      const idx = await ensureBundleIndex();
+      const cur = buildCurrentModSnapshot(idx);
+      const prev = readPrevSnapshot();
+      const diff = diffSnapshots(prev, cur);
+      state.mod.prev = prev;
+      state.mod.cur = cur;
+      state.mod.diff = diff;
+    } catch (e) {
+      console.error(e);
+      state.mod.prev = readPrevSnapshot();
+      state.mod.cur = null;
+      state.mod.diff = null;
+    } finally {
+      state.mod.loading = false;
+    }
   }
 
   function currentScreenId() {
@@ -563,6 +698,81 @@
     }
   }
 
+  // -------------------------
+  // Add flow helpers (safe defaults)
+  // -------------------------
+  function guessMechanic(item) {
+    const s = String(item?.sheet || '').toLowerCase();
+    if (s.includes('subclass')) return 'subclass';
+    if (s.includes('class')) return 'class';
+    if (s.includes('race')) return 'race';
+    if (s.includes('subrace')) return 'subrace';
+    if (s.includes('spell')) return 'spell';
+    if (s.includes('weapon')) return 'weapon';
+    if (s.includes('equip')) return 'equipment';
+    if (s.includes('trait') || s.includes('feat') || s.includes('passive')) return 'trait';
+    return 'unknown';
+  }
+
+  function findExistingZoneForMechanic(kind) {
+    // Best-effort only: we never modify renderer logic. If we can't find a safe target,
+    // we fall back to click-to-place.
+    try {
+      const layout = asRows(readDraft()?.UILayout) || asRows(window.__HBCR_LAST_LAYOUT__);
+      const curScreen = currentScreenId();
+      const rows = (layout || []).filter(r => String(r?.ScreenId || r?.screenId || '') === curScreen);
+      const want = String(kind || '').toLowerCase();
+      const scoreZone = (z) => {
+        const id = String(z || '').toLowerCase();
+        if (!id) return 0;
+        if (want && id.includes(want)) return 3;
+        if (want === 'spell' && (id.includes('spell') || id.includes('cantrip'))) return 3;
+        if (want === 'trait' && (id.includes('trait') || id.includes('feat') || id.includes('passive'))) return 3;
+        if (want === 'equipment' && (id.includes('gear') || id.includes('equip') || id.includes('item'))) return 2;
+        if (want === 'weapon' && id.includes('weapon')) return 2;
+        return 0;
+      };
+      let best = { zoneId: '', score: 0 };
+      for (const r of rows) {
+        const z = r?.ZoneId || r?.zoneId || '';
+        const s = scoreZone(z);
+        if (s > best.score) best = { zoneId: String(z), score: s };
+      }
+      return best.score >= 3 ? best.zoneId : '';
+    } catch {
+      return '';
+    }
+  }
+
+  async function promptType() {
+    const v = (prompt('How should this appear?\n\nType one: radial, dropdown, picker, panel', 'radial') || '').trim().toLowerCase();
+    if (!v) return null;
+    if (['radial','dropdown','picker','panel'].includes(v)) return v;
+    toast('Cancelled (unknown type).');
+    return null;
+  }
+
+  async function addItemToDraftAndPlace(item, { forcedZoneId = '', chosenType = '' } = {}) {
+    const sheet = item.sheet;
+    const rowKey = item.rowKey;
+    const label = item.label;
+    const row = item.row;
+
+    const forcedUiType = (chosenType === 'panel') ? 'panel'
+      : (chosenType === 'dropdown') ? 'dropdown'
+      : 'radial';
+
+    await createUiForRow({
+      sheet,
+      rowKey,
+      label,
+      row,
+      forcedZoneId: forcedZoneId || '',
+      forcedUiType,
+      auto: true,
+    });
+  }
+
   async function addItemFlow(item) {
     const guess = guessMechanic(item);
     const forcedZoneId = findExistingZoneForMechanic(guess);
@@ -593,6 +803,186 @@
 
     ui.results.style.display = 'block';
 
+    // -------------------------
+    // View: Mod Updates
+    // -------------------------
+    if (state.view === 'updates') {
+      if (!state.mod.diff && !state.mod.loading) {
+        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+        (async () => {
+          await ensureModDiff();
+          renderResults();
+        })();
+        return;
+      }
+      if (state.mod.loading) {
+        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+        return;
+      }
+
+      const prev = state.mod.prev;
+      const cur = state.mod.cur;
+      const diff = state.mod.diff;
+      if (!cur || !diff) {
+        ui.results.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-weight:800;letter-spacing:.06em;text-transform:uppercase;">Mod Updates</div>
+              <div style="opacity:.75;font-size:12px;margin-top:2px;">Could not load bundle / snapshot. Check /api/bundle and try again.</div>
+            </div>
+            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:700;">Close</button>
+          </div>
+        `;
+        ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+        return;
+      }
+
+      const prevAt = prev?.generatedAt ? new Date(prev.generatedAt).toLocaleString() : '—';
+      const curAt = cur?.generatedAt ? new Date(cur.generatedAt).toLocaleString() : '—';
+      const addedCount = diff.added.length;
+      const removedCount = diff.removed.length;
+
+      const mkChip = (label, count) => `
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;">
+          <span style="opacity:.75;">${esc(label)}</span>
+          <span style="font-weight:900;">${count}</span>
+        </span>`;
+
+      const header = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div style="min-width:260px;">
+            <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
+            <div style="opacity:.75;font-size:12px;margin-top:2px;line-height:1.35;">
+              Baseline: <span style="opacity:.92;">${esc(prevAt)}</span><br>
+              Current: <span style="opacity:.92;">${esc(curAt)}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${mkChip('New', addedCount)}
+            ${mkChip('Removed', removedCount)}
+            <button data-action="set-baseline" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:800;">Set Baseline</button>
+            <button data-action="copy-snapshot" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Copy Snapshot</button>
+            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Close</button>
+          </div>
+        </div>`;
+
+      const groupHtml = (title, map, emptyText) => {
+        const types = Array.from(map.keys());
+        if (!types.length) {
+          return `<div style="margin-top:12px;opacity:.75;">${esc(emptyText)}</div>`;
+        }
+        const sections = [];
+        for (const t of ['class','subclass','spell','weapon','equipment','pickType']) {
+          if (!map.has(t)) continue;
+          const arr = map.get(t);
+          const actionLabel = (t === 'class' || t === 'subclass') ? 'Add to radial…'
+            : (t === 'pickType') ? 'Add to dropdown…'
+            : 'Add to picker…';
+          sections.push(`
+            <div style="margin-top:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
+                ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:800;">${esc(actionLabel)}</button>` : ''}
+              </div>
+              <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+                ${arr.slice(0, 200).map(it => {
+                  const k = `${it.type}|${it.id}`;
+                  const checked = state.mod.sel.has(k) ? 'checked' : '';
+                  return `
+                    <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
+                      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
+                        <div style="min-width:0;">
+                          <div style="font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
+                          <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+                        </div>
+                      </div>
+                    </label>`;
+                }).join('')}
+              </div>
+            </div>`);
+        }
+        return sections.join('');
+      };
+
+      ui.results.innerHTML = `
+        ${header}
+        <div style="margin-top:10px;opacity:.75;font-size:12px;line-height:1.4;">
+          This list only tracks <b>brand-new IDs</b> (rows tagged <code>source = hbcr</code>). Balance/description edits are ignored.
+        </div>
+        ${groupHtml('New', diff.addedByType, 'No new IDs found (vs baseline).')}
+        ${groupHtml('Removed', diff.removedByType, 'No removed IDs found (vs baseline).')}
+      `;
+
+      ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+      ui.results.querySelector('[data-action=set-baseline]')?.addEventListener('click', () => {
+        writePrevSnapshot(cur);
+        toast('Baseline saved.');
+        state.mod.prev = cur;
+        state.mod.diff = diffSnapshots(cur, cur);
+        state.mod.sel = new Set();
+        renderResults();
+      });
+      ui.results.querySelector('[data-action=copy-snapshot]')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(cur, null, 2));
+          toast('Snapshot copied.');
+        } catch {
+          toast('Copy failed (clipboard blocked).');
+        }
+      });
+
+      ui.results.querySelectorAll('input[data-action=toggle]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const k = cb.getAttribute('data-key');
+          if (!k) return;
+          if (cb.checked) state.mod.sel.add(k);
+          else state.mod.sel.delete(k);
+        });
+      });
+
+      ui.results.querySelectorAll('button[data-action=apply-type]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const type = btn.getAttribute('data-type') || '';
+          const selected = Array.from(state.mod.sel)
+            .map(k => ({ k, type: k.split('|')[0], id: k.split('|')[1] }))
+            .filter(x => x.type === type);
+          if (!selected.length) {
+            toast('Select some NEW items first.');
+            return;
+          }
+
+          // Pick zone once, place all into that zone.
+          toast('Click where to place these…');
+          startZonePick({
+            onPick: async (zoneId) => {
+              const idx = await ensureBundleIndex();
+              const toAdd = [];
+              for (const s of selected) {
+                const it = (diff.added || []).find(x => x.type === s.type && x.id === s.id);
+                if (!it) continue;
+                const entry = (idx.rowsBySheet.get(it.sheet) || []).find(r => r.rowKey === it.id);
+                if (entry) toAdd.push(entry);
+              }
+              if (!toAdd.length) {
+                toast('Could not find matching rows in bundle.');
+                return;
+              }
+              for (const entry of toAdd) {
+                await addItemToDraftAndPlace(entry, { forcedZoneId: zoneId, chosenType: (type === 'pickType') ? 'dropdown' : (type === 'class' || type === 'subclass') ? 'radial' : 'picker' });
+              }
+              toast('Added. Refreshing…');
+              setTimeout(() => { try { location.reload(); } catch {} }, 350);
+            }
+          });
+        });
+      });
+      return;
+    }
+
+    // -------------------------
+    // View: Add Content
+    // -------------------------
     if (!idx) {
       ui.results.innerHTML = `<div style="opacity:.75;">Loading…</div>`;
       return;
