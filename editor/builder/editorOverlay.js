@@ -135,6 +135,169 @@
     t.__hbcrTimer = setTimeout(() => { t.style.opacity = "0"; }, 1800);
   }
 
+  // ------------------------------------------------------------
+  // Embedded Dock Mounting (NOT an overlay)
+  // ------------------------------------------------------------
+  const ui = { dock: null, results: null, search: null, filterAll: null, filterNew: null };
+  const state = { open: false, filter: 'all', query: '' };
+
+  function ensureRightGroup(topbar) {
+    if (!topbar) return null;
+    let right = topbar.querySelector(':scope > .hbcr-editor-right');
+    if (right) return right;
+
+    const version = topbar.querySelector(':scope > .version-pill');
+    if (!version) return null;
+
+    right = document.createElement('div');
+    right.className = 'hbcr-editor-right';
+    right.style.display = 'flex';
+    right.style.alignItems = 'center';
+    right.style.gap = '10px';
+    right.style.marginLeft = 'auto';
+
+    topbar.insertBefore(right, version);
+    right.appendChild(version);
+    return right;
+  }
+
+  function ensureEmbeddedUI() {
+    const app = document.getElementById('app');
+    if (!app) return null;
+    const topbar = app.querySelector('.topbar');
+    if (!topbar) return null;
+
+    const right = ensureRightGroup(topbar);
+    if (!right) return null;
+
+    let dock = right.querySelector('#hbcr_editor_dock');
+    if (!dock) {
+      dock = document.createElement('div');
+      dock.id = 'hbcr_editor_dock';
+      dock.style.display = 'flex';
+      dock.style.alignItems = 'center';
+      dock.style.gap = '8px';
+      dock.style.padding = '6px 10px';
+      dock.style.borderRadius = '999px';
+      dock.style.border = '1px solid rgba(212,175,55,0.22)';
+      dock.style.background = 'rgba(0,0,0,0.26)';
+      dock.style.color = 'rgba(232,220,198,0.95)';
+      dock.style.fontSize = '12px';
+      dock.style.letterSpacing = '0.08em';
+      dock.style.textTransform = 'uppercase';
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.textContent = '+ Add';
+      addBtn.style.all = 'unset';
+      addBtn.style.cursor = 'pointer';
+      addBtn.style.padding = '4px 8px';
+      addBtn.style.borderRadius = '10px';
+      addBtn.style.border = '1px solid rgba(212,175,55,0.22)';
+      addBtn.style.background = 'rgba(0,0,0,0.22)';
+      addBtn.style.fontWeight = '700';
+      addBtn.addEventListener('click', () => toggleOpen(true));
+
+      const search = document.createElement('input');
+      search.id = 'hbcr_editor_search';
+      search.placeholder = 'Search content…';
+      search.autocomplete = 'off';
+      search.spellcheck = false;
+      search.style.width = '220px';
+      search.style.maxWidth = '34vw';
+      search.style.padding = '6px 10px';
+      search.style.borderRadius = '12px';
+      search.style.border = '1px solid rgba(212,175,55,0.18)';
+      search.style.background = 'rgba(0,0,0,0.22)';
+      search.style.color = 'rgba(232,220,198,0.95)';
+      search.style.outline = 'none';
+      search.style.textTransform = 'none';
+      search.style.letterSpacing = '0';
+
+      const pillWrap = document.createElement('div');
+      pillWrap.style.display = 'flex';
+      pillWrap.style.alignItems = 'center';
+      pillWrap.style.gap = '6px';
+
+      const mkPill = (id, label) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.id = id;
+        b.textContent = label;
+        b.style.all = 'unset';
+        b.style.cursor = 'pointer';
+        b.style.padding = '4px 8px';
+        b.style.borderRadius = '999px';
+        b.style.border = '1px solid rgba(212,175,55,0.18)';
+        b.style.background = 'rgba(0,0,0,0.18)';
+        b.style.opacity = '0.9';
+        return b;
+      };
+      const allP = mkPill('hbcr_editor_filter_all', 'All');
+      const newP = mkPill('hbcr_editor_filter_new', 'New');
+      pillWrap.appendChild(allP);
+      pillWrap.appendChild(newP);
+
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.textContent = 'Close';
+      closeBtn.style.all = 'unset';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.style.padding = '4px 8px';
+      closeBtn.style.borderRadius = '10px';
+      closeBtn.style.border = '1px solid rgba(212,175,55,0.18)';
+      closeBtn.style.background = 'rgba(0,0,0,0.18)';
+      closeBtn.addEventListener('click', () => toggleOpen(false));
+
+      dock.appendChild(addBtn);
+      dock.appendChild(search);
+      dock.appendChild(pillWrap);
+      dock.appendChild(closeBtn);
+      right.insertBefore(dock, right.firstChild);
+
+      search.addEventListener('input', () => {
+        state.query = search.value || '';
+        renderResults();
+      });
+      allP.addEventListener('click', () => {
+        state.filter = 'all';
+        renderResults();
+      });
+      newP.addEventListener('click', () => {
+        state.filter = 'new';
+        renderResults();
+      });
+    }
+
+    const frame = app.querySelector('.frame');
+    if (!frame) return null;
+    let results = frame.querySelector('#hbcr_editor_results');
+    if (!results) {
+      const divider = frame.querySelector('.divider');
+      results = document.createElement('div');
+      results.id = 'hbcr_editor_results';
+      results.style.display = 'none';
+      results.style.padding = '10px 28px 12px';
+      results.style.background = 'rgba(0,0,0,0.18)';
+      results.style.borderBottom = '1px solid rgba(212,175,55,0.14)';
+      results.style.color = 'rgba(232,220,198,0.95)';
+      results.style.maxHeight = '38vh';
+      results.style.overflow = 'auto';
+      if (divider && divider.parentNode) {
+        divider.parentNode.insertBefore(results, divider.nextSibling);
+      } else {
+        frame.insertBefore(results, frame.firstChild);
+      }
+    }
+
+    ui.dock = dock;
+    ui.results = results;
+    ui.search = document.getElementById('hbcr_editor_search');
+    ui.filterAll = document.getElementById('hbcr_editor_filter_all');
+    ui.filterNew = document.getElementById('hbcr_editor_filter_new');
+    return ui;
+  }
+
   function currentScreenId() {
     // LayoutScreen exposes current rows in window.__HBCR_LAST_LAYOUT__ / __HBCR_LAST_ZONES__
     try {
@@ -367,385 +530,142 @@
 
   // -------------------------
   // UI (BG3-native, ultra-simple)
+  // NOTE: Previously this used fixed-position overlays. Per request, it is now
+  // mounted INSIDE the editor header, and the results expand in normal flow.
+
   // -------------------------
-  function ensureFab() {
-    if (document.getElementById("hbcr_inbox_fab")) return;
+  // Embedded Add Content (mounted in topbar; results panel expands under header)
+  // -------------------------
+  let idx = null;
+  const lastSeen = readJsonLS(LAST_SEEN_KEY, {});
 
-    const fab = document.createElement("button");
-    fab.id = "hbcr_inbox_fab";
-    fab.type = "button";
-    fab.title = "Add";
-    fab.style.position = "fixed";
-    fab.style.right = "18px";
-    fab.style.bottom = "18px";
-    fab.style.zIndex = "999999";
-    fab.style.width = "56px";
-    fab.style.height = "56px";
-    fab.style.borderRadius = "16px";
-    fab.style.border = "1px solid rgba(212,175,55,0.28)";
-    fab.style.background = "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.28)), rgba(10,6,6,0.78)";
-    fab.style.cursor = "pointer";
-    fab.style.boxShadow = "0 12px 30px rgba(0,0,0,.35)";
-
-    const img = document.createElement("img");
-    img.alt = "Add";
-    img.src = "/assets/ui/karlachplus.png";
-    img.style.width = "42px";
-    img.style.height = "42px";
-    img.style.objectFit = "contain";
-    img.style.filter = "drop-shadow(0 0 10px rgba(212,175,55,0.18))";
-    fab.appendChild(img);
-
-    fab.addEventListener("click", () => openInbox());
-
-    document.body.appendChild(fab);
-  }
-  function openInbox() {
-    if (document.getElementById("hbcr_inbox_dock")) return;
-
-    // Editor-only light styling; does not change app CSS.
-    if (!document.getElementById("hbcr_inbox_style")) {
-      const st = document.createElement("style");
-      st.id = "hbcr_inbox_style";
-      st.textContent = `
-        #hbcr_inbox_dock .hbcr-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; cursor:pointer; border: 1px solid rgba(212,175,55,0.10); }
-        #hbcr_inbox_dock .hbcr-row:hover{ background: rgba(212,175,55,0.07); border-color: rgba(212,175,55,0.24); }
-        #hbcr_inbox_dock .hbcr-name{ color: rgba(242,230,196,0.94); font-size: 13px; letter-spacing: 0.06em; }
-        #hbcr_inbox_dock .hbcr-meta{ color: rgba(242,230,196,0.66); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-        #hbcr_inbox_dock .hbcr-chip{ display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; border:1px solid rgba(212,175,55,0.18); background: rgba(0,0,0,0.14); color: rgba(242,230,196,0.78); font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase; }
-        #hbcr_inbox_dropdown{ box-shadow: 0 18px 40px rgba(0,0,0,.45); }
-      `;
-      document.head.appendChild(st);
-    }
-
-    // --- Top dock (does not overlap the main builder area)
-    const dock = document.createElement("div");
-    dock.id = "hbcr_inbox_dock";
-    dock.className = "filter-panel";
-    dock.style.position = "fixed";
-    dock.style.left = "12px";
-    dock.style.right = "12px";
-    dock.style.top = "10px";
-    dock.style.zIndex = "999999";
-    dock.style.padding = "10px 12px";
-
-    const titleRow = document.createElement("div");
-    titleRow.style.display = "flex";
-    titleRow.style.alignItems = "center";
-    titleRow.style.justifyContent = "space-between";
-    titleRow.style.gap = "10px";
-
-    const title = document.createElement("div");
-    title.className = "filter-title";
-    title.textContent = "ADD CONTENT";
-    title.style.margin = "0";
-
-    const close = document.createElement("button");
-    close.className = "btn";
-    close.textContent = "Close";
-    close.style.padding = "10px 12px";
-    close.addEventListener("click", () => {
-      try { if (dock.__hbcrOnResize) window.removeEventListener("resize", dock.__hbcrOnResize); } catch {}
-      try { dock.remove(); } catch {}
-      try { document.getElementById("hbcr_inbox_dropdown")?.remove(); } catch {}
-    });
-
-    titleRow.appendChild(title);
-    titleRow.appendChild(close);
-    dock.appendChild(titleRow);
-
-    const topRow = document.createElement("div");
-    topRow.className = "filter-row wrap";
-    topRow.style.marginTop = "10px";
-
-    const search = document.createElement("input");
-    search.className = "search";
-    search.placeholder = "Search…";
-    search.style.flex = "1";
-
-    const gear = document.createElement("button");
-    gear.className = "btn";
-    gear.textContent = "⋯";
-    gear.title = "Draft tools";
-    gear.style.padding = "10px 12px";
-
-    topRow.appendChild(search);
-    topRow.appendChild(gear);
-    dock.appendChild(topRow);
-
-    const tools = document.createElement("div");
-    tools.style.display = "none";
-    tools.style.marginTop = "10px";
-    tools.className = "filter-row wrap";
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "btn";
-    copyBtn.textContent = "Copy Draft";
-    const resetBtn = document.createElement("button");
-    resetBtn.className = "btn";
-    resetBtn.textContent = "Reset Draft";
-    tools.appendChild(copyBtn);
-    tools.appendChild(resetBtn);
-    dock.appendChild(tools);
-
-    gear.addEventListener("click", () => {
-      tools.style.display = tools.style.display === "none" ? "flex" : "none";
-    });
-
-    copyBtn.addEventListener("click", async () => {
-      const d = readDraft() || {};
-      const text = JSON.stringify(d, null, 2);
-      try { await navigator.clipboard.writeText(text); toast("Draft copied."); }
-      catch {
-        const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Draft copied.");
-      }
-    });
-    resetBtn.addEventListener("click", () => {
-      writeDraft({});
-      toast("Draft reset. Refreshing…");
-      setTimeout(() => { try { location.reload(); } catch {} }, 350);
-    });
-
-    const pills = document.createElement("div");
-    pills.className = "pill-row";
-    pills.style.justifyContent = "flex-start";
-    pills.style.marginTop = "10px";
-    const pillAll = document.createElement("span");
-    pillAll.className = "pill";
-    pillAll.textContent = "ALL";
-    pillAll.style.cursor = "pointer";
-    const pillNew = document.createElement("span");
-    pillNew.className = "pill";
-    pillNew.textContent = "NEW";
-    pillNew.style.cursor = "pointer";
-    pills.appendChild(pillAll);
-    pills.appendChild(pillNew);
-    dock.appendChild(pills);
-
-    // Dropdown results container (appears below dock)
-    const dropdown = document.createElement("div");
-    dropdown.id = "hbcr_inbox_dropdown";
-    dropdown.className = "filter-panel";
-    dropdown.style.position = "fixed";
-    dropdown.style.left = "12px";
-    dropdown.style.right = "12px";
-    // top is computed after mount so it always sits right below the dock
-    dropdown.style.top = "96px";
-    dropdown.style.zIndex = "999998";
-    dropdown.style.maxHeight = "42vh";
-    dropdown.style.overflow = "auto";
-    dropdown.style.padding = "10px 12px";
-
-    const listWrap = document.createElement("div");
-    dropdown.appendChild(listWrap);
-
-    document.body.appendChild(dock);
-    document.body.appendChild(dropdown);
-
-    const positionDropdown = () => {
-      try {
-        const r = dock.getBoundingClientRect();
-        dropdown.style.top = `${Math.round(r.bottom + 8)}px`;
-      } catch {}
-    };
-    positionDropdown();
-    const onResize = () => positionDropdown();
-    window.addEventListener("resize", onResize);
-    dock.__hbcrOnResize = onResize;
-
-    let state = { mode: "all", q: "" };
-    const lastSeen = readJsonLS(LAST_SEEN_KEY, {});
-    const setMode = (m) => {
-      state.mode = m;
-      pillAll.style.borderColor = m === "all" ? "rgba(212,175,55,0.55)" : "rgba(212,175,55,0.18)";
-      pillNew.style.borderColor = m === "new" ? "rgba(212,175,55,0.55)" : "rgba(212,175,55,0.18)";
-      render();
-    };
-    setMode("all");
-
-    search.addEventListener("input", () => { state.q = (search.value || "").toLowerCase().trim(); render(); });
-    pillAll.addEventListener("click", () => setMode("all"));
-    pillNew.addEventListener("click", () => setMode("new"));
-
-    let idx = null;
-    (async () => {
-      try {
-        await ensureDraftBase();
-        const bundle = await fetchBundle();
-        idx = buildBundleIndex(bundle);
-        render();
-        setTimeout(() => { try { search.focus(); } catch {} }, 40);
-      } catch (e) {
-        toast("Bundle failed to load.");
-        listWrap.innerHTML = `<div class="mini-muted">${esc(e?.message || e)}</div>`;
-      }
-    })();
-
-    function isNew(item) {
-      const s = String(item.sheet);
-      const set = new Set(lastSeen[s] || []);
-      return !set.has(item.rowKey);
-    }
-    function markSeen(item) {
-      const s = String(item.sheet);
-      const set = new Set(lastSeen[s] || []);
-      set.add(item.rowKey);
-      lastSeen[s] = Array.from(set);
-      writeJsonLS(LAST_SEEN_KEY, lastSeen);
-    }
-
-    function allZoneIds() {
-      const els = Array.from(document.querySelectorAll("[data-ui-zone]"));
-      return els.map(el => String(el.getAttribute("data-ui-zone") || "")).filter(Boolean);
-    }
-    function inferKnownMechanic(sheet) {
-      const s = String(sheet || "").toLowerCase();
-      if (s.includes("subclass")) return "subclass";
-      if (s.includes("class")) return "class";
-      if (s.includes("race") || s.includes("subrace")) return "race";
-      if (s.includes("trait") || s.includes("feature") || s.includes("passive")) return "trait";
-      if (s.includes("feat")) return "feat";
-      if (s.includes("spell") || s.includes("cantrip")) return "spell";
-      return "";
-    }
-    function autoZoneForMechanic(mech, zoneIds) {
-      const z = zoneIds.map(x => x.toLowerCase());
-      const pick = (needle) => {
-        const i = z.findIndex(v => v.includes(needle));
-        return i >= 0 ? zoneIds[i] : "";
-      };
-      if (!mech) return "";
-      return pick(mech) || pick(mech.slice(0, 4)) || "";
-    }
-    function showMechanicChooser({ label, onChoose }) {
-      const overlay = document.createElement("div");
-      overlay.style.position = "fixed";
-      overlay.style.inset = "0";
-      overlay.style.zIndex = "1000000";
-      overlay.style.background = "rgba(0,0,0,0.55)";
-      overlay.style.display = "flex";
-      overlay.style.alignItems = "center";
-      overlay.style.justifyContent = "center";
-
-      const box = document.createElement("div");
-      box.className = "filter-panel";
-      box.style.width = "420px";
-      box.style.maxWidth = "calc(100vw - 36px)";
-
-      const t = document.createElement("div");
-      t.className = "filter-title";
-      t.textContent = "CHOOSE STYLE";
-      box.appendChild(t);
-
-      const mm = document.createElement("div");
-      mm.className = "mini-muted";
-      mm.style.textAlign = "left";
-      mm.style.marginTop = "10px";
-      mm.textContent = `How should “${label}” appear?`;
-      box.appendChild(mm);
-
-      const row = document.createElement("div");
-      row.className = "filter-row wrap";
-      row.style.marginTop = "12px";
-      const mkBtn = (txt, val) => {
-        const b = document.createElement("button");
-        b.className = "btn primary";
-        b.textContent = txt;
-        b.addEventListener("click", () => { try { overlay.remove(); } catch {} onChoose(val); });
-        return b;
-      };
-      row.appendChild(mkBtn("Radial", "radial"));
-      row.appendChild(mkBtn("Dropdown", "dropdown"));
-      row.appendChild(mkBtn("Panel", "panel"));
-      const cancel = document.createElement("button");
-      cancel.className = "btn";
-      cancel.textContent = "Cancel";
-      cancel.addEventListener("click", () => { try { overlay.remove(); } catch {} });
-      row.appendChild(cancel);
-      box.appendChild(row);
-      overlay.appendChild(box);
-      document.body.appendChild(overlay);
-    }
-
-    async function addItemFlow(item) {
-      const zoneIds = allZoneIds();
-      const mech = inferKnownMechanic(item.sheet);
-      const autoZone = autoZoneForMechanic(mech, zoneIds);
-
-      if (mech && autoZone) {
-        await createUiForRow({ sheet: item.sheet, rowKey: item.rowKey, label: item.label, row: item.row, forcedZoneId: autoZone, forcedUiType: componentTypeFromSheet(item.sheet), auto: true });
-        toast("Added. Refreshing…");
-        setTimeout(() => { try { location.reload(); } catch {} }, 350);
-        return;
-      }
-
-      showMechanicChooser({
-        label: item.label,
-        onChoose: (uiType) => {
-          toast("Click where to place it.");
-          createUiForRow({ sheet: item.sheet, rowKey: item.rowKey, label: item.label, row: item.row, forcedUiType: uiType, auto: false });
-        }
-      });
-    }
-
-    function render() {
-      if (!idx) {
-        listWrap.innerHTML = `<div class="mini-muted">Loading…</div>`;
-        return;
-      }
-      const q = state.q;
-      const sections = [];
-      for (const sheet of idx.sheets) {
-        const rows = idx.rowsBySheet.get(sheet) || [];
-        const filtered = rows.filter(r => {
-          if (q && !r.searchText.includes(q)) return false;
-          if (state.mode === "new" && !isNew(r)) return false;
-          return true;
-        });
-        if (!filtered.length) continue;
-        sections.push({ sheet, rows: filtered.slice(0, 80) });
-      }
-
-      if (!sections.length) {
-        listWrap.innerHTML = `<div class="mini-muted">No matches.</div>`;
-        return;
-      }
-
-      const html = [];
-      for (const sec of sections) {
-        html.push(`<div class="mini-muted" style="text-align:left;margin:10px 0 6px 2px;">${esc(sec.sheet)}</div>`);
-        for (const item of sec.rows) {
-          const badge = isNew(item) ? `<span class="hbcr-chip">NEW</span>` : ``;
-          html.push(
-            `<div class="hbcr-row" data-sheet="${esc(item.sheet)}" data-rowkey="${esc(item.rowKey)}">` +
-              `<div style="min-width:0;">` +
-                `<div class="hbcr-name">${esc(item.label)}</div>` +
-                `<div class="hbcr-meta">${esc(item.rowKey)}</div>` +
-              `</div>` +
-              `<div style="display:flex;align-items:center;gap:8px;">${badge}<button class="btn primary" data-action="add" style="padding:8px 10px;">Add</button></div>` +
-            `</div>`
-          );
-        }
-      }
-      listWrap.innerHTML = html.join("");
-
-      listWrap.querySelectorAll("button[data-action=add]").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const rowEl = btn.closest(".hbcr-row");
-          const sheet = rowEl.getAttribute("data-sheet");
-          const rowKey = rowEl.getAttribute("data-rowkey");
-          const item = (idx.rowsBySheet.get(sheet) || []).find(x => x.rowKey === rowKey);
-          if (!item) return;
-          markSeen(item);
-          await addItemFlow(item);
-          render();
-        });
-      });
-    }
-
+  function isNew(item) {
+    const s = String(item.sheet);
+    const set = new Set(lastSeen[s] || []);
+    return !set.has(item.rowKey);
   }
 
-  // Install
-  ensureFab();
+  function markSeen(item) {
+    const s = String(item.sheet);
+    const set = new Set(lastSeen[s] || []);
+    set.add(item.rowKey);
+    lastSeen[s] = Array.from(set);
+    writeJsonLS(LAST_SEEN_KEY, lastSeen);
+  }
+
+  function toggleOpen(on) {
+    state.open = !!on;
+    ensureEmbeddedUI();
+    if (ui.results) ui.results.style.display = state.open ? 'block' : 'none';
+    if (state.open) {
+      renderResults();
+      setTimeout(() => { try { ui.search?.focus(); } catch {} }, 30);
+    }
+  }
+
+  async function addItemFlow(item) {
+    const guess = guessMechanic(item);
+    const forcedZoneId = findExistingZoneForMechanic(guess);
+    if (forcedZoneId) {
+      await addItemToDraftAndPlace(item, { forcedZoneId });
+      toast(`Added to ${guess.toUpperCase()}.`);
+      setTimeout(() => { try { location.reload(); } catch {} }, 300);
+      return;
+    }
+    const chosenType = await promptType();
+    if (!chosenType) return;
+    toast('Click where to place it…');
+    await addItemToDraftAndPlace(item, { forcedZoneId: null, chosenType });
+    setTimeout(() => { try { location.reload(); } catch {} }, 300);
+  }
+
+  function renderResults() {
+    ensureEmbeddedUI();
+    if (!ui.results) return;
+
+    if (ui.filterAll) ui.filterAll.style.borderColor = state.filter === 'all' ? 'rgba(212,175,55,0.55)' : 'rgba(212,175,55,0.18)';
+    if (ui.filterNew) ui.filterNew.style.borderColor = state.filter === 'new' ? 'rgba(212,175,55,0.55)' : 'rgba(212,175,55,0.18)';
+
+    if (!state.open) {
+      ui.results.style.display = 'none';
+      return;
+    }
+
+    ui.results.style.display = 'block';
+
+    if (!idx) {
+      ui.results.innerHTML = `<div style="opacity:.75;">Loading…</div>`;
+      return;
+    }
+
+    const q = (state.query || '').toLowerCase().trim();
+    const sections = [];
+    for (const sheet of idx.sheets) {
+      const rows = idx.rowsBySheet.get(sheet) || [];
+      const filtered = rows.filter(r => {
+        if (q && !r.searchText.includes(q)) return false;
+        if (state.filter === 'new' && !isNew(r)) return false;
+        return true;
+      });
+      if (!filtered.length) continue;
+      sections.push({ sheet, rows: filtered.slice(0, 60) });
+    }
+
+    if (!sections.length) {
+      ui.results.innerHTML = `<div style="opacity:.75;">No matches.</div>`;
+      return;
+    }
+
+    const html = [];
+    for (const sec of sections) {
+      html.push(`<div style="opacity:.72;letter-spacing:.08em;text-transform:uppercase;font-size:11px;margin:10px 0 6px;">${esc(sec.sheet)}</div>`);
+      for (const item of sec.rows) {
+        const badge = isNew(item)
+          ? `<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:10px;letter-spacing:.10em;">NEW</span>`
+          : ``;
+        html.push(
+          `<div data-sheet="${esc(item.sheet)}" data-rowkey="${esc(item.rowKey)}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);margin-bottom:6px;">` +
+            `<div style="min-width:0;">` +
+              `<div style="font-weight:700;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(item.label)}</div>` +
+              `<div style="opacity:.72;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(item.rowKey)}</div>` +
+            `</div>` +
+            `<div style="display:flex;align-items:center;gap:8px;">${badge}<button data-action="add" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:700;">Add</button></div>` +
+          `</div>`
+        );
+      }
+    }
+    ui.results.innerHTML = html.join('');
+
+    ui.results.querySelectorAll('button[data-action=add]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rowEl = btn.closest('[data-sheet]');
+        const sheet = rowEl?.getAttribute('data-sheet');
+        const rowKey = rowEl?.getAttribute('data-rowkey');
+        const item = (idx.rowsBySheet.get(sheet) || []).find(x => x.rowKey === rowKey);
+        if (!item) return;
+        markSeen(item);
+        await addItemFlow(item);
+        renderResults();
+      });
+    });
+  }
+
+  // Re-mount on app re-render (app replaces header nodes)
+  const mo = new MutationObserver(() => { ensureEmbeddedUI(); });
+  try { mo.observe(document.getElementById('app'), { childList: true, subtree: true }); } catch {}
+  ensureEmbeddedUI();
+
+  (async () => {
+    try {
+      await ensureDraftBase();
+      const bundle = await fetchBundle();
+      idx = buildBundleIndex(bundle);
+    } catch (e) {
+      toast('Bundle failed to load.');
+      console.warn(e);
+    }
+    toggleOpen(false);
+  })();
 })();
