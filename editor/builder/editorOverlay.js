@@ -278,7 +278,7 @@
     return `${s}: ${label}`;
   }
 
-  async function createUiForRow({ sheet, rowKey, label, row }) {
+  async function createUiForRow({ sheet, rowKey, label, row, forcedZoneId = "", forcedUiType = "", auto = false }) {
     const draft = await ensureDraftBase();
     const next = {
       UILayout: Array.isArray(draft.UILayout) ? [...draft.UILayout] : [],
@@ -309,38 +309,38 @@
       WhereJson: JSON.stringify(where),
     });
 
-    // Ask user to pick a zone (click-to-place)
-    startZonePick({
-      onPick: (zoneId) => {
-        const uiType = componentTypeFromSheet(sheet);
-        const nodeId = nowId("ui");
-        const nodeType = nodeTypeFromUiType(uiType);
+    const place = (zoneId) => {
+      const uiType = forcedUiType || componentTypeFromSheet(sheet);
+      const nodeId = nowId("ui");
+      const nodeType = nodeTypeFromUiType(uiType);
+      const props = { title: niceTitle(sheet, label), subtitle: "" };
 
-        // safe, minimal props (no JSON editing)
-        const props = {
-          title: niceTitle(sheet, label),
-          subtitle: "",
-        };
+      next.UILayout.push({
+        ScreenId: screenId,
+        ComponentId: nodeId,
+        Type: nodeType,
+        ParentId: "",
+        ZoneId: zoneId,
+        Slot: "",
+        Order: 0,
+        BindingId: bindingId,
+        PropsJson: JSON.stringify(props),
+        Enabled: true,
+      });
+      writeDraft(next);
 
-        next.UILayout.push({
-          ScreenId: screenId,
-          ComponentId: nodeId,
-          Type: nodeType,
-          ParentId: "",
-          ZoneId: zoneId,
-          Slot: "",
-          Order: 0,
-          BindingId: bindingId,
-          PropsJson: JSON.stringify(props),
-          Enabled: true,
-        });
-        // Save draft
-        writeDraft(next);
-        // The core app store isn't exposed; safest is a quick refresh in editor.
+      if (!auto) {
         toast("Added. Refreshing…");
         setTimeout(() => { try { location.reload(); } catch {} }, 350);
       }
-    });
+    };
+
+    if (forcedZoneId) {
+      place(forcedZoneId);
+      return;
+    }
+
+    startZonePick({ onPick: (zoneId) => place(zoneId) });
   }
 
   // -------------------------
@@ -366,7 +366,7 @@
   }
 
   // -------------------------
-  // UI (single-screen inbox)
+  // UI (BG3-native, ultra-simple)
   // -------------------------
   function ensureFab() {
     if (document.getElementById("hbcr_inbox_fab")) return;
@@ -374,385 +374,339 @@
     const fab = document.createElement("button");
     fab.id = "hbcr_inbox_fab";
     fab.type = "button";
-    fab.textContent = "+";
     fab.title = "Add";
     fab.style.position = "fixed";
     fab.style.right = "18px";
     fab.style.bottom = "18px";
     fab.style.zIndex = "999999";
-    fab.style.width = "44px";
-    fab.style.height = "44px";
-    fab.style.borderRadius = "14px";
-    fab.style.border = "1px solid rgba(255,255,255,.18)";
-    fab.style.background = "rgba(0,0,0,.75)";
-    fab.style.color = "rgba(255,255,255,.92)";
-    fab.style.fontSize = "22px";
+    fab.style.width = "56px";
+    fab.style.height = "56px";
+    fab.style.borderRadius = "16px";
+    fab.style.border = "1px solid rgba(212,175,55,0.28)";
+    fab.style.background = "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.28)), rgba(10,6,6,0.78)";
     fab.style.cursor = "pointer";
     fab.style.boxShadow = "0 12px 30px rgba(0,0,0,.35)";
+
+    const img = document.createElement("img");
+    img.alt = "Add";
+    img.src = "/assets/ui/karlachplus.png";
+    img.style.width = "42px";
+    img.style.height = "42px";
+    img.style.objectFit = "contain";
+    img.style.filter = "drop-shadow(0 0 10px rgba(212,175,55,0.18))";
+    fab.appendChild(img);
 
     fab.addEventListener("click", () => openInbox());
 
     document.body.appendChild(fab);
   }
-
   function openInbox() {
-    if (document.getElementById("hbcr_inbox_modal")) return;
 
-    const overlay = document.createElement("div");
-    overlay.id = "hbcr_inbox_modal";
-    overlay.style.position = "fixed";
-    overlay.style.inset = "0";
-    overlay.style.zIndex = "999998";
-    overlay.style.background = "rgba(0,0,0,.45)";
+    if (document.getElementById("hbcr_inbox_panel")) return;
 
-    const card = document.createElement("div");
-    card.style.position = "fixed";
-    card.style.left = "50%";
-    card.style.top = "50%";
-    card.style.transform = "translate(-50%, -50%)";
-    card.style.width = "min(980px, calc(100vw - 40px))";
-    card.style.maxHeight = "min(760px, calc(100vh - 40px))";
-    card.style.overflow = "hidden";
-    card.style.borderRadius = "16px";
-    card.style.background = "rgba(8,8,8,.92)";
-    card.style.border = "1px solid rgba(255,255,255,.14)";
-    card.style.boxShadow = "0 18px 45px rgba(0,0,0,.45)";
-    card.style.display = "flex";
-    card.style.flexDirection = "column";
+    // Editor-only light styling; does not change app CSS.
+    if (!document.getElementById("hbcr_inbox_style")) {
+      const st = document.createElement("style");
+      st.id = "hbcr_inbox_style";
+      st.textContent = `
+        #hbcr_inbox_panel .hbcr-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 8px; border-radius:10px; cursor:pointer; border: 1px solid rgba(212,175,55,0.10); }
+        #hbcr_inbox_panel .hbcr-row:hover{ background: rgba(212,175,55,0.07); border-color: rgba(212,175,55,0.24); }
+        #hbcr_inbox_panel .hbcr-name{ color: rgba(242,230,196,0.94); font-size: 13px; letter-spacing: 0.06em; }
+        #hbcr_inbox_panel .hbcr-meta{ color: rgba(242,230,196,0.66); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+        #hbcr_inbox_panel .hbcr-chip{ display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; border:1px solid rgba(212,175,55,0.18); background: rgba(0,0,0,0.14); color: rgba(242,230,196,0.78); font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase; }
+      `;
+      document.head.appendChild(st);
+    }
 
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.alignItems = "center";
-    header.style.justifyContent = "space-between";
-    header.style.padding = "12px 14px";
-    header.style.borderBottom = "1px solid rgba(255,255,255,.10)";
+    const panel = document.createElement("div");
+    panel.id = "hbcr_inbox_panel";
+    panel.className = "filter-panel";
+    panel.style.position = "fixed";
+    panel.style.left = "18px";
+    panel.style.top = "18px";
+    panel.style.zIndex = "999999";
+    panel.style.width = "380px";
+    panel.style.maxWidth = "calc(100vw - 36px)";
+    panel.style.maxHeight = "calc(100vh - 36px)";
+    panel.style.overflow = "auto";
 
-    const hLeft = document.createElement("div");
-    hLeft.innerHTML = `<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.92)">Add Content</div><div style="font-size:12px;color:rgba(255,255,255,.70)">Search the published bundle, then click where it should go.</div>`;
+    const title = document.createElement("div");
+    title.className = "filter-title";
+    title.textContent = "ADD CONTENT";
+    panel.appendChild(title);
 
-    const closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.textContent = "Close";
-    closeBtn.style.borderRadius = "12px";
-    closeBtn.style.padding = "6px 10px";
-    closeBtn.style.border = "1px solid rgba(255,255,255,.16)";
-    closeBtn.style.background = "rgba(255,255,255,.06)";
-    closeBtn.style.color = "rgba(255,255,255,.9)";
-    closeBtn.style.cursor = "pointer";
-    closeBtn.addEventListener("click", () => overlay.remove());
-
-    header.appendChild(hLeft);
-    header.appendChild(closeBtn);
-
-    const body = document.createElement("div");
-    body.style.display = "grid";
-    body.style.gridTemplateColumns = "1.3fr 0.7fr";
-    body.style.gap = "12px";
-    body.style.padding = "12px";
-    body.style.flex = "1";
-    body.style.overflow = "hidden";
-
-    // Left: search + results
-    const left = document.createElement("div");
-    left.style.display = "flex";
-    left.style.flexDirection = "column";
-    left.style.gap = "10px";
-    left.style.minHeight = "0";
-
-    const searchRow = document.createElement("div");
-    searchRow.style.display = "flex";
-    searchRow.style.gap = "8px";
-    searchRow.style.alignItems = "center";
+    const topRow = document.createElement("div");
+    topRow.className = "filter-row wrap";
+    topRow.style.marginTop = "10px";
 
     const search = document.createElement("input");
-    search.type = "text";
-    search.placeholder = "Search (e.g. Oathbreaker, Metamagic, Darkvision)…";
+    search.className = "search";
+    search.placeholder = "Search…";
     search.style.flex = "1";
-    search.style.padding = "10px 12px";
-    search.style.borderRadius = "12px";
-    search.style.border = "1px solid rgba(255,255,255,.16)";
-    search.style.background = "rgba(255,255,255,.06)";
-    search.style.color = "rgba(255,255,255,.92)";
-    search.style.outline = "none";
 
-    const filter = document.createElement("select");
-    filter.style.padding = "10px 10px";
-    filter.style.borderRadius = "12px";
-    filter.style.border = "1px solid rgba(255,255,255,.16)";
-    filter.style.background = "rgba(255,255,255,.06)";
-    filter.style.color = "rgba(255,255,255,.92)";
-    filter.innerHTML = `
-      <option value="unplaced">Unplaced</option>
-      <option value="new">New</option>
-      <option value="all">All</option>
-    `;
+    const gear = document.createElement("button");
+    gear.className = "btn";
+    gear.textContent = "⋯";
+    gear.title = "Draft tools";
+    gear.style.padding = "10px 12px";
 
-    const markSeen = document.createElement("button");
-    markSeen.type = "button";
-    markSeen.textContent = "Mark seen";
-    markSeen.style.padding = "10px 10px";
-    markSeen.style.borderRadius = "12px";
-    markSeen.style.border = "1px solid rgba(255,255,255,.16)";
-    markSeen.style.background = "rgba(255,255,255,.06)";
-    markSeen.style.color = "rgba(255,255,255,.92)";
-    markSeen.style.cursor = "pointer";
+    const close = document.createElement("button");
+    close.className = "btn";
+    close.textContent = "Close";
+    close.style.padding = "10px 12px";
+    close.addEventListener("click", () => { try { panel.remove(); } catch {} });
 
-    searchRow.appendChild(search);
-    searchRow.appendChild(filter);
-    searchRow.appendChild(markSeen);
+    topRow.appendChild(search);
+    topRow.appendChild(gear);
+    topRow.appendChild(close);
+    panel.appendChild(topRow);
 
-    const results = document.createElement("div");
-    results.style.flex = "1";
-    results.style.minHeight = "0";
-    results.style.overflow = "auto";
-    results.style.borderRadius = "12px";
-    results.style.border = "1px solid rgba(255,255,255,.10)";
-    results.style.background = "rgba(0,0,0,.25)";
+    const tools = document.createElement("div");
+    tools.style.display = "none";
+    tools.style.marginTop = "10px";
+    tools.className = "filter-row wrap";
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "btn";
+    copyBtn.textContent = "Copy Draft";
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "btn";
+    resetBtn.textContent = "Reset Draft";
+    tools.appendChild(copyBtn);
+    tools.appendChild(resetBtn);
+    panel.appendChild(tools);
 
-    left.appendChild(searchRow);
-    left.appendChild(results);
+    gear.addEventListener("click", () => {
+      tools.style.display = tools.style.display === "none" ? "flex" : "none";
+    });
 
-    // Right: details + big actions
-    const right = document.createElement("div");
-    right.style.display = "flex";
-    right.style.flexDirection = "column";
-    right.style.gap = "10px";
-    right.style.minHeight = "0";
+    copyBtn.addEventListener("click", async () => {
+      const d = readDraft() || {};
+      const text = JSON.stringify(d, null, 2);
+      try { await navigator.clipboard.writeText(text); toast("Draft copied."); }
+      catch {
+        const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Draft copied.");
+      }
+    });
+    resetBtn.addEventListener("click", () => {
+      writeDraft({});
+      toast("Draft reset. Refreshing…");
+      setTimeout(() => { try { location.reload(); } catch {} }, 350);
+    });
 
-    const details = document.createElement("div");
-    details.style.borderRadius = "12px";
-    details.style.border = "1px solid rgba(255,255,255,.10)";
-    details.style.background = "rgba(0,0,0,.25)";
-    details.style.padding = "12px";
-    details.style.color = "rgba(255,255,255,.90)";
-    details.style.fontSize = "13px";
-    details.innerHTML = `<div style="opacity:.75">Pick something from the list.</div>`;
+    const pills = document.createElement("div");
+    pills.className = "pill-row";
+    pills.style.justifyContent = "flex-start";
+    pills.style.marginTop = "10px";
+    const pillAll = document.createElement("span");
+    pillAll.className = "pill";
+    pillAll.textContent = "ALL";
+    pillAll.style.cursor = "pointer";
+    const pillNew = document.createElement("span");
+    pillNew.className = "pill";
+    pillNew.textContent = "NEW";
+    pillNew.style.cursor = "pointer";
+    pills.appendChild(pillAll);
+    pills.appendChild(pillNew);
+    panel.appendChild(pills);
 
-    const addBtn = document.createElement("button");
-    addBtn.type = "button";
-    addBtn.textContent = "Create UI for this → click to place";
-    addBtn.disabled = true;
-    addBtn.style.width = "100%";
-    addBtn.style.padding = "12px 12px";
-    addBtn.style.borderRadius = "12px";
-    addBtn.style.border = "1px solid rgba(255,255,255,.16)";
-    addBtn.style.background = "rgba(255,255,255,.08)";
-    addBtn.style.color = "rgba(255,255,255,.92)";
-    addBtn.style.cursor = "pointer";
+    const listWrap = document.createElement("div");
+    listWrap.style.marginTop = "10px";
+    panel.appendChild(listWrap);
 
-    const undoBtn = document.createElement("button");
-    undoBtn.type = "button";
-    undoBtn.textContent = "Reset draft";
-    undoBtn.style.width = "100%";
-    undoBtn.style.padding = "10px 12px";
-    undoBtn.style.borderRadius = "12px";
-    undoBtn.style.border = "1px solid rgba(255,255,255,.16)";
-    undoBtn.style.background = "rgba(255,255,255,.04)";
-    undoBtn.style.color = "rgba(255,255,255,.88)";
-    undoBtn.style.cursor = "pointer";
+    document.body.appendChild(panel);
 
-    const exportBtn = document.createElement("button");
-    exportBtn.type = "button";
-    exportBtn.textContent = "Copy draft JSON";
-    exportBtn.style.width = "100%";
-    exportBtn.style.padding = "10px 12px";
-    exportBtn.style.borderRadius = "12px";
-    exportBtn.style.border = "1px solid rgba(255,255,255,.16)";
-    exportBtn.style.background = "rgba(255,255,255,.04)";
-    exportBtn.style.color = "rgba(255,255,255,.88)";
-    exportBtn.style.cursor = "pointer";
+    let state = { mode: "all", q: "" };
+    const lastSeen = readJsonLS(LAST_SEEN_KEY, {});
+    const setMode = (m) => {
+      state.mode = m;
+      pillAll.style.borderColor = m === "all" ? "rgba(212,175,55,0.55)" : "rgba(212,175,55,0.18)";
+      pillNew.style.borderColor = m === "new" ? "rgba(212,175,55,0.55)" : "rgba(212,175,55,0.18)";
+      render();
+    };
+    setMode("all");
 
-    right.appendChild(details);
-    right.appendChild(addBtn);
-    right.appendChild(exportBtn);
-    right.appendChild(undoBtn);
+    search.addEventListener("input", () => { state.q = (search.value || "").toLowerCase().trim(); render(); });
+    pillAll.addEventListener("click", () => setMode("all"));
+    pillNew.addEventListener("click", () => setMode("new"));
 
-    body.appendChild(left);
-    body.appendChild(right);
-
-    card.appendChild(header);
-    card.appendChild(body);
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-
-    // State
-    let bundle = null;
-    let index = null;
-    let selected = null;
-
-    // Load + render
+    let idx = null;
     (async () => {
-      results.innerHTML = `<div style="padding:12px;color:rgba(255,255,255,.75)">Loading bundle…</div>`;
       try {
-        bundle = await fetchBundle();
-        index = buildBundleIndex(bundle);
         await ensureDraftBase();
+        const bundle = await fetchBundle();
+        idx = buildBundleIndex(bundle);
         render();
+        setTimeout(() => { try { search.focus(); } catch {} }, 40);
       } catch (e) {
-        results.innerHTML = `<div style="padding:12px;color:rgba(255,180,180,.95)">Failed to load bundle. Check /api/bundle.</div>`;
+        toast("Bundle failed to load.");
+        listWrap.innerHTML = `<div class="mini-muted">${esc(e?.message || e)}</div>`;
       }
     })();
 
-    function getLastSeen() {
-      return readJsonLS(LAST_SEEN_KEY, {});
+    function isNew(item) {
+      const s = String(item.sheet);
+      const set = new Set(lastSeen[s] || []);
+      return !set.has(item.rowKey);
     }
-    function setLastSeen(v) {
-      writeJsonLS(LAST_SEEN_KEY, v || {});
+    function markSeen(item) {
+      const s = String(item.sheet);
+      const set = new Set(lastSeen[s] || []);
+      set.add(item.rowKey);
+      lastSeen[s] = Array.from(set);
+      writeJsonLS(LAST_SEEN_KEY, lastSeen);
     }
 
-    function isNew(sheet, rowKey) {
-      const seen = getLastSeen();
-      const set = new Set(Array.isArray(seen?.[sheet]) ? seen[sheet] : []);
-      return !set.has(rowKey);
+    function allZoneIds() {
+      const els = Array.from(document.querySelectorAll("[data-ui-zone]"));
+      return els.map(el => String(el.getAttribute("data-ui-zone") || "")).filter(Boolean);
+    }
+    function inferKnownMechanic(sheet) {
+      const s = String(sheet || "").toLowerCase();
+      if (s.includes("subclass")) return "subclass";
+      if (s.includes("class")) return "class";
+      if (s.includes("race") || s.includes("subrace")) return "race";
+      if (s.includes("trait") || s.includes("feature") || s.includes("passive")) return "trait";
+      if (s.includes("feat")) return "feat";
+      if (s.includes("spell") || s.includes("cantrip")) return "spell";
+      return "";
+    }
+    function autoZoneForMechanic(mech, zoneIds) {
+      const z = zoneIds.map(x => x.toLowerCase());
+      const pick = (needle) => {
+        const i = z.findIndex(v => v.includes(needle));
+        return i >= 0 ? zoneIds[i] : "";
+      };
+      if (!mech) return "";
+      return pick(mech) || pick(mech.slice(0, 4)) || "";
+    }
+    function showMechanicChooser({ label, onChoose }) {
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "1000000";
+      overlay.style.background = "rgba(0,0,0,0.55)";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+
+      const box = document.createElement("div");
+      box.className = "filter-panel";
+      box.style.width = "420px";
+      box.style.maxWidth = "calc(100vw - 36px)";
+
+      const t = document.createElement("div");
+      t.className = "filter-title";
+      t.textContent = "CHOOSE STYLE";
+      box.appendChild(t);
+
+      const mm = document.createElement("div");
+      mm.className = "mini-muted";
+      mm.style.textAlign = "left";
+      mm.style.marginTop = "10px";
+      mm.textContent = `How should “${label}” appear?`;
+      box.appendChild(mm);
+
+      const row = document.createElement("div");
+      row.className = "filter-row wrap";
+      row.style.marginTop = "12px";
+      const mkBtn = (txt, val) => {
+        const b = document.createElement("button");
+        b.className = "btn primary";
+        b.textContent = txt;
+        b.addEventListener("click", () => { try { overlay.remove(); } catch {} onChoose(val); });
+        return b;
+      };
+      row.appendChild(mkBtn("Radial", "radial"));
+      row.appendChild(mkBtn("Dropdown", "dropdown"));
+      row.appendChild(mkBtn("Panel", "panel"));
+      const cancel = document.createElement("button");
+      cancel.className = "btn";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => { try { overlay.remove(); } catch {} });
+      row.appendChild(cancel);
+      box.appendChild(row);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
     }
 
-    function markAllSeen() {
-      if (!index) return;
-      const seen = getLastSeen();
-      for (const sheet of index.sheets) {
-        const arr = index.rowsBySheet.get(sheet) || [];
-        seen[sheet] = arr.map(r => r.rowKey);
+    async function addItemFlow(item) {
+      const zoneIds = allZoneIds();
+      const mech = inferKnownMechanic(item.sheet);
+      const autoZone = autoZoneForMechanic(mech, zoneIds);
+
+      if (mech && autoZone) {
+        await createUiForRow({ sheet: item.sheet, rowKey: item.rowKey, label: item.label, row: item.row, forcedZoneId: autoZone, forcedUiType: componentTypeFromSheet(item.sheet), auto: true });
+        toast("Added. Refreshing…");
+        setTimeout(() => { try { location.reload(); } catch {} }, 350);
+        return;
       }
-      setLastSeen(seen);
-      toast("Marked as seen.");
-      render();
+
+      showMechanicChooser({
+        label: item.label,
+        onChoose: (uiType) => {
+          toast("Click where to place it.");
+          createUiForRow({ sheet: item.sheet, rowKey: item.rowKey, label: item.label, row: item.row, forcedUiType: uiType, auto: false });
+        }
+      });
     }
 
     function render() {
-      if (!index) return;
-      const q = String(search.value || "").trim().toLowerCase();
-      const mode = String(filter.value || "unplaced");
-
-      const draft = readDraft() || {};
-      const placed = buildPlacedSet(draft);
-
-      const blocks = [];
-      for (const sheet of index.sheets) {
-        const rows = index.rowsBySheet.get(sheet) || [];
-        let list = rows;
-        if (q) list = list.filter(r => r.searchText.includes(q));
-
-        if (mode === "new") list = list.filter(r => isNew(r.sheet, r.rowKey));
-        if (mode === "unplaced") list = list.filter(r => !placed.has(`${r.sheet}|${r.rowKey}`));
-
-        if (!list.length) continue;
-
-        const itemsHtml = list.slice(0, 250).map(r => {
-          const key = `${r.sheet}|${r.rowKey}`;
-          const isPlaced = placed.has(key);
-          const badge = isPlaced ? `<span style="font-size:11px;opacity:.65">Placed</span>` : `<span style="font-size:11px;color:rgba(180,255,190,.9)">Not placed</span>`;
-          return `
-            <div data-pick="${esc(key)}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);cursor:pointer">
-              <div style="min-width:0">
-                <div style="font-size:13px;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.label)}</div>
-                <div style="font-size:12px;opacity:.65">${esc(r.rowKey)}</div>
-              </div>
-              <div>${badge}</div>
-            </div>
-          `;
-        }).join("");
-
-        blocks.push(`
-          <div style="border-bottom:1px solid rgba(255,255,255,.08)">
-            <div style="padding:10px 12px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.65);background:rgba(255,255,255,.03)">${esc(sheet)}</div>
-            ${itemsHtml}
-          </div>
-        `);
+      if (!idx) {
+        listWrap.innerHTML = `<div class="mini-muted">Loading…</div>`;
+        return;
+      }
+      const q = state.q;
+      const sections = [];
+      for (const sheet of idx.sheets) {
+        const rows = idx.rowsBySheet.get(sheet) || [];
+        const filtered = rows.filter(r => {
+          if (q && !r.searchText.includes(q)) return false;
+          if (state.mode === "new" && !isNew(r)) return false;
+          return true;
+        });
+        if (!filtered.length) continue;
+        sections.push({ sheet, rows: filtered.slice(0, 80) });
       }
 
-      results.innerHTML = blocks.length
-        ? blocks.join("")
-        : `<div style="padding:12px;color:rgba(255,255,255,.70)">No matches.</div>`;
+      if (!sections.length) {
+        listWrap.innerHTML = `<div class="mini-muted">No matches.</div>`;
+        return;
+      }
 
-      // click handlers
-      results.querySelectorAll("[data-pick]").forEach(el => {
-        el.addEventListener("click", () => {
-          const key = el.getAttribute("data-pick");
-          const [sheet, rowKey] = String(key).split("|");
-          const row = (index.rowsBySheet.get(sheet) || []).find(r => r.rowKey === rowKey);
-          if (!row) return;
-          selected = row;
-          addBtn.disabled = false;
+      const html = [];
+      for (const sec of sections) {
+        html.push(`<div class="mini-muted" style="text-align:left;margin:10px 0 6px 2px;">${esc(sec.sheet)}</div>`);
+        for (const item of sec.rows) {
+          const badge = isNew(item) ? `<span class="hbcr-chip">NEW</span>` : ``;
+          html.push(
+            `<div class="hbcr-row" data-sheet="${esc(item.sheet)}" data-rowkey="${esc(item.rowKey)}">` +
+              `<div style="min-width:0;">` +
+                `<div class="hbcr-name">${esc(item.label)}</div>` +
+                `<div class="hbcr-meta">${esc(item.rowKey)}</div>` +
+              `</div>` +
+              `<div style="display:flex;align-items:center;gap:8px;">${badge}<button class="btn primary" data-action="add" style="padding:8px 10px;">Add</button></div>` +
+            `</div>`
+          );
+        }
+      }
+      listWrap.innerHTML = html.join("");
 
-          const newBadge = isNew(sheet, rowKey) ? `<span style="font-size:11px;color:rgba(255,220,140,.95)">New</span>` : `<span style="font-size:11px;opacity:.65">Seen</span>`;
-          details.innerHTML = `
-            <div style="font-size:14px;font-weight:700">${esc(row.label)}</div>
-            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span style="font-size:12px;opacity:.75">${esc(sheet)}</span>
-              <span style="font-size:12px;opacity:.75">•</span>
-              <span style="font-size:12px;opacity:.75">${esc(row.rowKey)}</span>
-              <span style="font-size:12px;opacity:.75">•</span>
-              ${newBadge}
-            </div>
-            <div style="margin-top:10px;font-size:12px;opacity:.75">Next: click “Create UI…” then click where it should go.</div>
-          `;
-
-          // Mark selected as seen automatically
-          const seen = getLastSeen();
-          const arr = Array.isArray(seen?.[sheet]) ? seen[sheet] : [];
-          if (!arr.includes(rowKey)) {
-            seen[sheet] = [...arr, rowKey];
-            setLastSeen(seen);
-          }
+      listWrap.querySelectorAll("button[data-action=add]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const rowEl = btn.closest(".hbcr-row");
+          const sheet = rowEl.getAttribute("data-sheet");
+          const rowKey = rowEl.getAttribute("data-rowkey");
+          const item = (idx.rowsBySheet.get(sheet) || []).find(x => x.rowKey === rowKey);
+          if (!item) return;
+          markSeen(item);
+          await addItemFlow(item);
+          render();
         });
       });
     }
 
-    search.addEventListener("input", render);
-    filter.addEventListener("change", render);
-    markSeen.addEventListener("click", markAllSeen);
-
-    addBtn.addEventListener("click", async () => {
-      if (!selected) return;
-      overlay.remove();
-      try {
-        await createUiForRow(selected);
-      } catch (e) {
-        toast("Could not add. Check console.");
-        console.error(e);
-      }
-    });
-
-    undoBtn.addEventListener("click", () => {
-      if (!confirm("Clear local editor draft? This does NOT change the sheet.")) return;
-      try { localStorage.removeItem(DRAFT_KEY); } catch {}
-      toast("Draft cleared. Refreshing…");
-      setTimeout(() => { try { location.reload(); } catch {} }, 350);
-      render();
-    });
-
-    exportBtn.addEventListener("click", async () => {
-      const draft = readDraft() || {};
-      const text = JSON.stringify(draft, null, 2);
-      try {
-        await navigator.clipboard.writeText(text);
-        toast("Draft JSON copied.");
-      } catch {
-        // fallback
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-        toast("Draft JSON copied.");
-      }
-    });
-
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
-    });
-
-    document.addEventListener("keydown", function onKey(e) {
-      if (!document.getElementById("hbcr_inbox_modal")) {
-        document.removeEventListener("keydown", onKey);
-        return;
-      }
-      if (e.key === "Escape") overlay.remove();
-    });
-
-    // initial focus
-    setTimeout(() => { try { search.focus(); } catch {} }, 50);
   }
 
   // Install
