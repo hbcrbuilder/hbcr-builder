@@ -401,39 +401,58 @@
     document.body.appendChild(fab);
   }
   function openInbox() {
-
-    if (document.getElementById("hbcr_inbox_panel")) return;
+    if (document.getElementById("hbcr_inbox_dock")) return;
 
     // Editor-only light styling; does not change app CSS.
     if (!document.getElementById("hbcr_inbox_style")) {
       const st = document.createElement("style");
       st.id = "hbcr_inbox_style";
       st.textContent = `
-        #hbcr_inbox_panel .hbcr-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 8px; border-radius:10px; cursor:pointer; border: 1px solid rgba(212,175,55,0.10); }
-        #hbcr_inbox_panel .hbcr-row:hover{ background: rgba(212,175,55,0.07); border-color: rgba(212,175,55,0.24); }
-        #hbcr_inbox_panel .hbcr-name{ color: rgba(242,230,196,0.94); font-size: 13px; letter-spacing: 0.06em; }
-        #hbcr_inbox_panel .hbcr-meta{ color: rgba(242,230,196,0.66); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-        #hbcr_inbox_panel .hbcr-chip{ display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; border:1px solid rgba(212,175,55,0.18); background: rgba(0,0,0,0.14); color: rgba(242,230,196,0.78); font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase; }
+        #hbcr_inbox_dock .hbcr-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; cursor:pointer; border: 1px solid rgba(212,175,55,0.10); }
+        #hbcr_inbox_dock .hbcr-row:hover{ background: rgba(212,175,55,0.07); border-color: rgba(212,175,55,0.24); }
+        #hbcr_inbox_dock .hbcr-name{ color: rgba(242,230,196,0.94); font-size: 13px; letter-spacing: 0.06em; }
+        #hbcr_inbox_dock .hbcr-meta{ color: rgba(242,230,196,0.66); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+        #hbcr_inbox_dock .hbcr-chip{ display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; border:1px solid rgba(212,175,55,0.18); background: rgba(0,0,0,0.14); color: rgba(242,230,196,0.78); font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase; }
+        #hbcr_inbox_dropdown{ box-shadow: 0 18px 40px rgba(0,0,0,.45); }
       `;
       document.head.appendChild(st);
     }
 
-    const panel = document.createElement("div");
-    panel.id = "hbcr_inbox_panel";
-    panel.className = "filter-panel";
-    panel.style.position = "fixed";
-    panel.style.left = "18px";
-    panel.style.top = "18px";
-    panel.style.zIndex = "999999";
-    panel.style.width = "380px";
-    panel.style.maxWidth = "calc(100vw - 36px)";
-    panel.style.maxHeight = "calc(100vh - 36px)";
-    panel.style.overflow = "auto";
+    // --- Top dock (does not overlap the main builder area)
+    const dock = document.createElement("div");
+    dock.id = "hbcr_inbox_dock";
+    dock.className = "filter-panel";
+    dock.style.position = "fixed";
+    dock.style.left = "12px";
+    dock.style.right = "12px";
+    dock.style.top = "10px";
+    dock.style.zIndex = "999999";
+    dock.style.padding = "10px 12px";
+
+    const titleRow = document.createElement("div");
+    titleRow.style.display = "flex";
+    titleRow.style.alignItems = "center";
+    titleRow.style.justifyContent = "space-between";
+    titleRow.style.gap = "10px";
 
     const title = document.createElement("div");
     title.className = "filter-title";
     title.textContent = "ADD CONTENT";
-    panel.appendChild(title);
+    title.style.margin = "0";
+
+    const close = document.createElement("button");
+    close.className = "btn";
+    close.textContent = "Close";
+    close.style.padding = "10px 12px";
+    close.addEventListener("click", () => {
+      try { if (dock.__hbcrOnResize) window.removeEventListener("resize", dock.__hbcrOnResize); } catch {}
+      try { dock.remove(); } catch {}
+      try { document.getElementById("hbcr_inbox_dropdown")?.remove(); } catch {}
+    });
+
+    titleRow.appendChild(title);
+    titleRow.appendChild(close);
+    dock.appendChild(titleRow);
 
     const topRow = document.createElement("div");
     topRow.className = "filter-row wrap";
@@ -450,16 +469,9 @@
     gear.title = "Draft tools";
     gear.style.padding = "10px 12px";
 
-    const close = document.createElement("button");
-    close.className = "btn";
-    close.textContent = "Close";
-    close.style.padding = "10px 12px";
-    close.addEventListener("click", () => { try { panel.remove(); } catch {} });
-
     topRow.appendChild(search);
     topRow.appendChild(gear);
-    topRow.appendChild(close);
-    panel.appendChild(topRow);
+    dock.appendChild(topRow);
 
     const tools = document.createElement("div");
     tools.style.display = "none";
@@ -473,7 +485,7 @@
     resetBtn.textContent = "Reset Draft";
     tools.appendChild(copyBtn);
     tools.appendChild(resetBtn);
-    panel.appendChild(tools);
+    dock.appendChild(tools);
 
     gear.addEventListener("click", () => {
       tools.style.display = tools.style.display === "none" ? "flex" : "none";
@@ -507,13 +519,38 @@
     pillNew.style.cursor = "pointer";
     pills.appendChild(pillAll);
     pills.appendChild(pillNew);
-    panel.appendChild(pills);
+    dock.appendChild(pills);
+
+    // Dropdown results container (appears below dock)
+    const dropdown = document.createElement("div");
+    dropdown.id = "hbcr_inbox_dropdown";
+    dropdown.className = "filter-panel";
+    dropdown.style.position = "fixed";
+    dropdown.style.left = "12px";
+    dropdown.style.right = "12px";
+    // top is computed after mount so it always sits right below the dock
+    dropdown.style.top = "96px";
+    dropdown.style.zIndex = "999998";
+    dropdown.style.maxHeight = "42vh";
+    dropdown.style.overflow = "auto";
+    dropdown.style.padding = "10px 12px";
 
     const listWrap = document.createElement("div");
-    listWrap.style.marginTop = "10px";
-    panel.appendChild(listWrap);
+    dropdown.appendChild(listWrap);
 
-    document.body.appendChild(panel);
+    document.body.appendChild(dock);
+    document.body.appendChild(dropdown);
+
+    const positionDropdown = () => {
+      try {
+        const r = dock.getBoundingClientRect();
+        dropdown.style.top = `${Math.round(r.bottom + 8)}px`;
+      } catch {}
+    };
+    positionDropdown();
+    const onResize = () => positionDropdown();
+    window.addEventListener("resize", onResize);
+    dock.__hbcrOnResize = onResize;
 
     let state = { mode: "all", q: "" };
     const lastSeen = readJsonLS(LAST_SEEN_KEY, {});
