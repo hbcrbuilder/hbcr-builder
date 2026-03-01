@@ -26,6 +26,14 @@
   const DEFAULT_BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
 
   // -------------------------
+  // UX goals (non-coder friendly)
+  // -------------------------
+  // - Default UI is a guided wizard (no IDs, no JSON)
+  // - Advanced drawer reveals raw fields for power users
+  // - All writes are ONLY to UILayout/UIBindings/UIZones draft in localStorage
+  // - No renderer/filter/bundle pipeline modifications
+
+  // -------------------------
   // Tiny helpers
   // -------------------------
   const nowId = (prefix) => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -161,6 +169,64 @@
     return out;
   }
 
+  function fieldKeysFromRow(row) {
+    if (!row || typeof row !== "object") return [];
+    return Object.keys(row);
+  }
+
+  function guessField(keys, kind) {
+    const k = (keys || []).map(String);
+    const has = (re) => k.find(x => re.test(x));
+    if (kind === "label") return has(/^(name|title|label)$/i) || has(/name$/i) || has(/title$/i) || (k[0] || "name");
+    if (kind === "value") return has(/^(id|key|slug|uuid)$/i) || has(/id$/i) || has(/key$/i) || (k[0] || "id");
+    if (kind === "icon") return has(/^icon$/i) || has(/icon/i) || "";
+    if (kind === "desc") return has(/^(desc|description|details|summary)$/i) || has(/desc/i) || has(/description/i) || "";
+    return "";
+  }
+
+  function titleCase(s) {
+    return String(s || "").replace(/[_\-]+/g, " ").replace(/\b\w/g, m => m.toUpperCase()).trim();
+  }
+
+  function toast(msg, ok = true) {
+    try {
+      const id = "hbcr_editor_toast";
+      let t = document.getElementById(id);
+      if (!t) {
+        t = el("div", { id, style: [
+          "position:fixed",
+          "left:14px",
+          "bottom:14px",
+          "z-index:999999",
+          "padding:10px 12px",
+          "border-radius:12px",
+          "border:1px solid rgba(200,160,80,0.30)",
+          "background:rgba(0,0,0,0.35)",
+          "color:#e8dcc6",
+          "backdrop-filter: blur(4px)",
+          "max-width:min(520px, calc(100vw - 28px))",
+          "opacity:0",
+          "transform:translateY(8px)",
+          "transition:opacity .18s ease, transform .18s ease",
+          "pointer-events:none",
+          "font-weight:700",
+        ].join(";") });
+        document.body.appendChild(t);
+      }
+      t.style.borderColor = ok ? "rgba(200,160,80,0.30)" : "rgba(255,120,120,0.40)";
+      t.innerHTML = escapeHtml(msg);
+      requestAnimationFrame(() => {
+        t.style.opacity = "1";
+        t.style.transform = "translateY(0px)";
+      });
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => {
+        t.style.opacity = "0";
+        t.style.transform = "translateY(8px)";
+      }, 2200);
+    } catch {}
+  }
+
   // -------------------------
   // Draft merge (non-destructive)
   // -------------------------
@@ -270,11 +336,11 @@
     const right = el("div", { style: "padding:12px;overflow:auto;" });
 
     const tabs = [
-      { id: "components", label: "Add Component" },
-      { id: "bindings", label: "Bindings" },
-      { id: "detect", label: "New / Unbound" },
-      { id: "zones", label: "Zones" },
-      { id: "export", label: "Export" },
+      { id: "wizard", label: "Add to Layout" },
+      { id: "sources", label: "Content Sources" },
+      { id: "new", label: "New Content" },
+      { id: "areas", label: "Layout Areas" },
+      { id: "export", label: "Save / Export" },
     ];
 
     const tabList = el("div", { style: "display:flex;flex-direction:column;gap:8px;" });
@@ -327,7 +393,7 @@
       root._activeTab = id;
       if (typeof root.render === "function") root.render();
     }
-    setActiveTab("components");
+    setActiveTab("wizard");
     return root;
   }
 
@@ -338,6 +404,30 @@
   let _index = null;
   let _draft = null;
   let _error = "";
+
+  // wizard state (editor-only)
+  let _advanced = false;
+  let _wizStep = 1;
+  let _wizTemplate = "radial";
+  let _wizName = "";
+  let _wizSheet = "";
+  let _wizSearch = "";
+  let _wizSingleRow = false;
+  let _wizSelectedRowKey = "";
+  let _wizScreen = "";
+  let _wizZone = "root";
+
+  function resetWizard() {
+    _wizStep = 1;
+    _wizTemplate = "radial";
+    _wizName = "";
+    _wizSheet = (_index?.sheets?.[0] || "");
+    _wizSearch = "";
+    _wizSingleRow = false;
+    _wizSelectedRowKey = "";
+    _wizScreen = "";
+    _wizZone = "root";
+  }
 
   async function ensureData() {
     try {
@@ -372,121 +462,195 @@
     </div>`;
   }
 
-  function viewComponents() {
+  function viewWizard() {
     const screens = Array.from(new Set(asArray(_draft?.UILayout).map(r => String(r?.ScreenId || r?.screenId)).filter(Boolean))).sort();
     const zones = asArray(_draft?.UIZones).map(z => String(z?.ZoneId || z?.zoneId)).filter(Boolean);
-    const bindingIds = Array.from(new Set(asArray(_draft?.UIBindings).map(b => String(b?.BindingId || b?.bindingId)).filter(Boolean))).sort();
-
-    const screenOpts = (screens.length ? screens : ["(type a screen id)"]).map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const zoneOpts = (zones.length ? zones : ["root"]).map(z => `<option value="${escapeHtml(z)}">${escapeHtml(z)}</option>`).join("");
-    const bindOpts = ["", ...bindingIds].map(b => `<option value="${escapeHtml(b)}">${b ? escapeHtml(b) : "(none)"}</option>`).join("");
-
-    return `
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div style="opacity:.9;line-height:1.35;">
-          Adds a new UI node into <b>UILayout</b> (and optionally attaches an existing <b>UIBinding</b>).<br/>
-          This is editor-only and saved to your local <code>${escapeHtml(DRAFT_KEY)}</code> draft.
-        </div>
-
-        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">ScreenId</span>
-            <input id="hbcr-add-screen" placeholder="e.g. metamagic" list="hbcr-screen-list" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-            <datalist id="hbcr-screen-list">${screenOpts}</datalist>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">ZoneId</span>
-            <select id="hbcr-add-zone" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">
-              ${zoneOpts}
-            </select>
-          </label>
-        </div>
-
-        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">Component Type</span>
-            <select id="hbcr-add-type" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">
-              <option value="panel">Box / Panel</option>
-              <option value="choiceGrid">Radial-like Choice Grid</option>
-            </select>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">BindingId (optional)</span>
-            <select id="hbcr-add-binding" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">
-              ${bindOpts}
-            </select>
-          </label>
-        </div>
-
-        <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-weight:700;">Props (JSON)</span>
-          <textarea id="hbcr-add-props" rows="6" style="width:100%;box-sizing:border-box;padding:10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">{
-  "title": "",
-  "subtitle": "",
-  "selectedPath": ""
-}</textarea>
-        </label>
-
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button type="button" id="hbcr-add-component-btn" style="all:unset;cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(200,160,80,0.35);background:rgba(0,0,0,0.18);font-weight:800;">+ Add Component</button>
-          <div id="hbcr-add-component-msg" style="opacity:.85;"></div>
-        </div>
-      </div>
-    `;
-  }
-
-  function viewBindings() {
     const sheets = asArray(_index?.sheets);
-    const sheetOpts = sheets.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    return `
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div style="opacity:.9;line-height:1.35;">
-          Create a new <b>UIBinding</b> row that reads from the published bundle.<br/>
-          This does not alter sheets; it only stores a binding config in the draft.
-        </div>
-        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">BindingId</span>
-            <input id="hbcr-bind-id" placeholder="e.g. Traits_All" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">SourceRef (bundle sheet)</span>
-            <select id="hbcr-bind-sheet" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">${sheetOpts}</select>
-          </label>
-        </div>
-        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">LabelField</span>
-            <input id="hbcr-bind-label" value="name" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">ValueField</span>
-            <input id="hbcr-bind-value" value="id" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-          </label>
-        </div>
-        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">IconField</span>
-            <input id="hbcr-bind-icon" value="icon" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;">
-            <span style="font-weight:700;">DescField</span>
-            <input id="hbcr-bind-desc" value="desc" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
-          </label>
-        </div>
+
+    if (!_wizSheet) _wizSheet = sheets[0] || "";
+    const rows = (_index?.rowsBySheet?.get(_wizSheet) || []);
+    const filtered = !_wizSearch ? rows : rows.filter(r => r.searchText.includes(String(_wizSearch).toLowerCase()));
+    const showRows = filtered.slice(0, 120);
+
+    const templateCards = [
+      { id: "radial", title: "Radial (selection wheel)", desc: "Shows a list of choices (like Race/Class/Subclass)." },
+      { id: "dropdown", title: "Dropdown", desc: "Shows a compact list selector." },
+      { id: "panel", title: "Panel / Box", desc: "A simple container with a title." },
+      { id: "button", title: "Button / Choice", desc: "A single clickable option." },
+    ];
+
+    const stepHdr = (n, label) => `<div style="display:flex;gap:10px;align-items:center;">
+      <div style="width:26px;height:26px;border-radius:999px;border:1px solid rgba(200,160,80,0.28);display:flex;align-items:center;justify-content:center;font-weight:900;background:${_wizStep===n?"rgba(200,160,80,0.15)":"rgba(0,0,0,0.12)"};">${n}</div>
+      <div style="font-weight:900;">${escapeHtml(label)}</div>
+    </div>`;
+
+    const advToggle = `
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer;user-select:none;opacity:.92;">
+        <input id="hbcr-adv" type="checkbox" ${_advanced?"checked":""} />
+        <span style="font-weight:800;">Advanced</span>
+      </label>
+    `;
+
+    const nav = `
+      <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <div style="opacity:.9;line-height:1.35;">Add something to the layout using a simple wizard. This only updates your local draft (safe).</div>
+        ${advToggle}
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+        <button type="button" id="hbcr-wiz-prev" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.25);background:rgba(0,0,0,0.12);font-weight:900;opacity:${_wizStep===1?".45":"1"};">Back</button>
+        <button type="button" id="hbcr-wiz-next" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.35);background:rgba(0,0,0,0.18);font-weight:900;">Next</button>
+        <button type="button" id="hbcr-wiz-reset" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.18);background:rgba(0,0,0,0.10);font-weight:900;opacity:.9;">Reset</button>
+      </div>
+    `;
+
+    const step1 = `
+      ${stepHdr(1, "Choose what you're adding")}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        ${templateCards.map(c => `
+          <button type="button" data-template="${escapeHtml(c.id)}" style="all:unset;cursor:pointer;padding:12px;border-radius:14px;border:1px solid ${_wizTemplate===c.id?"rgba(200,160,80,0.40)":"rgba(200,160,80,0.18)"};background:${_wizTemplate===c.id?"rgba(200,160,80,0.12)":"rgba(0,0,0,0.12)"};">
+            <div style="font-weight:900;margin-bottom:4px;">${escapeHtml(c.title)}</div>
+            <div style="opacity:.88;line-height:1.25;">${escapeHtml(c.desc)}</div>
+          </button>
+        `).join("")}
+      </div>
+      <label style="display:flex;flex-direction:column;gap:6px;margin-top:12px;">
+        <span style="font-weight:900;">Name (optional)</span>
+        <input id="hbcr-wiz-name" placeholder="e.g. Trait Picker" value="${escapeHtml(_wizName)}" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
+        <div style="opacity:.78;font-size:12px;line-height:1.25;">This is just a friendly label. Internal IDs are generated for you.</div>
+      </label>
+    `;
+
+    const sheetOpts = sheets.map(s => `<option value="${escapeHtml(s)}" ${s===_wizSheet?"selected":""}>${escapeHtml(titleCase(s))}</option>`).join("");
+
+    const step2 = `
+      ${stepHdr(2, "Pick the content it should show")}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-weight:700;">WhereJson (optional, array)</span>
-          <textarea id="hbcr-bind-where" rows="5" style="width:100%;box-sizing:border-box;padding:10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">[]</textarea>
+          <span style="font-weight:900;">Content list (bundle sheet)</span>
+          <select id="hbcr-wiz-sheet" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">${sheetOpts}</select>
         </label>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button type="button" id="hbcr-add-binding-btn" style="all:unset;cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(200,160,80,0.35);background:rgba(0,0,0,0.18);font-weight:800;">+ Create Binding</button>
-          <div id="hbcr-add-binding-msg" style="opacity:.85;"></div>
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-weight:900;">Search (optional)</span>
+          <input id="hbcr-wiz-search" placeholder="type to search…" value="${escapeHtml(_wizSearch)}" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
+        </label>
+      </div>
+
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer;user-select:none;">
+        <input id="hbcr-wiz-single" type="checkbox" ${_wizSingleRow?"checked":""} />
+        <span style="font-weight:900;">Only show one item (optional)</span>
+        <span style="opacity:.78;font-size:12px;">(advanced usage; usually leave off)</span>
+      </label>
+
+      <div id="hbcr-wiz-rowpick" style="margin-top:10px;${_wizSingleRow?"":"display:none;"}">
+        <div style="font-weight:900;margin-bottom:6px;">Choose the item</div>
+        <div style="max-height:240px;overflow:auto;border:1px solid rgba(200,160,80,0.18);border-radius:14px;background:rgba(0,0,0,0.12);">
+          ${showRows.map(r => `
+            <button type="button" data-rowkey="${escapeHtml(r.rowKey)}" style="all:unset;display:block;cursor:pointer;width:100%;box-sizing:border-box;padding:10px 12px;border-bottom:1px solid rgba(200,160,80,0.10);background:${_wizSelectedRowKey===r.rowKey?"rgba(200,160,80,0.10)":"transparent"};">
+              <div style="font-weight:900;">${escapeHtml(r.label)}</div>
+              <div style="opacity:.75;font-size:12px;">${escapeHtml(r.rowKey)} • ${escapeHtml(titleCase(r.sheet))}</div>
+            </button>
+          `).join("") || `<div style="padding:12px;opacity:.8;">No matches.</div>`}
+        </div>
+      </div>
+
+      ${_advanced ? `
+        <div style="margin-top:12px;padding:10px;border-radius:14px;border:1px solid rgba(200,160,80,0.18);background:rgba(0,0,0,0.10);">
+          <div style="font-weight:900;margin-bottom:6px;">Advanced (content fields)</div>
+          <div style="opacity:.82;line-height:1.25;font-size:12px;">We'll auto-pick fields for you when we build the Content Source. You can adjust them later under “Content Sources”.</div>
+        </div>
+      ` : ""}
+    `;
+
+    const screenOpts = screens.map(s => `<option value="${escapeHtml(s)}" ${s===_wizScreen?"selected":""}>${escapeHtml(titleCase(s))}</option>`).join("");
+    const zoneOpts = (zones.length ? zones : ["root"]).map(z => `<option value="${escapeHtml(z)}" ${z===_wizZone?"selected":""}>${escapeHtml(titleCase(z))}</option>`).join("");
+
+    const step3 = `
+      ${stepHdr(3, "Choose where it goes")}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-weight:900;">Screen</span>
+          <select id="hbcr-wiz-screen" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">
+            <option value="">(pick one)</option>
+            ${screenOpts}
+          </select>
+          <div style="opacity:.78;font-size:12px;">If you don’t see the screen yet, open it once, then come back.</div>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-weight:900;">Area</span>
+          <select id="hbcr-wiz-zone" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">${zoneOpts}</select>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <button type="button" id="hbcr-wiz-create" style="all:unset;cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(200,160,80,0.38);background:rgba(0,0,0,0.18);font-weight:1000;">Add to Layout</button>
+        <div style="opacity:.85;">This writes to your local draft only.</div>
+      </div>
+
+      ${_advanced ? `
+        <div style="margin-top:12px;padding:10px;border-radius:14px;border:1px solid rgba(200,160,80,0.18);background:rgba(0,0,0,0.10);">
+          <div style="font-weight:900;margin-bottom:6px;">Advanced</div>
+          <div style="opacity:.82;font-size:12px;line-height:1.25;">Raw IDs / JSON editing is available under the “Save / Export” tab.</div>
+        </div>
+      ` : ""}
+    `;
+
+    const content = (_wizStep === 1 ? step1 : _wizStep === 2 ? step2 : step3);
+    return `<div style="display:flex;flex-direction:column;gap:12px;">${nav}${content}</div>`;
+  }
+
+  function viewSources() {
+    const sheets = asArray(_index?.sheets);
+    const existing = asArray(_draft?.UIBindings);
+    const list = existing.map(b => {
+      const id = String(b?.BindingId || b?.bindingId || "");
+      const src = String(b?.SourceRef || b?.sourceRef || b?.Sheet || b?.sheet || "");
+      return { id, src, raw: b };
+    }).filter(x => x.id);
+
+    const sheetOpts = sheets.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(titleCase(s))}</option>`).join("");
+    return `
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="opacity:.92;line-height:1.35;">
+          <div style="font-weight:1000;margin-bottom:4px;">Content Sources</div>
+          A “Content Source” tells the UI what list of items to show (from the published bundle). This is editor-only and safe.
+        </div>
+
+        <div style="padding:10px;border-radius:14px;border:1px solid rgba(200,160,80,0.18);background:rgba(0,0,0,0.10);">
+          <div style="font-weight:1000;margin-bottom:6px;">Create a new Content Source</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-weight:900;">Name</span>
+              <input id="hbcr-src-id" placeholder="e.g. Traits_All" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-weight:900;">Bundle sheet</span>
+              <select id="hbcr-src-sheet" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.22);background:rgba(0,0,0,0.2);color:#e8dcc6;outline:none;">${sheetOpts}</select>
+            </label>
+          </div>
+          <div style="opacity:.78;font-size:12px;margin-top:8px;line-height:1.25;">We auto-pick display/value/icon fields based on what’s in that sheet. You can adjust in Advanced mode later.</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+            <button type="button" id="hbcr-src-create" style="all:unset;cursor:pointer;padding:9px 12px;border-radius:12px;border:1px solid rgba(200,160,80,0.35);background:rgba(0,0,0,0.18);font-weight:1000;">+ Create Content Source</button>
+            <div id="hbcr-src-msg" style="opacity:.85;"></div>
+          </div>
+        </div>
+
+        <div style="font-weight:1000;">Existing</div>
+        <div style="border:1px solid rgba(200,160,80,0.18);border-radius:14px;overflow:hidden;background:rgba(0,0,0,0.10);">
+          ${list.length ? list.map(x => `
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(200,160,80,0.10);">
+              <div>
+                <div style="font-weight:900;">${escapeHtml(x.id)}</div>
+                <div style="opacity:.78;font-size:12px;">Sheet: ${escapeHtml(titleCase(x.src || "(unknown)"))}</div>
+              </div>
+              <button type="button" data-del-src="${escapeHtml(x.id)}" style="all:unset;cursor:pointer;padding:7px 10px;border-radius:12px;border:1px solid rgba(255,120,120,0.30);background:rgba(120,0,0,0.10);font-weight:900;">Remove</button>
+            </div>
+          `).join("") : `<div style="padding:12px;opacity:.85;">No content sources yet.</div>`}
         </div>
       </div>
     `;
   }
 
-  function viewDetect() {
+  function viewNewContent() {
     // New detection = current bundle row keys vs last-seen.
     const lastSeen = readJsonLS(LAST_SEEN_KEY, {});
     const used = new Set();
@@ -512,8 +676,8 @@
     return `
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <div style="font-weight:800;">Detect</div>
-          <div style="opacity:.85;">New rows: <b>${totalNew}</b> • Unbound rows: <b>${totalUnbound}</b></div>
+          <div style="font-weight:1000;">New Content</div>
+          <div style="opacity:.85;">New since last seen: <b>${totalNew}</b> • Not referenced in layout draft: <b>${totalUnbound}</b></div>
           <button type="button" id="hbcr-mark-seen" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px solid rgba(200,160,80,0.30);background:rgba(0,0,0,0.16);font-weight:800;">Mark all as seen</button>
         </div>
 
@@ -542,6 +706,27 @@
         </div>
 
         <div id="hbcr-detect-list" style="border:1px solid rgba(200,160,80,0.18);border-radius:12px;overflow:hidden;"></div>
+      </div>
+    `;
+  }
+
+  function viewAreas() {
+    const zones = asArray(_draft?.UIZones);
+    const zoneIds = zones.map(z => String(z?.ZoneId || z?.zoneId)).filter(Boolean);
+    return `
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="opacity:.92;line-height:1.35;">
+          <div style="font-weight:1000;margin-bottom:4px;">Layout Areas</div>
+          Areas are where components can be placed. You usually don’t need to touch this.
+        </div>
+        <div style="border:1px solid rgba(200,160,80,0.18);border-radius:14px;overflow:hidden;background:rgba(0,0,0,0.10);">
+          ${(zoneIds.length ? zoneIds : ["root"]).map(z => `
+            <div style="padding:10px 12px;border-bottom:1px solid rgba(200,160,80,0.10);">
+              <div style="font-weight:900;">${escapeHtml(titleCase(z))}</div>
+              <div style="opacity:.75;font-size:12px;">ZoneId: ${escapeHtml(z)}</div>
+            </div>
+          `).join("")}
+        </div>
       </div>
     `;
   }
@@ -614,7 +799,172 @@
 
     // delegate handler based on active tab
     right.addEventListener("click", async (e) => {
-      const id = e.target?.id;
+      const activeTab = modal._activeTab || "wizard";
+      const id = e.target?.id || "";
+
+      // -------------------------
+      // Wizard interactions (non-coder friendly)
+      // -------------------------
+      if (activeTab === "wizard") {
+        const tplBtn = e.target?.closest?.("[data-template]");
+        if (tplBtn) {
+          _wizTemplate = tplBtn.getAttribute("data-template") || _wizTemplate;
+          modal.render();
+          return;
+        }
+        const rowBtn = e.target?.closest?.("[data-rowkey]");
+        if (rowBtn) {
+          _wizSelectedRowKey = rowBtn.getAttribute("data-rowkey") || "";
+          modal.render();
+          return;
+        }
+
+        if (id === "hbcr-wiz-prev") {
+          _wizStep = Math.max(1, _wizStep - 1);
+          modal.render();
+          return;
+        }
+        if (id === "hbcr-wiz-next") {
+          // minimal validation per step
+          if (_wizStep === 2 && _wizSingleRow && !_wizSelectedRowKey) {
+            toast("Pick an item (or turn off ‘Only show one item’).", false);
+            return;
+          }
+          _wizStep = Math.min(3, _wizStep + 1);
+          modal.render();
+          return;
+        }
+        if (id === "hbcr-wiz-reset") {
+          resetWizard();
+          modal.render();
+          return;
+        }
+        if (id === "hbcr-wiz-create") {
+          const screen = String(_wizScreen || "").trim();
+          const zone = String(_wizZone || "root").trim() || "root";
+          const sheet = String(_wizSheet || "").trim();
+          if (!screen) { toast("Choose a Screen first.", false); return; }
+          if (!sheet) { toast("Choose a content list (sheet).", false); return; }
+
+          // Map friendly template → existing renderer-safe types.
+          // We do NOT change renderer; we only use types it already understands.
+          let type = "choiceGrid";
+          if (_wizTemplate === "panel") type = "panel";
+          // dropdown/button are currently represented as choiceGrid for safety.
+
+          const list = (_index?.rowsBySheet?.get(sheet) || []);
+          const firstRow = list[0]?.row || null;
+          const keys = fieldKeysFromRow(firstRow);
+          const labelField = guessField(keys, "label");
+          const valueField = guessField(keys, "value");
+          const iconField = guessField(keys, "icon");
+          const descField = guessField(keys, "desc");
+
+          const bindingId = nowId("src");
+          const where = (_wizSingleRow && _wizSelectedRowKey)
+            ? JSON.stringify([{ field: valueField, op: "eq", value: _wizSelectedRowKey }])
+            : "[]";
+
+          const next = clone(_draft);
+          next.UIBindings = asArray(next.UIBindings).concat([{
+            BindingId: bindingId,
+            SourceType: "sheet",
+            SourceRef: sheet,
+            ItemsPath: "",
+            WhereJson: where,
+            LabelField: labelField,
+            IconField: iconField,
+            ValueField: valueField,
+            DescField: descField,
+            SortField: "",
+            SortDir: "asc",
+          }]);
+
+          const componentId = nowId(type);
+          const order = nextOrderWithin(asArray(next.UILayout), screen, zone);
+          const title = (_wizName || titleCase(_wizTemplate)) + (sheet ? ` • ${titleCase(sheet)}` : "");
+          const props = (type === "panel")
+            ? { title }
+            : { title, mode: _wizTemplate };
+
+          next.UILayout = asArray(next.UILayout).concat([{
+            ScreenId: screen,
+            ComponentId: componentId,
+            Type: type,
+            ParentId: "",
+            ZoneId: zone,
+            Slot: "",
+            Order: order,
+            Enabled: true,
+            BindingId: bindingId,
+            PropsJson: JSON.stringify(props),
+            StyleJson: "{}",
+            VisibilityJson: "",
+          }]);
+
+          saveDraftNonDestructive(next);
+          toast("Added to layout (saved to local draft).", true);
+          resetWizard();
+          modal.render();
+          return;
+        }
+      }
+
+      // -------------------------
+      // Content Sources
+      // -------------------------
+      if (activeTab === "sources") {
+        const del = e.target?.closest?.("[data-del-src]");
+        if (del) {
+          const bid = del.getAttribute("data-del-src") || "";
+          if (!bid) return;
+          const next = clone(_draft);
+          next.UIBindings = asArray(next.UIBindings).filter(b => String(b?.BindingId || b?.bindingId) !== bid);
+          saveDraftNonDestructive(next);
+          toast("Removed content source.");
+          modal.render();
+          return;
+        }
+        if (id === "hbcr-src-create") {
+          const msg = right.querySelector("#hbcr-src-msg");
+          const name = (right.querySelector("#hbcr-src-id")?.value || "").trim();
+          const sheet = (right.querySelector("#hbcr-src-sheet")?.value || "").trim();
+          if (!name) { if (msg) msg.textContent = "Name is required."; toast("Name is required.", false); return; }
+          if (!sheet) { if (msg) msg.textContent = "Choose a sheet."; toast("Choose a sheet.", false); return; }
+          const exists = asArray(_draft?.UIBindings).some(b => String(b?.BindingId || b?.bindingId) === name);
+          if (exists) { if (msg) msg.textContent = "That name already exists."; toast("That name already exists.", false); return; }
+
+          const list = (_index?.rowsBySheet?.get(sheet) || []);
+          const firstRow = list[0]?.row || null;
+          const keys = fieldKeysFromRow(firstRow);
+          const labelField = guessField(keys, "label");
+          const valueField = guessField(keys, "value");
+          const iconField = guessField(keys, "icon");
+          const descField = guessField(keys, "desc");
+
+          const next = clone(_draft);
+          next.UIBindings = asArray(next.UIBindings).concat([{
+            BindingId: name,
+            SourceType: "sheet",
+            SourceRef: sheet,
+            ItemsPath: "",
+            WhereJson: "[]",
+            LabelField: labelField,
+            IconField: iconField,
+            ValueField: valueField,
+            DescField: descField,
+            SortField: "",
+            SortDir: "asc",
+          }]);
+          saveDraftNonDestructive(next);
+          if (msg) msg.textContent = `Created: ${name}`;
+          toast("Created content source.");
+          modal.render();
+          return;
+        }
+      }
+
+      // If no id, nothing else to do
       if (!id) return;
 
       // Add Component
@@ -716,7 +1066,7 @@
         return;
       }
 
-      // Detect: mark seen
+      // New Content: mark seen
       if (id === "hbcr-mark-seen") {
         const seen = {};
         for (const sheet of (_index?.sheets || [])) {
@@ -750,15 +1100,37 @@
       }
     });
 
+    // Wizard + sources model updates
+    right.addEventListener("input", (e) => {
+      const active = modal._activeTab || "wizard";
+      const id = e.target?.id;
+      if (active === "wizard") {
+        if (id === "hbcr-wiz-name") _wizName = e.target.value || "";
+        if (id === "hbcr-wiz-search") { _wizSearch = e.target.value || ""; modal.render(); }
+      }
+    });
+
+    right.addEventListener("change", (e) => {
+      const active = modal._activeTab || "wizard";
+      const id = e.target?.id;
+      if (active === "wizard") {
+        if (id === "hbcr-adv") { _advanced = !!e.target.checked; modal.render(); }
+        if (id === "hbcr-wiz-sheet") { _wizSheet = e.target.value || ""; _wizSelectedRowKey = ""; modal.render(); }
+        if (id === "hbcr-wiz-single") { _wizSingleRow = !!e.target.checked; if (!_wizSingleRow) _wizSelectedRowKey = ""; modal.render(); }
+        if (id === "hbcr-wiz-screen") _wizScreen = e.target.value || "";
+        if (id === "hbcr-wiz-zone") _wizZone = e.target.value || "root";
+      }
+    });
+
     // Detect list live rendering
     right.addEventListener("input", (e) => {
       const active = modal._activeTab;
-      if (active !== "detect") return;
+      if (active !== "new") return;
       if (e.target?.id === "hbcr-detect-q") renderDetectList(right);
     });
     right.addEventListener("change", (e) => {
       const active = modal._activeTab;
-      if (active !== "detect") return;
+      if (active !== "new") return;
       const id = e.target?.id;
       if (id === "hbcr-detect-sheet" || id === "hbcr-detect-only-new" || id === "hbcr-detect-only-unbound") {
         renderDetectList(right);
@@ -820,17 +1192,17 @@
         right.innerHTML = _error ? viewError() : `<div style="opacity:.85;padding:10px;">Loading…</div>`;
         return;
       }
-      const active = modal._activeTab || "components";
-      if (active === "components") right.innerHTML = viewComponents();
-      else if (active === "bindings") right.innerHTML = viewBindings();
-      else if (active === "detect") {
-        right.innerHTML = viewDetect();
+      const active = modal._activeTab || "wizard";
+      if (active === "wizard") right.innerHTML = viewWizard();
+      else if (active === "sources") right.innerHTML = viewSources();
+      else if (active === "new") {
+        right.innerHTML = viewNewContent();
         // render list after DOM exists
         setTimeout(() => renderDetectList(right), 0);
       }
-      else if (active === "zones") right.innerHTML = viewZones();
+      else if (active === "areas") right.innerHTML = viewAreas();
       else if (active === "export") right.innerHTML = viewExport();
-      else right.innerHTML = viewComponents();
+      else right.innerHTML = viewWizard();
     };
   }
 
@@ -845,6 +1217,7 @@
 
     // Load initial data once.
     await ensureData();
+    resetWizard();
     modal.render();
 
     btn.addEventListener("click", async () => {
