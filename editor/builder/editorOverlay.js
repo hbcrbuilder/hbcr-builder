@@ -1058,4 +1058,28 @@
     }
     toggleOpen(false);
   })();
+
+  // ------------------------------------------------------------
+  // Debug / external hooks
+  // ------------------------------------------------------------
+  window.runModUpdates = function runModUpdates() {
+    try {
+      state.view = "updates";
+      toggleOpen(true);
+      renderResults();
+    } catch (err) {
+      console.error("[HBCR] runModUpdates failed", err);
+    }
+  };
+
+  window.runEditorAdd = function runEditorAdd() {
+    try {
+      state.view = "search";
+      toggleOpen(true);
+      renderResults();
+    } catch (err) {
+      console.error("[HBCR] runEditorAdd failed", err);
+    }
+  };
+
 })();
