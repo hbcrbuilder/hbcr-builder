@@ -1,6 +1,6 @@
 /* Easy Mode CMS styling – uses existing bg3 theme vars from /src/ui.css */
 
-.cms-root{min-height:100vh;}
+.cms-root{min-height:100vh; flex-direction:column;}
 
 .cms-topbar{
   position:sticky;top:0;z-index:50;
@@ -21,9 +21,13 @@
 
 .cms-grid{
   display:grid;
-  grid-template-columns: 320px 1fr 380px;
-  gap:14px;
-  padding:14px;
+  grid-template-columns: 380px 1.2fr 1fr;
+  gap:24px;
+  padding:18px 32px 22px;
+  width:100%;
+  max-width:1700px;
+  margin:0 auto;
+  box-sizing:border-box;
 }
 
 .cms-panel{
