@@ -26,8 +26,66 @@ async function fetchBundle() {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Bundle fetch failed: ${res.status}`);
-  return await res.json();
+  const json = await res.json();
+  // CMS Full Preview: apply local draft overrides (hbcr_cms_draft_v1)
+  try {
+    const params = new URLSearchParams(window.location?.search || "");
+    if (params.get("cmsPreview") === "1") {
+      const raw = localStorage.getItem("hbcr_cms_draft_v1");
+      if (raw) {
+        const draft = JSON.parse(raw);
+        applyCmsDraftOverrides(json, draft);
+      }
+    }
+  } catch {}
+  return json;
 }
+
+// Map sheet -> id key (matches CMS)
+const __CMS_ID_KEYS__ = {
+  Races: "RaceId",
+  Subraces: "SubraceId",
+  Classes: "ClassId",
+  Subclasses: "SubclassId",
+  Spells: "SpellId",
+  Cantrips: "SpellId",
+  Feats: "FeatId",
+  Traits: "TraitId",
+  Equipment: "EquipmentId",
+  Weapons: "WeaponId",
+  ClassFeatures: "FeatureId",
+};
+
+function applyCmsDraftOverrides(bundle, draft){
+  if(!bundle || typeof bundle !== 'object' || !draft || typeof draft !== 'object') return;
+  const perSheet = {};
+  for(const k of Object.keys(draft)){
+    const parts = String(k).split('::');
+    if(parts.length < 2) continue;
+    const sheet = parts[0];
+    const id = parts.slice(1).join('::');
+    (perSheet[sheet] ||= {})[id] = draft[k];
+  }
+  for(const sheet of Object.keys(perSheet)){
+    const rows = bundle[sheet];
+    if(!Array.isArray(rows)) continue;
+    const idKey = __CMS_ID_KEYS__[sheet];
+    if(!idKey) continue;
+    const map = new Map();
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i];
+      const rid = r && r[idKey];
+      if(rid != null) map.set(String(rid), i);
+    }
+    const overrides = perSheet[sheet];
+    for(const id of Object.keys(overrides)){
+      const idx = map.get(String(id));
+      if(idx == null) continue;
+      rows[idx] = { ...rows[idx], ...overrides[id] };
+    }
+  }
+}
+
 
 export async function getBundle() {
   if (!_bundlePromise) _bundlePromise = fetchBundle();

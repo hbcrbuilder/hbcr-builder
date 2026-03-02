@@ -68,14 +68,18 @@
         <div class="cms-panel-header">
           <div>
             <div class="cms-h">Live Preview</div>
-            <div class="cms-help">This is a safe preview panel (won’t freeze the browser).</div>
+            <div class="cms-help" id="previewHelp">This is a safe preview panel (won’t freeze the browser).</div>
+          </div>
+          <div class="cms-preview-toggle">
+            <button class="btn btn-small is-active" id="btnPreviewLight" type="button" title="Fast preview (recommended)">Light</button>
+            <button class="btn btn-small" id="btnPreviewFull" type="button" title="Full builder preview (updates on Save Draft)">Full Builder</button>
           </div>
         </div>
         <div class="cms-preview-wrap">
           <iframe id="previewFrame" class="cms-preview" src="/editor/builder/preview.html" title="Builder Preview"></iframe>
         </div>
         <div class="cms-help" style="padding:10px 12px">
-          Tip: This preview shows the name + icon as it would appear in the builder. Full builder rendering stays in the Builder screen.
+          <span id="previewTip">Tip: Light preview shows name + icon only. Switch to Full Builder for a full preview (updates on Save Draft).</span>
         </div>
       </section>
     </main>

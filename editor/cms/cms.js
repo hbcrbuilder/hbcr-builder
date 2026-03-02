@@ -24,6 +24,13 @@ const btnSave = $("#btnSave");
 const btnRevert = $("#btnRevert");
 
 const previewFrame = $("#previewFrame");
+const btnPreviewLight = $("#btnPreviewLight");
+const btnPreviewFull  = $("#btnPreviewFull");
+const elPreviewHelp = $("#previewHelp");
+const elPreviewTip  = $("#previewTip");
+
+let previewMode = "light"; // light | full
+
 
 let bundle = null; // { SheetName: rows[] }
 let sheets = []; // sheet names
@@ -213,6 +220,43 @@ function postPreview(row){
     previewFrame?.contentWindow?.postMessage(msg, '*');
   } catch {}
 }
+
+function setPreviewMode(mode){
+  previewMode = (mode === "full") ? "full" : "light";
+  if(previewMode === "full"){
+    btnPreviewFull?.classList.add("is-active");
+    btnPreviewLight?.classList.remove("is-active");
+    if(elPreviewHelp) elPreviewHelp.textContent = "Full Builder preview (updates when you click Save Draft).";
+    if(elPreviewTip) elPreviewTip.textContent = "Tip: Full Builder preview updates on Save Draft to avoid freezing. Switch back to Light if it feels slow.";
+    if(previewFrame) previewFrame.src = "/editor/builder/?cmsPreview=1";
+  } else {
+    btnPreviewLight?.classList.add("is-active");
+    btnPreviewFull?.classList.remove("is-active");
+    if(elPreviewHelp) elPreviewHelp.textContent = "This is a safe preview panel (won’t freeze the browser).";
+    if(elPreviewTip) elPreviewTip.textContent = "Tip: Light preview shows name + icon only. Switch to Full Builder for a full preview (updates on Save Draft).";
+    if(previewFrame) previewFrame.src = "/editor/builder/preview.html";
+    sendPreview(currentRow);
+  }
+}
+
+btnPreviewLight?.addEventListener("click", ()=> setPreviewMode("light"));
+btnPreviewFull?.addEventListener("click", ()=> {
+  if(!localStorage.getItem("hbcr_cms_full_preview_ok")){
+    const ok = confirm("Full Builder preview can be heavier than Light Preview. It will only update when you click Save Draft. Continue?");
+    if(!ok) return;
+    localStorage.setItem("hbcr_cms_full_preview_ok","1");
+  }
+  setPreviewMode("full");
+});
+
+function pushFullPreviewOverrides(){
+  try{
+    const all = readDraftAll();
+    const msg = { type: "HBCR_CMS_OVERRIDES", draft: all, t: Date.now() };
+    previewFrame?.contentWindow?.postMessage(msg, "*");
+  } catch {}
+}
+
 
 function renderForm(){
   if(!currentRow){

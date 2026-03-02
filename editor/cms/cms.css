@@ -144,3 +144,9 @@
   .cms-grid{grid-template-columns: 1fr;}
   .cms-panel{height:auto;}
 }
+
+
+/* Preview mode toggle */
+.cms-preview-toggle{display:flex;gap:8px;align-items:center}
+.btn.btn-small{padding:6px 10px;font-size:12px;line-height:1;border-radius:10px}
+.btn.btn-small.is-active{outline:2px solid rgba(216,188,123,.35)}
