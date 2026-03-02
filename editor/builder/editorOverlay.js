@@ -153,58 +153,11 @@ function hbcrApi(path) {
       t.style.pointerEvents = "none";
       document.body.appendChild(t);
     }
-
     t.textContent = msg;
     t.style.opacity = "1";
     clearTimeout(t.__hbcrTimer);
     t.__hbcrTimer = setTimeout(() => { t.style.opacity = "0"; }, 1800);
   }
-
-	async function confirmDialog({ title, message, confirmText = "Confirm", cancelText = "Cancel" }) {
-	  return await new Promise((resolve) => {
-	    const overlay = document.createElement("div");
-	    overlay.style.position = "fixed";
-	    overlay.style.inset = "0";
-	    overlay.style.zIndex = "1000000";
-	    overlay.style.background = "rgba(0,0,0,.55)";
-	    overlay.style.display = "flex";
-	    overlay.style.alignItems = "center";
-	    overlay.style.justifyContent = "center";
-	    overlay.style.padding = "18px";
-
-	    const card = document.createElement("div");
-	    card.style.width = "min(520px, 92vw)";
-	    card.style.background = "rgba(12,12,12,.92)";
-	    card.style.border = "1px solid rgba(212,175,55,0.25)";
-	    card.style.borderRadius = "16px";
-	    card.style.boxShadow = "0 18px 60px rgba(0,0,0,.55)";
-	    card.style.padding = "14px 14px 12px";
-	    card.style.color = "rgba(255,255,255,.92)";
-
-	    card.innerHTML = `
-	      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;">${esc(title || "Confirm")}</div>
-	      <div style="margin-top:8px;opacity:.85;font-size:13px;line-height:1.45;white-space:pre-wrap;">${esc(message || "")}</div>
-	      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-	        <button data-a="cancel" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);font-weight:800;">${esc(cancelText)}</button>
-	        <button data-a="ok" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.35);background:rgba(212,175,55,0.12);font-weight:900;">${esc(confirmText)}</button>
-	      </div>
-	    `;
-
-	    const cleanup = (val) => {
-	      try { overlay.remove(); } catch {}
-	      resolve(val);
-	    };
-
-	    overlay.addEventListener("click", (e) => {
-	      if (e.target === overlay) cleanup(false);
-	    });
-	    card.querySelector('[data-a="cancel"]')?.addEventListener("click", () => cleanup(false));
-	    card.querySelector('[data-a="ok"]')?.addEventListener("click", () => cleanup(true));
-
-	    overlay.appendChild(card);
-	    document.body.appendChild(overlay);
-	  });
-	}
 
   // ------------------------------------------------------------
   // Embedded Dock Mounting (NOT an overlay)
@@ -224,7 +177,7 @@ function hbcrApi(path) {
     filter: 'all',
     query: '',
     bundleIndex: null,
-    mod: { loading: false, saving: false, error: null, tab: 'new', search: '', limits: { added: {}, removed: {} }, prev: null, cur: null, diff: null, sel: new Set() },
+    mod: { loading: false, prev: null, cur: null, diff: null, sel: new Set() },
   };
 
   function ensureRightGroup(topbar) {
@@ -425,73 +378,7 @@ function hbcrApi(path) {
     return "other";
   }
 
-  // NOTE: The overlay has two different needs:
-  // - The inbox/search UI wants a full bundle index (labels/searchText)
-  // - Mod Updates only needs a lightweight snapshot of IDs.
-  // Building the full index can be expensive on large bundles, so Mod Updates
-  // uses a fast path that avoids hashing/stringifying entire rows.
-
-  function cheapRowKey(row) {
-    if (!row || typeof row !== "object") return "";
-    const direct = row.id ?? row.Id ?? row.ID ?? row.key ?? row.Key ?? row.slug ?? row.Slug;
-    if (direct != null && String(direct).trim()) return String(direct).trim();
-    // Prefer any field that ends with Id/ID (e.g. RaceId, ClassId)
-    for (const [k, v] of Object.entries(row)) {
-      if (v == null) continue;
-      const ks = String(k);
-      if (/Id$|ID$/i.test(ks) || /^(id|key|slug|uuid)$/i.test(ks)) {
-        const s = String(v).trim();
-        if (s) return s;
-      }
-    }
-    return "";
-  }
-
-  async function buildCurrentModSnapshotFromBundle(bundle) {
-    const items = [];
-    if (!bundle || typeof bundle !== "object") {
-      return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
-    }
-
-    const sheetNames = Object.keys(bundle)
-      .filter(k => k && typeof k === "string")
-      .sort((a, b) => a.localeCompare(b));
-
-    let processed = 0;
-    for (const sheet of sheetNames) {
-      const type = sheetToContentType(sheet);
-      if (!['class','subclass','weapon','equipment','spell','pickType'].includes(type)) continue;
-      const raw = bundle[sheet];
-      const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : []);
-      if (!rows || !rows.length) continue;
-
-      for (const row of rows) {
-        const src = normalizeSource(
-          row?.source ?? row?.Source ?? row?.SOURCE ??
-          row?.modSource ?? row?.ModSource ?? row?.MODSOURCE ??
-          row?.mod_source ?? row?.MOD_SOURCE ??
-          row?.origin ?? row?.Origin
-        );
-        // Treat missing source as in-scope; enforce hbcr only if present.
-        if (src && src !== 'hbcr') continue;
-        const id = cheapRowKey(row);
-        if (!id) continue;
-        items.push({ type, id, sheet });
-
-        // Yield to the browser occasionally to prevent tab freezes.
-        processed++;
-        if (processed % 600 === 0) {
-          await new Promise(r => setTimeout(r, 0));
-        }
-      }
-    }
-
-    items.sort((a,b) => (a.type + '|' + a.id).localeCompare(b.type + '|' + b.id));
-    return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
-  }
-
   function buildCurrentModSnapshot(bundleIndex) {
-    // Legacy path (used by older callers); keep it but prefer the fast path above for Mod Updates.
     const items = [];
     if (!bundleIndex?.rowsBySheet) return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
     for (const [sheet, rows] of bundleIndex.rowsBySheet.entries()) {
@@ -505,8 +392,11 @@ function hbcrApi(path) {
           row?.mod_source ?? row?.MOD_SOURCE ??
           row?.origin ?? row?.Origin
         );
+        // Many bundles (including our current /api/bundle shape) do not include a
+        // per-row source field. Treat missing source as in-scope, but if a source
+        // is present, enforce hbcr.
         if (src && src !== 'hbcr') continue;
-        const id = cheapRowKey(row) || stableRowKey(row);
+        const id = stableRowKey(row);
         if (!id) continue;
         items.push({ type, id, sheet });
       }
@@ -516,60 +406,56 @@ function hbcrApi(path) {
   }
 
   async function readPrevSnapshot() {
-  // Prefer Worker KV baseline
-  try {
-    const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
+    // Prefer Worker KV baseline
+    try {
+      const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        // Worker can return either:
+        // 1) { baseline: [...] }
+        // 2) { baseline: { schema, generatedAt, items: [...] } }
+        if (Array.isArray(data?.baseline)) {
+          return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items: data.baseline };
+        }
+        if (data?.baseline?.items && Array.isArray(data.baseline.items)) {
+          return data.baseline;
+        }
+      }
+    } catch (e) {
+      console.warn("Baseline GET failed; falling back to localStorage", e);
+    }
+    // Fallback: local baseline
+    return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
+  }
 
-      // Worker shape: { baseline: [...] }
-      if (Array.isArray(data?.baseline)) {
-        return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items: data.baseline };
+  async function writePrevSnapshot(snap) {
+    // Write Worker KV baseline; also keep local fallback copy
+    try {
+      const token = getPublishToken();
+      const res = await fetch(BASELINE_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": "Bearer " + token } : {}),
+        },
+        // Worker stores baseline as an array; accept either snapshot object or array.
+        body: JSON.stringify(snap?.items ?? snap),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Baseline POST failed: ${res.status} ${t}`);
       }
 
-      // Alt shape: { baseline: { items: [...] } }
-      if (data?.baseline?.items && Array.isArray(data.baseline.items)) {
-        return data.baseline;
-      }
+      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+      return;
+    } catch (e) {
+      console.warn("Baseline POST failed; saving only to localStorage", e);
+      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
     }
-  } catch (e) {
-    console.warn("Baseline GET failed; falling back to localStorage", e);
   }
-  // Fallback: local baseline
-  return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
-}
 
-async function writePrevSnapshot(snap) {
-  // Write Worker KV baseline; also keep local fallback copy
-  const payload = snap?.items ?? snap; // Worker expects array; allow snapshot object too
-  try {
-    const token = getPublishToken();
-    const res = await fetch(BASELINE_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "Authorization": "Bearer " + token } : {}),
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(`Baseline POST failed: ${res.status} ${t}`);
-    }
-
-    // Keep a local fallback copy (snapshot form)
-    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
-    return { ok: true };
-  } catch (e) {
-    console.warn("Baseline POST failed; saving only to localStorage", e);
-    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
-    return { ok: false, error: String(e?.message || e) };
-  }
-}
-
-
-function diffSnapshots(prev, cur) {
+  function diffSnapshots(prev, cur) {
     const key = (x) => `${x.type}|${x.id}`;
     const p = new Map();
     const c = new Map();
@@ -602,9 +488,11 @@ function diffSnapshots(prev, cur) {
     if (state.mod.loading) return;
     state.mod.loading = true;
     try {
-      // FAST PATH: avoid building the full bundle index (can freeze on large bundles)
+      // IMPORTANT: Mod Updates must stay fast. Do NOT build the full bundle index
+      // (it is used for Add Content search and can be expensive). For diffing we
+      // only need stable IDs per row.
       const bundle = await fetchBundle();
-      const cur = await buildCurrentModSnapshotFromBundle(bundle);
+      const cur = buildCurrentModSnapshotFromBundle(bundle);
       const prev = await readPrevSnapshot();
       const diff = diffSnapshots(prev, cur);
       state.mod.prev = prev;
@@ -663,6 +551,8 @@ function diffSnapshots(prev, cur) {
           sheet,
           rowKey: key,
           label,
+          // Keep this cheap. Stringifying every row can freeze the browser.
+          // Search still works well with label + id.
           searchText: (label + " " + key).toLowerCase(),
           row,
         });
@@ -673,6 +563,45 @@ function diffSnapshots(prev, cur) {
       }
     }
     return out;
+  }
+
+  // Fast snapshot builder: iterate the raw bundle object keyed by sheet name.
+  function buildCurrentModSnapshotFromBundle(bundle) {
+    const items = [];
+    if (!bundle || typeof bundle !== 'object') {
+      return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
+    }
+
+    const allowTypes = new Set(['class','subclass','weapon','equipment','spell','pickType']);
+    const sheetNames = Object.keys(bundle)
+      .filter(k => k && typeof k === 'string')
+      .sort((a, b) => a.localeCompare(b));
+
+    for (const sheet of sheetNames) {
+      const type = sheetToContentType(sheet);
+      if (!allowTypes.has(type)) continue;
+
+      const raw = bundle[sheet];
+      const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : null);
+      if (!rows) continue;
+
+      for (const row of rows) {
+        const src = normalizeSource(
+          row?.source ?? row?.Source ?? row?.SOURCE ??
+          row?.modSource ?? row?.ModSource ?? row?.MODSOURCE ??
+          row?.mod_source ?? row?.MOD_SOURCE ??
+          row?.origin ?? row?.Origin
+        );
+        // Many bundles don't have per-row source; allow missing.
+        if (src && src !== 'hbcr') continue;
+        const id = stableRowKey(row);
+        if (!id) continue;
+        items.push({ type, id, sheet });
+      }
+    }
+
+    items.sort((a,b) => (a.type + '|' + a.id).localeCompare(b.type + '|' + b.id));
+    return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
   }
 
   // -------------------------
@@ -993,301 +922,131 @@ function diffSnapshots(prev, cur) {
     // -------------------------
     // View: Mod Updates
     // -------------------------
-	  if (state.view === 'updates') {
-	    // Kick off load once
-	    if (!state.mod.diff && !state.mod.loading) {
-	      state.mod.loading = true;
-	      ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
-	      (async () => {
-	        try {
-	          await ensureModDiff();
-	        } finally {
-	          state.mod.loading = false;
-	          renderResults();
-	        }
-	      })();
-	      return;
-	    }
-	    if (state.mod.loading) {
-	      ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
-	      return;
-	    }
+    if (state.view === 'updates') {
+      if (!state.mod.diff && !state.mod.loading) {
+        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+        (async () => {
+          await ensureModDiff();
+          renderResults();
+        })();
+        return;
+      }
+      if (state.mod.loading) {
+        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+        return;
+      }
 
-	    const prev = state.mod.prev;
-	    const cur = state.mod.cur;
-	    const diff = state.mod.diff;
-	    if (!cur || !diff) {
-	      ui.results.innerHTML = `
-	        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-	          <div>
-	            <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
-	            <div style="opacity:.75;font-size:12px;margin-top:2px;line-height:1.35;">Could not load bundle / snapshot. Check /api/bundle and try again.</div>
-	          </div>
-	          <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:800;">Close</button>
-	        </div>
-	      `;
-	      ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
-	      return;
-	    }
-
-	    const prevAt = prev?.generatedAt ? new Date(prev.generatedAt).toLocaleString() : '—';
-	    const curAt = cur?.generatedAt ? new Date(cur.generatedAt).toLocaleString() : '—';
-	    const addedCount = diff.added?.length || 0;
-	    const removedCount = diff.removed?.length || 0;
-
-	    // Build type maps (and apply search filter)
-	    const q = (state.mod.search || '').toLowerCase().trim();
-	    const inQuery = (it) => !q || String(it.id).toLowerCase().includes(q) || String(it.sheet || '').toLowerCase().includes(q);
-	
-	    const addedMap = new Map();
-	    for (const it of (diff.added || []).filter(inQuery)) {
-	      if (!addedMap.has(it.type)) addedMap.set(it.type, []);
-	      addedMap.get(it.type).push(it);
-	    }
-	    const removedMap = new Map();
-	    for (const it of (diff.removed || []).filter(inQuery)) {
-	      if (!removedMap.has(it.type)) removedMap.set(it.type, []);
-	      removedMap.get(it.type).push(it);
-	    }
-
-	    const tokenOk = !!getPublishToken();
-	    const statusText = (addedCount || removedCount)
-	      ? `⚠ ${addedCount} new / ${removedCount} removed`
-	      : `✅ In sync`;
-
-	    const header = `
-	      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-	        <div style="min-width:260px;">
-	          <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
-	          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-	            <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.06em;">${esc(statusText)}</span>
-	            <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.12);font-size:11px;letter-spacing:.06em;">Token: ${tokenOk ? '✓' : 'Missing'}</span>
-	          </div>
-	          <div style="opacity:.78;font-size:12px;margin-top:8px;line-height:1.35;">
-	            Baseline: <span style="opacity:.92;">${esc(prevAt)}</span><br>
-	            Current: <span style="opacity:.92;">${esc(curAt)}</span>
-	          </div>
-	        </div>
-	
-	        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-	          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;"><span style="opacity:.75;">New</span> <span style="font-weight:900;">${addedCount}</span></span>
-	          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;"><span style="opacity:.75;">Removed</span> <span style="font-weight:900;">${removedCount}</span></span>
-	          <button data-action="save-baseline" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:900;">${state.mod.saving ? 'Saving…' : 'Save as New Baseline'}</button>
-	          <button data-action="copy-report" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:900;">Copy Change Report</button>
-	          <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:900;">Close</button>
-	        </div>
-	      </div>
-	
-	      <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-	        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-	          <button data-action="tab" data-tab="all" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='all'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">All</button>
-	          <button data-action="tab" data-tab="new" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='new'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">New</button>
-	          <button data-action="tab" data-tab="removed" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='removed'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">Removed</button>
-	        </div>
-	        <input data-action="search" value="${esc(state.mod.search)}" placeholder="Search ID or sheet…" style="width:min(360px, 90vw);padding:7px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);color:rgba(255,255,255,0.92);outline:none;" />
-	      </div>
-	      ${state.mod.error ? `<div style="margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,90,90,0.35);background:rgba(255,90,90,0.08);font-weight:800;">${esc(state.mod.error)}</div>` : ''}
-	    `;
-
-	    const groupHtml = (title, map, emptyText) => {
-	      const types = Array.from(map.keys());
-	      if (!types.length) return `<div style="margin-top:12px;opacity:.75;">${esc(emptyText)}</div>`;
-	      const sections = [];
-	      for (const t of ['class','subclass','spell','weapon','equipment','pickType']) {
-	        if (!map.has(t)) continue;
-	        const arr = map.get(t);
-	        const actionLabel = (t === 'class' || t === 'subclass') ? 'Add to radial…'
-	          : (t === 'pickType') ? 'Add to dropdown…'
-	          : 'Add to picker…';
-	        sections.push(`
-	          <div style="margin-top:14px;">
-	            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-	              <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
-	              ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:900;">${esc(actionLabel)}</button>` : ''}
-	            </div>
-	            <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-	              ${(() => {
-  const kind = (title||'').toLowerCase()==='new' ? 'added' : 'removed';
-  const lims = state.mod.limits || (state.mod.limits = { added:{}, removed:{} });
-  const limit = (lims[kind] && lims[kind][t]) ? lims[kind][t] : 80;
-  const shown = arr.slice(0, limit);
-  const rowsHtml = shown.map(it => {
-    const k = `${it.type}|${it.id}`;
-    const checked = state.mod.sel.has(k) ? 'checked' : '';
-    return `
-      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-          <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
-          <div style="min-width:0;">
-            <div style="font-weight:900;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
-            <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+      const prev = state.mod.prev;
+      const cur = state.mod.cur;
+      const diff = state.mod.diff;
+      if (!cur || !diff) {
+        ui.results.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-weight:800;letter-spacing:.06em;text-transform:uppercase;">Mod Updates</div>
+              <div style="opacity:.75;font-size:12px;margin-top:2px;">Could not load bundle / snapshot. Check /api/bundle and try again.</div>
+            </div>
+            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:700;">Close</button>
           </div>
+        `;
+        ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+        return;
+      }
+
+      const prevAt = prev?.generatedAt ? new Date(prev.generatedAt).toLocaleString() : '—';
+      const curAt = cur?.generatedAt ? new Date(cur.generatedAt).toLocaleString() : '—';
+      const addedCount = diff.added.length;
+      const removedCount = diff.removed.length;
+
+      const mkChip = (label, count) => `
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;">
+          <span style="opacity:.75;">${esc(label)}</span>
+          <span style="font-weight:900;">${count}</span>
+        </span>`;
+
+      const header = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div style="min-width:260px;">
+            <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
+            <div style="opacity:.75;font-size:12px;margin-top:2px;line-height:1.35;">
+              Baseline: <span style="opacity:.92;">${esc(prevAt)}</span><br>
+              Current: <span style="opacity:.92;">${esc(curAt)}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${mkChip('New', addedCount)}
+            ${mkChip('Removed', removedCount)}
+            <button data-action="set-baseline" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:800;">Set Baseline</button>
+            <button data-action="copy-snapshot" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Copy Snapshot</button>
+            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Close</button>
+          </div>
+        </div>`;
+
+      const groupHtml = (title, map, emptyText) => {
+        const types = Array.from(map.keys());
+        if (!types.length) {
+          return `<div style="margin-top:12px;opacity:.75;">${esc(emptyText)}</div>`;
+        }
+        const sections = [];
+        for (const t of ['class','subclass','spell','weapon','equipment','pickType']) {
+          if (!map.has(t)) continue;
+          const arr = map.get(t);
+          const actionLabel = (t === 'class' || t === 'subclass') ? 'Add to radial…'
+            : (t === 'pickType') ? 'Add to dropdown…'
+            : 'Add to picker…';
+          sections.push(`
+            <div style="margin-top:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
+                <!-- Selection/apply disabled in maintainer-safe mode (prevents browser freezes). -->
+              </div>
+              <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+                ${arr.slice(0, 40).map(it => {
+                  return `
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
+                      <div style="min-width:0;">
+                        <div style="font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
+                        <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+                      </div>
+                    </div>`;
+                }).join('')}
+              </div>
+            </div>`);
+        }
+        return sections.join('');
+      };
+
+      ui.results.innerHTML = `
+        ${header}
+        <div style="margin-top:10px;opacity:.75;font-size:12px;line-height:1.4;">
+          This list only tracks <b>brand-new IDs</b> (rows tagged <code>source = hbcr</code>). Balance/description edits are ignored.
         </div>
-      </label>`;
-  }).join('');
-  const more = (arr.length > limit)
-    ? `<button data-action="more" data-kind="${esc(kind)}" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px dashed rgba(212,175,55,0.25);background:rgba(0,0,0,0.10);font-weight:900;opacity:.95;">Show more (${shown.length}/${arr.length})</button>`
-    : '';
-  return rowsHtml + more;
-})()}
-	            </div>
-	          </div>`);
-	      }
-	      return sections.join('');
-	    };
+        ${groupHtml('New', diff.addedByType, 'No new IDs found (vs baseline).')}
+        ${groupHtml('Removed', diff.removedByType, 'No removed IDs found (vs baseline).')}
+      `;
 
-	    ui.results.innerHTML = `
-	      ${header}
-	      <div style="margin-top:10px;opacity:.80;font-size:12px;line-height:1.45;">Compares the current bundle to the saved baseline. Tracks <b>new</b> and <b>removed</b> IDs (not balance/description text edits).</div>
-	      ${state.mod.tab !== 'removed' ? groupHtml('New', addedMap, 'No new IDs found (vs baseline).') : ''}
-	      ${state.mod.tab !== 'new' ? groupHtml('Removed', removedMap, 'No removed IDs found (vs baseline).') : ''}
-	    `;
+      ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+      ui.results.querySelector('[data-action=set-baseline]')?.addEventListener('click', () => {
+        (async () => {
+          await writePrevSnapshot(cur);
+          toast('Baseline saved.');
+          state.mod.prev = cur;
+          state.mod.diff = diffSnapshots(cur, cur);
+          state.mod.sel = new Set();
+          renderResults();
+        })();
+      });
+      ui.results.querySelector('[data-action=copy-snapshot]')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(cur, null, 2));
+          toast('Snapshot copied.');
+        } catch {
+          toast('Copy failed (clipboard blocked).');
+        }
+      });
 
-	    ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
-	
-	    ui.results.querySelectorAll('button[data-action=tab]').forEach(b => {
-	      b.addEventListener('click', () => {
-	        const tab = (b.getAttribute('data-tab') || 'all').toLowerCase();
-	        state.mod.tab = (tab === 'new' || tab === 'removed' || tab === 'all') ? tab : 'all';
-	        renderResults();
-	      });
-	    });
-	
-	    
-const searchEl = ui.results.querySelector('input[data-action=search]');
-if (searchEl) {
-  let tId = null;
-  searchEl.addEventListener('input', () => {
-    state.mod.search = searchEl.value || '';
-    if (tId) clearTimeout(tId);
-    tId = setTimeout(() => renderResults(), 150);
-  });
-}
-
-	    
-// "Show more" (avoid rendering thousands of rows at once)
-ui.results.querySelectorAll('button[data-action=more]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const kind = (btn.getAttribute('data-kind') || 'added');
-    const type = (btn.getAttribute('data-type') || '');
-    const lims = state.mod.limits || (state.mod.limits = { added:{}, removed:{} });
-    if (!lims[kind]) lims[kind] = {};
-    lims[kind][type] = (lims[kind][type] || 80) + 200;
-    renderResults();
-  });
-});
-
-ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
-	      if (state.mod.saving) return;
-	      const ok = await confirmDialog({
-	        title: "Save new baseline?",
-	        message: "This will replace the saved baseline with the current snapshot.\n\nAfter saving, NEW will become 0 until you make more changes.",
-	        confirmText: "Yes, Save Baseline",
-	        cancelText: "Cancel",
-	      });
-	      if (!ok) return;
-
-	      state.mod.saving = true;
-	      state.mod.error = null;
-	      renderResults();
-
-	      const result = await writePrevSnapshot(cur);
-	      state.mod.saving = false;
-	      if (result && result.ok === false) {
-	        state.mod.error = result.error || "Save failed.";
-	        toast('Baseline save failed.');
-	        renderResults();
-	        return;
-	      }
-	
-	      toast('Baseline saved.');
-	      state.mod.prev = cur;
-	      state.mod.diff = diffSnapshots(cur, cur);
-	      state.mod.sel = new Set();
-	      renderResults();
-	    });
-
-	    ui.results.querySelector('[data-action=copy-report]')?.addEventListener('click', async () => {
-	      try {
-	        const lines = [];
-	        lines.push("HBCR Mod Updates Report");
-	        lines.push("");
-	        lines.push(`Baseline: ${prevAt}`);
-	        lines.push(`Current:  ${curAt}`);
-	        lines.push("");
-	        lines.push(`New: ${addedCount}`);
-	        lines.push(`Removed: ${removedCount}`);
-	        lines.push("");
-	
-	        const dumpList = (title, arr) => {
-	          if (!arr.length) return;
-	          lines.push(title + ":");
-	          const take = arr.slice(0, 250);
-	          for (const it of take) lines.push(`- ${it.type}: ${it.id}  (${it.sheet})`);
-	          if (arr.length > take.length) lines.push(`…and ${arr.length - take.length} more`);
-	          lines.push("");
-	        };
-	
-	        dumpList("New IDs", diff.added || []);
-	        dumpList("Removed IDs", diff.removed || []);
-	
-	        await navigator.clipboard.writeText(lines.join("\n"));
-	        toast('Report copied.');
-	      } catch {
-	        toast('Copy failed (clipboard blocked).');
-	      }
-	    });
-
-	    ui.results.querySelectorAll('input[data-action=toggle]').forEach(cb => {
-	      cb.addEventListener('change', () => {
-	        const k = cb.getAttribute('data-key');
-	        if (!k) return;
-	        if (cb.checked) state.mod.sel.add(k);
-	        else state.mod.sel.delete(k);
-	      });
-	    });
-
-	    ui.results.querySelectorAll('button[data-action=apply-type]').forEach(btn => {
-	      btn.addEventListener('click', async () => {
-	        const type = btn.getAttribute('data-type') || '';
-	        const selected = Array.from(state.mod.sel)
-	          .map(k => ({ k, type: k.split('|')[0], id: k.split('|')[1] }))
-	          .filter(x => x.type === type);
-	        if (!selected.length) {
-	          toast('Select some NEW items first.');
-	          return;
-	        }
-	
-	        toast('Click where to place these…');
-	        startZonePick({
-	          onPick: async (zoneId) => {
-	            const idx = await ensureBundleIndex();
-	            const toAdd = [];
-	            for (const s of selected) {
-	              const it = (diff.added || []).find(x => x.type === s.type && x.id === s.id);
-	              if (!it) continue;
-	              const entry = (idx.rowsBySheet.get(it.sheet) || []).find(r => r.rowKey === it.id);
-	              if (entry) toAdd.push(entry);
-	            }
-	            if (!toAdd.length) {
-	              toast('Could not find matching rows in bundle.');
-	              return;
-	            }
-	            for (const entry of toAdd) {
-	              await addItemToDraftAndPlace(entry, {
-	                forcedZoneId: zoneId,
-	                chosenType: (type === 'pickType') ? 'dropdown' : (type === 'class' || type === 'subclass') ? 'radial' : 'picker'
-	              });
-	            }
-	            toast('Added. Refreshing…');
-	            setTimeout(() => { try { location.reload(); } catch {} }, 350);
-	          }
-	        });
-	      });
-	    });
-
-	    return;
-	  }
+      return;
+    }
 
     // -------------------------
     // View: Add Content
@@ -1392,3 +1151,36 @@ ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click
   };
 
 })();
+// --- HBCR BASELINE NORMALIZATION PATCH ---
+async function readPrevSnapshot(){
+  try{
+    const res = await fetch(BASELINE_ENDPOINT,{method:"GET",mode:"cors",cache:"no-store"});
+    if(res.ok){
+      const data = await res.json();
+      if(Array.isArray(data?.baseline)){
+        return {schema:1,items:data.baseline};
+      }
+      if(data?.baseline?.items && Array.isArray(data.baseline.items)){
+        return data.baseline;
+      }
+    }
+  }catch(e){console.warn("Baseline GET failed",e);}
+  return readJsonLS(MOD_SNAPSHOT_PREV_KEY,null);
+}
+async function writePrevSnapshot(snap){
+  try{
+    const token = (window.SAVE_TOKEN||window.PUBLISH_TOKEN_V2||localStorage.getItem("PUBLISH_TOKEN_V2")||"");
+    const res = await fetch(BASELINE_ENDPOINT,{
+      method:"POST",
+      headers:{"Content-Type":"application/json",...(token?{"Authorization":"Bearer "+token}:{})},
+      body: JSON.stringify(snap?.items ?? snap)
+    });
+    if(!res.ok) throw new Error("Baseline POST failed");
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
+  }catch(e){
+    console.warn("Baseline POST failed",e);
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
+  }
+}
+// --- END PATCH ---
+
