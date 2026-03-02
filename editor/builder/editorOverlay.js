@@ -425,7 +425,73 @@ function hbcrApi(path) {
     return "other";
   }
 
+  // NOTE: The overlay has two different needs:
+  // - The inbox/search UI wants a full bundle index (labels/searchText)
+  // - Mod Updates only needs a lightweight snapshot of IDs.
+  // Building the full index can be expensive on large bundles, so Mod Updates
+  // uses a fast path that avoids hashing/stringifying entire rows.
+
+  function cheapRowKey(row) {
+    if (!row || typeof row !== "object") return "";
+    const direct = row.id ?? row.Id ?? row.ID ?? row.key ?? row.Key ?? row.slug ?? row.Slug;
+    if (direct != null && String(direct).trim()) return String(direct).trim();
+    // Prefer any field that ends with Id/ID (e.g. RaceId, ClassId)
+    for (const [k, v] of Object.entries(row)) {
+      if (v == null) continue;
+      const ks = String(k);
+      if (/Id$|ID$/i.test(ks) || /^(id|key|slug|uuid)$/i.test(ks)) {
+        const s = String(v).trim();
+        if (s) return s;
+      }
+    }
+    return "";
+  }
+
+  async function buildCurrentModSnapshotFromBundle(bundle) {
+    const items = [];
+    if (!bundle || typeof bundle !== "object") {
+      return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
+    }
+
+    const sheetNames = Object.keys(bundle)
+      .filter(k => k && typeof k === "string")
+      .sort((a, b) => a.localeCompare(b));
+
+    let processed = 0;
+    for (const sheet of sheetNames) {
+      const type = sheetToContentType(sheet);
+      if (!['class','subclass','weapon','equipment','spell','pickType'].includes(type)) continue;
+      const raw = bundle[sheet];
+      const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : []);
+      if (!rows || !rows.length) continue;
+
+      for (const row of rows) {
+        const src = normalizeSource(
+          row?.source ?? row?.Source ?? row?.SOURCE ??
+          row?.modSource ?? row?.ModSource ?? row?.MODSOURCE ??
+          row?.mod_source ?? row?.MOD_SOURCE ??
+          row?.origin ?? row?.Origin
+        );
+        // Treat missing source as in-scope; enforce hbcr only if present.
+        if (src && src !== 'hbcr') continue;
+        const id = cheapRowKey(row);
+        if (!id) continue;
+        items.push({ type, id, sheet });
+
+        // Yield to the browser occasionally to prevent tab freezes.
+        processed++;
+        if (processed % 600 === 0) {
+          await new Promise(r => setTimeout(r, 0));
+        }
+      }
+    }
+
+    items.sort((a,b) => (a.type + '|' + a.id).localeCompare(b.type + '|' + b.id));
+    return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
+  }
+
   function buildCurrentModSnapshot(bundleIndex) {
+    // Legacy path (used by older callers); keep it but prefer the fast path above for Mod Updates.
     const items = [];
     if (!bundleIndex?.rowsBySheet) return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
     for (const [sheet, rows] of bundleIndex.rowsBySheet.entries()) {
@@ -439,11 +505,8 @@ function hbcrApi(path) {
           row?.mod_source ?? row?.MOD_SOURCE ??
           row?.origin ?? row?.Origin
         );
-        // Many bundles (including our current /api/bundle shape) do not include a
-        // per-row source field. Treat missing source as in-scope, but if a source
-        // is present, enforce hbcr.
         if (src && src !== 'hbcr') continue;
-        const id = stableRowKey(row);
+        const id = cheapRowKey(row) || stableRowKey(row);
         if (!id) continue;
         items.push({ type, id, sheet });
       }
@@ -539,8 +602,9 @@ function diffSnapshots(prev, cur) {
     if (state.mod.loading) return;
     state.mod.loading = true;
     try {
-      const idx = await ensureBundleIndex();
-      const cur = buildCurrentModSnapshot(idx);
+      // FAST PATH: avoid building the full bundle index (can freeze on large bundles)
+      const bundle = await fetchBundle();
+      const cur = await buildCurrentModSnapshotFromBundle(bundle);
       const prev = await readPrevSnapshot();
       const diff = diffSnapshots(prev, cur);
       state.mod.prev = prev;
