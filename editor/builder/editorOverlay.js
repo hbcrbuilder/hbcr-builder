@@ -599,7 +599,7 @@ function diffSnapshots(prev, cur) {
           sheet,
           rowKey: key,
           label,
-          searchText: (label + " " + key + " " + JSON.stringify(row)).toLowerCase(),
+          searchText: (label + " " + key).toLowerCase(),
           row,
         });
       }
