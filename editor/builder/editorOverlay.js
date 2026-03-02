@@ -154,58 +154,57 @@ function hbcrApi(path) {
       document.body.appendChild(t);
     }
 
-
-async function confirmDialog({ title, message, confirmText = "Confirm", cancelText = "Cancel" }) {
-  return await new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.inset = "0";
-    overlay.style.zIndex = "1000000";
-    overlay.style.background = "rgba(0,0,0,.55)";
-    overlay.style.display = "flex";
-    overlay.style.alignItems = "center";
-    overlay.style.justifyContent = "center";
-    overlay.style.padding = "18px";
-
-    const card = document.createElement("div");
-    card.style.width = "min(520px, 92vw)";
-    card.style.background = "rgba(12,12,12,.92)";
-    card.style.border = "1px solid rgba(212,175,55,0.25)";
-    card.style.borderRadius = "16px";
-    card.style.boxShadow = "0 18px 60px rgba(0,0,0,.55)";
-    card.style.padding = "14px 14px 12px";
-    card.style.color = "rgba(255,255,255,.92)";
-
-    card.innerHTML = `
-      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;">${esc(title || "Confirm")}</div>
-      <div style="margin-top:8px;opacity:.85;font-size:13px;line-height:1.45;white-space:pre-wrap;">${esc(message || "")}</div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-        <button data-a="cancel" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);font-weight:800;">${esc(cancelText)}</button>
-        <button data-a="ok" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.35);background:rgba(212,175,55,0.12);font-weight:900;">${esc(confirmText)}</button>
-      </div>
-    `;
-
-    const cleanup = (val) => {
-      try { overlay.remove(); } catch {}
-      resolve(val);
-    };
-
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) cleanup(false);
-    });
-    card.querySelector('[data-a="cancel"]')?.addEventListener("click", () => cleanup(false));
-    card.querySelector('[data-a="ok"]')?.addEventListener("click", () => cleanup(true));
-
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-  });
-}
-
     t.textContent = msg;
     t.style.opacity = "1";
     clearTimeout(t.__hbcrTimer);
     t.__hbcrTimer = setTimeout(() => { t.style.opacity = "0"; }, 1800);
   }
+
+	async function confirmDialog({ title, message, confirmText = "Confirm", cancelText = "Cancel" }) {
+	  return await new Promise((resolve) => {
+	    const overlay = document.createElement("div");
+	    overlay.style.position = "fixed";
+	    overlay.style.inset = "0";
+	    overlay.style.zIndex = "1000000";
+	    overlay.style.background = "rgba(0,0,0,.55)";
+	    overlay.style.display = "flex";
+	    overlay.style.alignItems = "center";
+	    overlay.style.justifyContent = "center";
+	    overlay.style.padding = "18px";
+
+	    const card = document.createElement("div");
+	    card.style.width = "min(520px, 92vw)";
+	    card.style.background = "rgba(12,12,12,.92)";
+	    card.style.border = "1px solid rgba(212,175,55,0.25)";
+	    card.style.borderRadius = "16px";
+	    card.style.boxShadow = "0 18px 60px rgba(0,0,0,.55)";
+	    card.style.padding = "14px 14px 12px";
+	    card.style.color = "rgba(255,255,255,.92)";
+
+	    card.innerHTML = `
+	      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;">${esc(title || "Confirm")}</div>
+	      <div style="margin-top:8px;opacity:.85;font-size:13px;line-height:1.45;white-space:pre-wrap;">${esc(message || "")}</div>
+	      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+	        <button data-a="cancel" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);font-weight:800;">${esc(cancelText)}</button>
+	        <button data-a="ok" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.35);background:rgba(212,175,55,0.12);font-weight:900;">${esc(confirmText)}</button>
+	      </div>
+	    `;
+
+	    const cleanup = (val) => {
+	      try { overlay.remove(); } catch {}
+	      resolve(val);
+	    };
+
+	    overlay.addEventListener("click", (e) => {
+	      if (e.target === overlay) cleanup(false);
+	    });
+	    card.querySelector('[data-a="cancel"]')?.addEventListener("click", () => cleanup(false));
+	    card.querySelector('[data-a="ok"]')?.addEventListener("click", () => cleanup(true));
+
+	    overlay.appendChild(card);
+	    document.body.appendChild(overlay);
+	  });
+	}
 
   // ------------------------------------------------------------
   // Embedded Dock Mounting (NOT an overlay)
@@ -930,154 +929,275 @@ function diffSnapshots(prev, cur) {
     // -------------------------
     // View: Mod Updates
     // -------------------------
-    if (state.view === 'updates') {
-      if (!state.mod.diff && !state.mod.loading) {
-        ui.results.innerHTML = `
-        ${header}
-        <div style="margin-top:10px;opacity:.80;font-size:12px;line-height:1.45;">
-          Compares the current bundle to the saved baseline. Tracks <b>new</b> and <b>removed</b> IDs (not balance/description text edits).
-        </div>
-        ${state.mod.tab !== 'removed' ? groupHtml('New', addedMap, 'No new IDs found (vs baseline).') : ''}
-        ${state.mod.tab !== 'new' ? groupHtml('Removed', removedMap, 'No removed IDs found (vs baseline).') : ''}
-      `;
+	  if (state.view === 'updates') {
+	    // Kick off load once
+	    if (!state.mod.diff && !state.mod.loading) {
+	      state.mod.loading = true;
+	      ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+	      (async () => {
+	        try {
+	          await ensureModDiff();
+	        } finally {
+	          state.mod.loading = false;
+	          renderResults();
+	        }
+	      })();
+	      return;
+	    }
+	    if (state.mod.loading) {
+	      ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
+	      return;
+	    }
 
-      
-ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+	    const prev = state.mod.prev;
+	    const cur = state.mod.cur;
+	    const diff = state.mod.diff;
+	    if (!cur || !diff) {
+	      ui.results.innerHTML = `
+	        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+	          <div>
+	            <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
+	            <div style="opacity:.75;font-size:12px;margin-top:2px;line-height:1.35;">Could not load bundle / snapshot. Check /api/bundle and try again.</div>
+	          </div>
+	          <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:800;">Close</button>
+	        </div>
+	      `;
+	      ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+	      return;
+	    }
 
-ui.results.querySelectorAll('button[data-action=tab]').forEach(b => {
-  b.addEventListener('click', () => {
-    const tab = (b.getAttribute('data-tab') || 'all').toLowerCase();
-    state.mod.tab = (tab === 'new' || tab === 'removed' || tab === 'all') ? tab : 'all';
-    renderResults();
-  });
-});
+	    const prevAt = prev?.generatedAt ? new Date(prev.generatedAt).toLocaleString() : '—';
+	    const curAt = cur?.generatedAt ? new Date(cur.generatedAt).toLocaleString() : '—';
+	    const addedCount = diff.added?.length || 0;
+	    const removedCount = diff.removed?.length || 0;
 
-const searchEl = ui.results.querySelector('input[data-action=search]');
-if (searchEl) {
-  searchEl.addEventListener('input', () => {
-    state.mod.search = searchEl.value || '';
-    renderResults();
-  });
-}
+	    // Build type maps (and apply search filter)
+	    const q = (state.mod.search || '').toLowerCase().trim();
+	    const inQuery = (it) => !q || String(it.id).toLowerCase().includes(q) || String(it.sheet || '').toLowerCase().includes(q);
+	
+	    const addedMap = new Map();
+	    for (const it of (diff.added || []).filter(inQuery)) {
+	      if (!addedMap.has(it.type)) addedMap.set(it.type, []);
+	      addedMap.get(it.type).push(it);
+	    }
+	    const removedMap = new Map();
+	    for (const it of (diff.removed || []).filter(inQuery)) {
+	      if (!removedMap.has(it.type)) removedMap.set(it.type, []);
+	      removedMap.get(it.type).push(it);
+	    }
 
-ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
-  if (state.mod.saving) return;
+	    const tokenOk = !!getPublishToken();
+	    const statusText = (addedCount || removedCount)
+	      ? `⚠ ${addedCount} new / ${removedCount} removed`
+	      : `✅ In sync`;
 
-  const ok = await confirmDialog({
-    title: "Save new baseline?",
-    message: "This will replace the saved baseline with the current snapshot.
+	    const header = `
+	      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+	        <div style="min-width:260px;">
+	          <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
+	          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+	            <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.06em;">${esc(statusText)}</span>
+	            <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.12);font-size:11px;letter-spacing:.06em;">Token: ${tokenOk ? '✓' : 'Missing'}</span>
+	          </div>
+	          <div style="opacity:.78;font-size:12px;margin-top:8px;line-height:1.35;">
+	            Baseline: <span style="opacity:.92;">${esc(prevAt)}</span><br>
+	            Current: <span style="opacity:.92;">${esc(curAt)}</span>
+	          </div>
+	        </div>
+	
+	        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+	          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;"><span style="opacity:.75;">New</span> <span style="font-weight:900;">${addedCount}</span></span>
+	          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;"><span style="opacity:.75;">Removed</span> <span style="font-weight:900;">${removedCount}</span></span>
+	          <button data-action="save-baseline" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:900;">${state.mod.saving ? 'Saving…' : 'Save as New Baseline'}</button>
+	          <button data-action="copy-report" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:900;">Copy Change Report</button>
+	          <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:900;">Close</button>
+	        </div>
+	      </div>
+	
+	      <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+	        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+	          <button data-action="tab" data-tab="all" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='all'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">All</button>
+	          <button data-action="tab" data-tab="new" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='new'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">New</button>
+	          <button data-action="tab" data-tab="removed" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;border:1px solid rgba(212,175,55,${state.mod.tab==='removed'?'0.55':'0.18'});background:rgba(0,0,0,0.12);font-weight:900;">Removed</button>
+	        </div>
+	        <input data-action="search" value="${esc(state.mod.search)}" placeholder="Search ID or sheet…" style="width:min(360px, 90vw);padding:7px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);color:rgba(255,255,255,0.92);outline:none;" />
+	      </div>
+	      ${state.mod.error ? `<div style="margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,90,90,0.35);background:rgba(255,90,90,0.08);font-weight:800;">${esc(state.mod.error)}</div>` : ''}
+	    `;
 
-After saving, NEW will become 0 until you make more changes.",
-    confirmText: "Yes, Save Baseline",
-    cancelText: "Cancel",
-  });
-  if (!ok) return;
+	    const groupHtml = (title, map, emptyText) => {
+	      const types = Array.from(map.keys());
+	      if (!types.length) return `<div style="margin-top:12px;opacity:.75;">${esc(emptyText)}</div>`;
+	      const sections = [];
+	      for (const t of ['class','subclass','spell','weapon','equipment','pickType']) {
+	        if (!map.has(t)) continue;
+	        const arr = map.get(t);
+	        const actionLabel = (t === 'class' || t === 'subclass') ? 'Add to radial…'
+	          : (t === 'pickType') ? 'Add to dropdown…'
+	          : 'Add to picker…';
+	        sections.push(`
+	          <div style="margin-top:14px;">
+	            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+	              <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
+	              ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:900;">${esc(actionLabel)}</button>` : ''}
+	            </div>
+	            <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+	              ${arr.slice(0, 300).map(it => {
+	                const k = `${it.type}|${it.id}`;
+	                const checked = state.mod.sel.has(k) ? 'checked' : '';
+	                return `
+	                  <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
+	                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+	                      <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
+	                      <div style="min-width:0;">
+	                        <div style="font-weight:900;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
+	                        <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+	                      </div>
+	                    </div>
+	                  </label>`;
+	              }).join('')}
+	            </div>
+	          </div>`);
+	      }
+	      return sections.join('');
+	    };
 
-  state.mod.saving = true;
-  state.mod.error = null;
-  renderResults();
+	    ui.results.innerHTML = `
+	      ${header}
+	      <div style="margin-top:10px;opacity:.80;font-size:12px;line-height:1.45;">Compares the current bundle to the saved baseline. Tracks <b>new</b> and <b>removed</b> IDs (not balance/description text edits).</div>
+	      ${state.mod.tab !== 'removed' ? groupHtml('New', addedMap, 'No new IDs found (vs baseline).') : ''}
+	      ${state.mod.tab !== 'new' ? groupHtml('Removed', removedMap, 'No removed IDs found (vs baseline).') : ''}
+	    `;
 
-  const result = await writePrevSnapshot(cur);
-  state.mod.saving = false;
+	    ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+	
+	    ui.results.querySelectorAll('button[data-action=tab]').forEach(b => {
+	      b.addEventListener('click', () => {
+	        const tab = (b.getAttribute('data-tab') || 'all').toLowerCase();
+	        state.mod.tab = (tab === 'new' || tab === 'removed' || tab === 'all') ? tab : 'all';
+	        renderResults();
+	      });
+	    });
+	
+	    const searchEl = ui.results.querySelector('input[data-action=search]');
+	    if (searchEl) {
+	      searchEl.addEventListener('input', () => {
+	        state.mod.search = searchEl.value || '';
+	        renderResults();
+	      });
+	    }
 
-  if (result && result.ok === false) {
-    state.mod.error = result.error || "Save failed.";
-    toast('Baseline save failed.');
-    renderResults();
-    return;
-  }
+	    ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
+	      if (state.mod.saving) return;
+	      const ok = await confirmDialog({
+	        title: "Save new baseline?",
+	        message: "This will replace the saved baseline with the current snapshot.\n\nAfter saving, NEW will become 0 until you make more changes.",
+	        confirmText: "Yes, Save Baseline",
+	        cancelText: "Cancel",
+	      });
+	      if (!ok) return;
 
-  toast('Baseline saved.');
-  state.mod.prev = cur;
-  state.mod.diff = diffSnapshots(cur, cur);
-  state.mod.sel = new Set();
-  renderResults();
-});
+	      state.mod.saving = true;
+	      state.mod.error = null;
+	      renderResults();
 
-ui.results.querySelector('[data-action=copy-report]')?.addEventListener('click', async () => {
-  try {
-    const lines = [];
-    lines.push("HBCR Mod Updates Report");
-    lines.push("");
-    lines.push(`Baseline: ${prevAt}`);
-    lines.push(`Current:  ${curAt}`);
-    lines.push("");
-    lines.push(`New: ${addedCount}`);
-    lines.push(`Removed: ${removedCount}`);
-    lines.push("");
+	      const result = await writePrevSnapshot(cur);
+	      state.mod.saving = false;
+	      if (result && result.ok === false) {
+	        state.mod.error = result.error || "Save failed.";
+	        toast('Baseline save failed.');
+	        renderResults();
+	        return;
+	      }
+	
+	      toast('Baseline saved.');
+	      state.mod.prev = cur;
+	      state.mod.diff = diffSnapshots(cur, cur);
+	      state.mod.sel = new Set();
+	      renderResults();
+	    });
 
-    const dumpList = (title, arr) => {
-      if (!arr.length) return;
-      lines.push(title + ":");
-      const take = arr.slice(0, 250);
-      for (const it of take) lines.push(`- ${it.type}: ${it.id}  (${it.sheet})`);
-      if (arr.length > take.length) lines.push(`…and ${arr.length - take.length} more`);
-      lines.push("");
-    };
+	    ui.results.querySelector('[data-action=copy-report]')?.addEventListener('click', async () => {
+	      try {
+	        const lines = [];
+	        lines.push("HBCR Mod Updates Report");
+	        lines.push("");
+	        lines.push(`Baseline: ${prevAt}`);
+	        lines.push(`Current:  ${curAt}`);
+	        lines.push("");
+	        lines.push(`New: ${addedCount}`);
+	        lines.push(`Removed: ${removedCount}`);
+	        lines.push("");
+	
+	        const dumpList = (title, arr) => {
+	          if (!arr.length) return;
+	          lines.push(title + ":");
+	          const take = arr.slice(0, 250);
+	          for (const it of take) lines.push(`- ${it.type}: ${it.id}  (${it.sheet})`);
+	          if (arr.length > take.length) lines.push(`…and ${arr.length - take.length} more`);
+	          lines.push("");
+	        };
+	
+	        dumpList("New IDs", diff.added || []);
+	        dumpList("Removed IDs", diff.removed || []);
+	
+	        await navigator.clipboard.writeText(lines.join("\n"));
+	        toast('Report copied.');
+	      } catch {
+	        toast('Copy failed (clipboard blocked).');
+	      }
+	    });
 
-    dumpList("New IDs", diff.added);
-    dumpList("Removed IDs", diff.removed);
+	    ui.results.querySelectorAll('input[data-action=toggle]').forEach(cb => {
+	      cb.addEventListener('change', () => {
+	        const k = cb.getAttribute('data-key');
+	        if (!k) return;
+	        if (cb.checked) state.mod.sel.add(k);
+	        else state.mod.sel.delete(k);
+	      });
+	    });
 
-    await navigator.clipboard.writeText(lines.join("
-"));
-    toast('Report copied.');
-  } catch {
-    toast('Copy failed (clipboard blocked).');
-  }
-});
-          toast('Snapshot copied.');
-        } catch {
-          toast('Copy failed (clipboard blocked).');
-        }
-      });
+	    ui.results.querySelectorAll('button[data-action=apply-type]').forEach(btn => {
+	      btn.addEventListener('click', async () => {
+	        const type = btn.getAttribute('data-type') || '';
+	        const selected = Array.from(state.mod.sel)
+	          .map(k => ({ k, type: k.split('|')[0], id: k.split('|')[1] }))
+	          .filter(x => x.type === type);
+	        if (!selected.length) {
+	          toast('Select some NEW items first.');
+	          return;
+	        }
+	
+	        toast('Click where to place these…');
+	        startZonePick({
+	          onPick: async (zoneId) => {
+	            const idx = await ensureBundleIndex();
+	            const toAdd = [];
+	            for (const s of selected) {
+	              const it = (diff.added || []).find(x => x.type === s.type && x.id === s.id);
+	              if (!it) continue;
+	              const entry = (idx.rowsBySheet.get(it.sheet) || []).find(r => r.rowKey === it.id);
+	              if (entry) toAdd.push(entry);
+	            }
+	            if (!toAdd.length) {
+	              toast('Could not find matching rows in bundle.');
+	              return;
+	            }
+	            for (const entry of toAdd) {
+	              await addItemToDraftAndPlace(entry, {
+	                forcedZoneId: zoneId,
+	                chosenType: (type === 'pickType') ? 'dropdown' : (type === 'class' || type === 'subclass') ? 'radial' : 'picker'
+	              });
+	            }
+	            toast('Added. Refreshing…');
+	            setTimeout(() => { try { location.reload(); } catch {} }, 350);
+	          }
+	        });
+	      });
+	    });
 
-      ui.results.querySelectorAll('input[data-action=toggle]').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const k = cb.getAttribute('data-key');
-          if (!k) return;
-          if (cb.checked) state.mod.sel.add(k);
-          else state.mod.sel.delete(k);
-        });
-      });
-
-      ui.results.querySelectorAll('button[data-action=apply-type]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const type = btn.getAttribute('data-type') || '';
-          const selected = Array.from(state.mod.sel)
-            .map(k => ({ k, type: k.split('|')[0], id: k.split('|')[1] }))
-            .filter(x => x.type === type);
-          if (!selected.length) {
-            toast('Select some NEW items first.');
-            return;
-          }
-
-          // Pick zone once, place all into that zone.
-          toast('Click where to place these…');
-          startZonePick({
-            onPick: async (zoneId) => {
-              const idx = await ensureBundleIndex();
-              const toAdd = [];
-              for (const s of selected) {
-                const it = (diff.added || []).find(x => x.type === s.type && x.id === s.id);
-                if (!it) continue;
-                const entry = (idx.rowsBySheet.get(it.sheet) || []).find(r => r.rowKey === it.id);
-                if (entry) toAdd.push(entry);
-              }
-              if (!toAdd.length) {
-                toast('Could not find matching rows in bundle.');
-                return;
-              }
-              for (const entry of toAdd) {
-                await addItemToDraftAndPlace(entry, { forcedZoneId: zoneId, chosenType: (type === 'pickType') ? 'dropdown' : (type === 'class' || type === 'subclass') ? 'radial' : 'picker' });
-              }
-              toast('Added. Refreshing…');
-              setTimeout(() => { try { location.reload(); } catch {} }, 350);
-            }
-          });
-        });
-      });
-      return;
-    }
+	    return;
+	  }
 
     // -------------------------
     // View: Add Content
