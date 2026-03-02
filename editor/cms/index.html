@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HBCR Content Editor</title>
+  <link rel="icon" type="image/png" href="/assets/ui/hbcr-icon.png"/>
+  <link rel="stylesheet" href="/src/ui.css"/>
+  <link rel="stylesheet" href="/editor/cms/cms.css"/>
+</head>
+<body>
+  <div class="app-root">
+    <div class="frame">
+      <div class="topbar">
+        <div class="brand">
+          <div class="title">HBCR</div>
+          <div class="subtitle">Content Editor · Easy Mode</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <a class="btn" href="/editor/" style="text-decoration:none">Back</a>
+          <a class="btn" href="/editor/builder/" style="text-decoration:none">Design Mode</a>
+          <a class="btn" href="/editor/logout" style="opacity:.85;text-decoration:none">Logout</a>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="content">
+        <div class="screen">
+          <div class="cms-shell">
+
+            <!-- LEFT: Library -->
+            <aside class="cms-col cms-left">
+              <div class="cms-card">
+                <div class="cms-card-title">Library</div>
+
+                <div class="cms-row">
+                  <label class="cms-label">Type</label>
+                  <select id="cmsType" class="cms-input"></select>
+                </div>
+
+                <div class="cms-row">
+                  <label class="cms-label">Search</label>
+                  <input id="cmsSearch" class="cms-input" placeholder="Search name or ID…" />
+                </div>
+
+                <div class="cms-actions">
+                  <button id="cmsAdd" class="btn">Add New</button>
+                  <button id="cmsReload" class="btn" style="opacity:.9">Reload Bundle</button>
+                </div>
+
+                <div class="cms-meta" id="cmsMeta">Loading…</div>
+              </div>
+
+              <div class="cms-list" id="cmsList"></div>
+            </aside>
+
+            <!-- CENTER: Form -->
+            <main class="cms-col cms-main">
+              <div class="cms-card">
+                <div class="cms-card-title">Editor</div>
+                <div class="cms-sub" id="cmsBreadcrumb">Pick an item from the list.</div>
+              </div>
+
+              <div class="cms-card" id="cmsFormCard" style="display:none">
+                <div class="cms-form" id="cmsForm"></div>
+
+                <details class="cms-advanced" id="cmsAdvanced">
+                  <summary>Advanced fields</summary>
+                  <div class="cms-form" id="cmsAdvancedForm"></div>
+                </details>
+              </div>
+
+              <div class="cms-card" id="cmsEmptyHint">
+                <div class="cms-sub">
+                  Tip: This editor saves a <b>draft</b> in your browser.
+                  When you're ready, click <b>Export TSV</b> and paste it into Google Sheets.
+                </div>
+              </div>
+            </main>
+
+            <!-- RIGHT: Actions -->
+            <aside class="cms-col cms-right">
+              <div class="cms-card">
+                <div class="cms-card-title">Actions</div>
+
+                <div class="cms-actions-vert">
+                  <button id="cmsSave" class="btn">Save Draft</button>
+                  <button id="cmsRevert" class="btn" style="opacity:.9">Revert Changes</button>
+                  <button id="cmsExport" class="btn" style="opacity:.95">Export TSV</button>
+                  <button id="cmsCopyReport" class="btn" style="opacity:.9">Copy Change Report</button>
+                </div>
+
+                <div class="cms-banner" id="cmsBanner" style="display:none"></div>
+                <div class="cms-meta" id="cmsDraftMeta"></div>
+              </div>
+
+              <div class="cms-card">
+                <div class="cms-card-title">What gets tracked?</div>
+                <div class="cms-sub">
+                  This edits the same data the Builder uses (from <b>/api/bundle</b>).
+                  Save Draft stores changes only in your browser until you export TSV.
+                </div>
+              </div>
+            </aside>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/editor/cms/cms.js"></script>
+</body>
+</html>

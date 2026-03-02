@@ -411,15 +411,7 @@ function hbcrApi(path) {
       const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        // Worker can return either:
-        // 1) { baseline: [...] }
-        // 2) { baseline: { schema, generatedAt, items: [...] } }
-        if (Array.isArray(data?.baseline)) {
-          return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items: data.baseline };
-        }
-        if (data?.baseline?.items && Array.isArray(data.baseline.items)) {
-          return data.baseline;
-        }
+        if (data?.baseline) return data.baseline;
       }
     } catch (e) {
       console.warn("Baseline GET failed; falling back to localStorage", e);
@@ -438,8 +430,7 @@ function hbcrApi(path) {
           "Content-Type": "application/json",
           ...(token ? { "Authorization": "Bearer " + token } : {}),
         },
-        // Worker stores baseline as an array; accept either snapshot object or array.
-        body: JSON.stringify(snap?.items ?? snap),
+        body: JSON.stringify(snap),
       });
 
       if (!res.ok) {
@@ -488,11 +479,8 @@ function hbcrApi(path) {
     if (state.mod.loading) return;
     state.mod.loading = true;
     try {
-      // IMPORTANT: Mod Updates must stay fast. Do NOT build the full bundle index
-      // (it is used for Add Content search and can be expensive). For diffing we
-      // only need stable IDs per row.
-      const bundle = await fetchBundle();
-      const cur = buildCurrentModSnapshotFromBundle(bundle);
+      const idx = await ensureBundleIndex();
+      const cur = buildCurrentModSnapshot(idx);
       const prev = await readPrevSnapshot();
       const diff = diffSnapshots(prev, cur);
       state.mod.prev = prev;
@@ -551,9 +539,7 @@ function hbcrApi(path) {
           sheet,
           rowKey: key,
           label,
-          // Keep this cheap. Stringifying every row can freeze the browser.
-          // Search still works well with label + id.
-          searchText: (label + " " + key).toLowerCase(),
+          searchText: (label + " " + key + " " + JSON.stringify(row)).toLowerCase(),
           row,
         });
       }
@@ -563,45 +549,6 @@ function hbcrApi(path) {
       }
     }
     return out;
-  }
-
-  // Fast snapshot builder: iterate the raw bundle object keyed by sheet name.
-  function buildCurrentModSnapshotFromBundle(bundle) {
-    const items = [];
-    if (!bundle || typeof bundle !== 'object') {
-      return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
-    }
-
-    const allowTypes = new Set(['class','subclass','weapon','equipment','spell','pickType']);
-    const sheetNames = Object.keys(bundle)
-      .filter(k => k && typeof k === 'string')
-      .sort((a, b) => a.localeCompare(b));
-
-    for (const sheet of sheetNames) {
-      const type = sheetToContentType(sheet);
-      if (!allowTypes.has(type)) continue;
-
-      const raw = bundle[sheet];
-      const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : null);
-      if (!rows) continue;
-
-      for (const row of rows) {
-        const src = normalizeSource(
-          row?.source ?? row?.Source ?? row?.SOURCE ??
-          row?.modSource ?? row?.ModSource ?? row?.MODSOURCE ??
-          row?.mod_source ?? row?.MOD_SOURCE ??
-          row?.origin ?? row?.Origin
-        );
-        // Many bundles don't have per-row source; allow missing.
-        if (src && src !== 'hbcr') continue;
-        const id = stableRowKey(row);
-        if (!id) continue;
-        items.push({ type, id, sheet });
-      }
-    }
-
-    items.sort((a,b) => (a.type + '|' + a.id).localeCompare(b.type + '|' + b.id));
-    return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
   }
 
   // -------------------------
@@ -998,17 +945,22 @@ function hbcrApi(path) {
             <div style="margin-top:14px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                 <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
-                <!-- Selection/apply disabled in maintainer-safe mode (prevents browser freezes). -->
+                ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:800;">${esc(actionLabel)}</button>` : ''}
               </div>
               <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-                ${arr.slice(0, 40).map(it => {
+                ${arr.slice(0, 200).map(it => {
+                  const k = `${it.type}|${it.id}`;
+                  const checked = state.mod.sel.has(k) ? 'checked' : '';
                   return `
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
-                      <div style="min-width:0;">
-                        <div style="font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
-                        <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+                    <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
+                      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
+                        <div style="min-width:0;">
+                          <div style="font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
+                          <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+                        </div>
                       </div>
-                    </div>`;
+                    </label>`;
                 }).join('')}
               </div>
             </div>`);
@@ -1045,6 +997,51 @@ function hbcrApi(path) {
         }
       });
 
+      ui.results.querySelectorAll('input[data-action=toggle]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const k = cb.getAttribute('data-key');
+          if (!k) return;
+          if (cb.checked) state.mod.sel.add(k);
+          else state.mod.sel.delete(k);
+        });
+      });
+
+      ui.results.querySelectorAll('button[data-action=apply-type]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const type = btn.getAttribute('data-type') || '';
+          const selected = Array.from(state.mod.sel)
+            .map(k => ({ k, type: k.split('|')[0], id: k.split('|')[1] }))
+            .filter(x => x.type === type);
+          if (!selected.length) {
+            toast('Select some NEW items first.');
+            return;
+          }
+
+          // Pick zone once, place all into that zone.
+          toast('Click where to place these…');
+          startZonePick({
+            onPick: async (zoneId) => {
+              const idx = await ensureBundleIndex();
+              const toAdd = [];
+              for (const s of selected) {
+                const it = (diff.added || []).find(x => x.type === s.type && x.id === s.id);
+                if (!it) continue;
+                const entry = (idx.rowsBySheet.get(it.sheet) || []).find(r => r.rowKey === it.id);
+                if (entry) toAdd.push(entry);
+              }
+              if (!toAdd.length) {
+                toast('Could not find matching rows in bundle.');
+                return;
+              }
+              for (const entry of toAdd) {
+                await addItemToDraftAndPlace(entry, { forcedZoneId: zoneId, chosenType: (type === 'pickType') ? 'dropdown' : (type === 'class' || type === 'subclass') ? 'radial' : 'picker' });
+              }
+              toast('Added. Refreshing…');
+              setTimeout(() => { try { location.reload(); } catch {} }, 350);
+            }
+          });
+        });
+      });
       return;
     }
 
