@@ -39,6 +39,13 @@ function hbcrApi(path) {
   // IMPORTANT: We only READ the bundle (same published JSON). We do not modify the app pipeline.
   const DEFAULT_BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
 
+  // Worker baseline (KV)
+  const BASELINE_ENDPOINT = hbcrApi("/api/mod-baseline");
+
+  // Token resolution for POST baseline
+  const getPublishToken = () =>
+    (window.SAVE_TOKEN || window.PUBLISH_TOKEN_V2 || localStorage.getItem("PUBLISH_TOKEN_V2") || "");
+
   // -------------------------
   // Helpers
   // -------------------------
@@ -379,7 +386,12 @@ function hbcrApi(path) {
       if (!['class','subclass','weapon','equipment','spell','pickType'].includes(type)) continue;
       for (const r of rows) {
         const row = r.row;
-        const src = normalizeSource(row?.source ?? row?.Source ?? row?.SOURCE);
+        const src = normalizeSource(
+          row?.source ?? row?.Source ?? row?.SOURCE ??
+          row?.modSource ?? row?.ModSource ?? row?.MODSOURCE ??
+          row?.mod_source ?? row?.MOD_SOURCE ??
+          row?.origin ?? row?.Origin
+        );
         if (src !== 'hbcr') continue;
         const id = stableRowKey(row);
         if (!id) continue;
@@ -390,11 +402,45 @@ function hbcrApi(path) {
     return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items };
   }
 
-  function readPrevSnapshot() {
+  async function readPrevSnapshot() {
+    // Prefer Worker KV baseline
+    try {
+      const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.baseline) return data.baseline;
+      }
+    } catch (e) {
+      console.warn("Baseline GET failed; falling back to localStorage", e);
+    }
+    // Fallback: local baseline
     return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
   }
-  function writePrevSnapshot(snap) {
-    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+
+  async function writePrevSnapshot(snap) {
+    // Write Worker KV baseline; also keep local fallback copy
+    try {
+      const token = getPublishToken();
+      const res = await fetch(BASELINE_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": "Bearer " + token } : {}),
+        },
+        body: JSON.stringify(snap),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Baseline POST failed: ${res.status} ${t}`);
+      }
+
+      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+      return;
+    } catch (e) {
+      console.warn("Baseline POST failed; saving only to localStorage", e);
+      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+    }
   }
 
   function diffSnapshots(prev, cur) {
@@ -432,14 +478,14 @@ function hbcrApi(path) {
     try {
       const idx = await ensureBundleIndex();
       const cur = buildCurrentModSnapshot(idx);
-      const prev = readPrevSnapshot();
+      const prev = await readPrevSnapshot();
       const diff = diffSnapshots(prev, cur);
       state.mod.prev = prev;
       state.mod.cur = cur;
       state.mod.diff = diff;
     } catch (e) {
       console.error(e);
-      state.mod.prev = readPrevSnapshot();
+      state.mod.prev = await readPrevSnapshot();
       state.mod.cur = null;
       state.mod.diff = null;
     } finally {
@@ -930,12 +976,14 @@ function hbcrApi(path) {
 
       ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
       ui.results.querySelector('[data-action=set-baseline]')?.addEventListener('click', () => {
-        writePrevSnapshot(cur);
-        toast('Baseline saved.');
-        state.mod.prev = cur;
-        state.mod.diff = diffSnapshots(cur, cur);
-        state.mod.sel = new Set();
-        renderResults();
+        (async () => {
+          await writePrevSnapshot(cur);
+          toast('Baseline saved.');
+          state.mod.prev = cur;
+          state.mod.diff = diffSnapshots(cur, cur);
+          state.mod.sel = new Set();
+          renderResults();
+        })();
       });
       ui.results.querySelector('[data-action=copy-snapshot]')?.addEventListener('click', async () => {
         try {
