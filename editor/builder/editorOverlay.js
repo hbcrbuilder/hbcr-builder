@@ -153,6 +153,54 @@ function hbcrApi(path) {
       t.style.pointerEvents = "none";
       document.body.appendChild(t);
     }
+
+
+async function confirmDialog({ title, message, confirmText = "Confirm", cancelText = "Cancel" }) {
+  return await new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.zIndex = "1000000";
+    overlay.style.background = "rgba(0,0,0,.55)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.padding = "18px";
+
+    const card = document.createElement("div");
+    card.style.width = "min(520px, 92vw)";
+    card.style.background = "rgba(12,12,12,.92)";
+    card.style.border = "1px solid rgba(212,175,55,0.25)";
+    card.style.borderRadius = "16px";
+    card.style.boxShadow = "0 18px 60px rgba(0,0,0,.55)";
+    card.style.padding = "14px 14px 12px";
+    card.style.color = "rgba(255,255,255,.92)";
+
+    card.innerHTML = `
+      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;">${esc(title || "Confirm")}</div>
+      <div style="margin-top:8px;opacity:.85;font-size:13px;line-height:1.45;white-space:pre-wrap;">${esc(message || "")}</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+        <button data-a="cancel" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.18);font-weight:800;">${esc(cancelText)}</button>
+        <button data-a="ok" style="all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;border:1px solid rgba(212,175,55,0.35);background:rgba(212,175,55,0.12);font-weight:900;">${esc(confirmText)}</button>
+      </div>
+    `;
+
+    const cleanup = (val) => {
+      try { overlay.remove(); } catch {}
+      resolve(val);
+    };
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cleanup(false);
+    });
+    card.querySelector('[data-a="cancel"]')?.addEventListener("click", () => cleanup(false));
+    card.querySelector('[data-a="ok"]')?.addEventListener("click", () => cleanup(true));
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+  });
+}
+
     t.textContent = msg;
     t.style.opacity = "1";
     clearTimeout(t.__hbcrTimer);
@@ -177,7 +225,7 @@ function hbcrApi(path) {
     filter: 'all',
     query: '',
     bundleIndex: null,
-    mod: { loading: false, prev: null, cur: null, diff: null, sel: new Set() },
+    mod: { loading: false, saving: false, error: null, tab: 'new', search: '', prev: null, cur: null, diff: null, sel: new Set() },
   };
 
   function ensureRightGroup(topbar) {
@@ -406,47 +454,60 @@ function hbcrApi(path) {
   }
 
   async function readPrevSnapshot() {
-    // Prefer Worker KV baseline
-    try {
-      const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.baseline) return data.baseline;
-      }
-    } catch (e) {
-      console.warn("Baseline GET failed; falling back to localStorage", e);
-    }
-    // Fallback: local baseline
-    return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
-  }
+  // Prefer Worker KV baseline
+  try {
+    const res = await fetch(BASELINE_ENDPOINT, { method: "GET", mode: "cors", cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
 
-  async function writePrevSnapshot(snap) {
-    // Write Worker KV baseline; also keep local fallback copy
-    try {
-      const token = getPublishToken();
-      const res = await fetch(BASELINE_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { "Authorization": "Bearer " + token } : {}),
-        },
-        body: JSON.stringify(snap),
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`Baseline POST failed: ${res.status} ${t}`);
+      // Worker shape: { baseline: [...] }
+      if (Array.isArray(data?.baseline)) {
+        return { schema: "hbcr-mod-snapshot@v1", generatedAt: new Date().toISOString(), items: data.baseline };
       }
 
-      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
-      return;
-    } catch (e) {
-      console.warn("Baseline POST failed; saving only to localStorage", e);
-      writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+      // Alt shape: { baseline: { items: [...] } }
+      if (data?.baseline?.items && Array.isArray(data.baseline.items)) {
+        return data.baseline;
+      }
     }
+  } catch (e) {
+    console.warn("Baseline GET failed; falling back to localStorage", e);
   }
+  // Fallback: local baseline
+  return readJsonLS(MOD_SNAPSHOT_PREV_KEY, null);
+}
 
-  function diffSnapshots(prev, cur) {
+async function writePrevSnapshot(snap) {
+  // Write Worker KV baseline; also keep local fallback copy
+  const payload = snap?.items ?? snap; // Worker expects array; allow snapshot object too
+  try {
+    const token = getPublishToken();
+    const res = await fetch(BASELINE_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": "Bearer " + token } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`Baseline POST failed: ${res.status} ${t}`);
+    }
+
+    // Keep a local fallback copy (snapshot form)
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+    return { ok: true };
+  } catch (e) {
+    console.warn("Baseline POST failed; saving only to localStorage", e);
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY, snap);
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+
+function diffSnapshots(prev, cur) {
     const key = (x) => `${x.type}|${x.id}`;
     const p = new Map();
     const c = new Map();
@@ -871,126 +932,99 @@ function hbcrApi(path) {
     // -------------------------
     if (state.view === 'updates') {
       if (!state.mod.diff && !state.mod.loading) {
-        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
-        (async () => {
-          await ensureModDiff();
-          renderResults();
-        })();
-        return;
-      }
-      if (state.mod.loading) {
-        ui.results.innerHTML = `<div style="opacity:.75;">Loading mod diff…</div>`;
-        return;
-      }
-
-      const prev = state.mod.prev;
-      const cur = state.mod.cur;
-      const diff = state.mod.diff;
-      if (!cur || !diff) {
         ui.results.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div>
-              <div style="font-weight:800;letter-spacing:.06em;text-transform:uppercase;">Mod Updates</div>
-              <div style="opacity:.75;font-size:12px;margin-top:2px;">Could not load bundle / snapshot. Check /api/bundle and try again.</div>
-            </div>
-            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:700;">Close</button>
-          </div>
-        `;
-        ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
-        return;
-      }
-
-      const prevAt = prev?.generatedAt ? new Date(prev.generatedAt).toLocaleString() : '—';
-      const curAt = cur?.generatedAt ? new Date(cur.generatedAt).toLocaleString() : '—';
-      const addedCount = diff.added.length;
-      const removedCount = diff.removed.length;
-
-      const mkChip = (label, count) => `
-        <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-size:11px;letter-spacing:.10em;text-transform:uppercase;">
-          <span style="opacity:.75;">${esc(label)}</span>
-          <span style="font-weight:900;">${count}</span>
-        </span>`;
-
-      const header = `
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-          <div style="min-width:260px;">
-            <div style="font-weight:900;letter-spacing:.08em;text-transform:uppercase;">Mod Updates</div>
-            <div style="opacity:.75;font-size:12px;margin-top:2px;line-height:1.35;">
-              Baseline: <span style="opacity:.92;">${esc(prevAt)}</span><br>
-              Current: <span style="opacity:.92;">${esc(curAt)}</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            ${mkChip('New', addedCount)}
-            ${mkChip('Removed', removedCount)}
-            <button data-action="set-baseline" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.20);font-weight:800;">Set Baseline</button>
-            <button data-action="copy-snapshot" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Copy Snapshot</button>
-            <button data-action="close" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.18);background:rgba(0,0,0,0.14);font-weight:800;">Close</button>
-          </div>
-        </div>`;
-
-      const groupHtml = (title, map, emptyText) => {
-        const types = Array.from(map.keys());
-        if (!types.length) {
-          return `<div style="margin-top:12px;opacity:.75;">${esc(emptyText)}</div>`;
-        }
-        const sections = [];
-        for (const t of ['class','subclass','spell','weapon','equipment','pickType']) {
-          if (!map.has(t)) continue;
-          const arr = map.get(t);
-          const actionLabel = (t === 'class' || t === 'subclass') ? 'Add to radial…'
-            : (t === 'pickType') ? 'Add to dropdown…'
-            : 'Add to picker…';
-          sections.push(`
-            <div style="margin-top:14px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                <div style="opacity:.78;letter-spacing:.10em;text-transform:uppercase;font-size:11px;">${esc(title)} · ${esc(t)} <span style="opacity:.9;">(${arr.length})</span></div>
-                ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:800;">${esc(actionLabel)}</button>` : ''}
-              </div>
-              <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-                ${arr.slice(0, 200).map(it => {
-                  const k = `${it.type}|${it.id}`;
-                  const checked = state.mod.sel.has(k) ? 'checked' : '';
-                  return `
-                    <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
-                      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                        <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
-                        <div style="min-width:0;">
-                          <div style="font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
-                          <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
-                        </div>
-                      </div>
-                    </label>`;
-                }).join('')}
-              </div>
-            </div>`);
-        }
-        return sections.join('');
-      };
-
-      ui.results.innerHTML = `
         ${header}
-        <div style="margin-top:10px;opacity:.75;font-size:12px;line-height:1.4;">
-          This list only tracks <b>brand-new IDs</b> (rows tagged <code>source = hbcr</code>). Balance/description edits are ignored.
+        <div style="margin-top:10px;opacity:.80;font-size:12px;line-height:1.45;">
+          Compares the current bundle to the saved baseline. Tracks <b>new</b> and <b>removed</b> IDs (not balance/description text edits).
         </div>
-        ${groupHtml('New', diff.addedByType, 'No new IDs found (vs baseline).')}
-        ${groupHtml('Removed', diff.removedByType, 'No removed IDs found (vs baseline).')}
+        ${state.mod.tab !== 'removed' ? groupHtml('New', addedMap, 'No new IDs found (vs baseline).') : ''}
+        ${state.mod.tab !== 'new' ? groupHtml('Removed', removedMap, 'No removed IDs found (vs baseline).') : ''}
       `;
 
-      ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
-      ui.results.querySelector('[data-action=set-baseline]')?.addEventListener('click', () => {
-        (async () => {
-          await writePrevSnapshot(cur);
-          toast('Baseline saved.');
-          state.mod.prev = cur;
-          state.mod.diff = diffSnapshots(cur, cur);
-          state.mod.sel = new Set();
-          renderResults();
-        })();
-      });
-      ui.results.querySelector('[data-action=copy-snapshot]')?.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(JSON.stringify(cur, null, 2));
+      
+ui.results.querySelector('[data-action=close]')?.addEventListener('click', () => toggleOpen(false));
+
+ui.results.querySelectorAll('button[data-action=tab]').forEach(b => {
+  b.addEventListener('click', () => {
+    const tab = (b.getAttribute('data-tab') || 'all').toLowerCase();
+    state.mod.tab = (tab === 'new' || tab === 'removed' || tab === 'all') ? tab : 'all';
+    renderResults();
+  });
+});
+
+const searchEl = ui.results.querySelector('input[data-action=search]');
+if (searchEl) {
+  searchEl.addEventListener('input', () => {
+    state.mod.search = searchEl.value || '';
+    renderResults();
+  });
+}
+
+ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
+  if (state.mod.saving) return;
+
+  const ok = await confirmDialog({
+    title: "Save new baseline?",
+    message: "This will replace the saved baseline with the current snapshot.
+
+After saving, NEW will become 0 until you make more changes.",
+    confirmText: "Yes, Save Baseline",
+    cancelText: "Cancel",
+  });
+  if (!ok) return;
+
+  state.mod.saving = true;
+  state.mod.error = null;
+  renderResults();
+
+  const result = await writePrevSnapshot(cur);
+  state.mod.saving = false;
+
+  if (result && result.ok === false) {
+    state.mod.error = result.error || "Save failed.";
+    toast('Baseline save failed.');
+    renderResults();
+    return;
+  }
+
+  toast('Baseline saved.');
+  state.mod.prev = cur;
+  state.mod.diff = diffSnapshots(cur, cur);
+  state.mod.sel = new Set();
+  renderResults();
+});
+
+ui.results.querySelector('[data-action=copy-report]')?.addEventListener('click', async () => {
+  try {
+    const lines = [];
+    lines.push("HBCR Mod Updates Report");
+    lines.push("");
+    lines.push(`Baseline: ${prevAt}`);
+    lines.push(`Current:  ${curAt}`);
+    lines.push("");
+    lines.push(`New: ${addedCount}`);
+    lines.push(`Removed: ${removedCount}`);
+    lines.push("");
+
+    const dumpList = (title, arr) => {
+      if (!arr.length) return;
+      lines.push(title + ":");
+      const take = arr.slice(0, 250);
+      for (const it of take) lines.push(`- ${it.type}: ${it.id}  (${it.sheet})`);
+      if (arr.length > take.length) lines.push(`…and ${arr.length - take.length} more`);
+      lines.push("");
+    };
+
+    dumpList("New IDs", diff.added);
+    dumpList("Removed IDs", diff.removed);
+
+    await navigator.clipboard.writeText(lines.join("
+"));
+    toast('Report copied.');
+  } catch {
+    toast('Copy failed (clipboard blocked).');
+  }
+});
           toast('Snapshot copied.');
         } catch {
           toast('Copy failed (clipboard blocked).');
@@ -1148,36 +1182,3 @@ function hbcrApi(path) {
   };
 
 })();
-// --- HBCR BASELINE NORMALIZATION PATCH ---
-async function readPrevSnapshot(){
-  try{
-    const res = await fetch(BASELINE_ENDPOINT,{method:"GET",mode:"cors",cache:"no-store"});
-    if(res.ok){
-      const data = await res.json();
-      if(Array.isArray(data?.baseline)){
-        return {schema:1,items:data.baseline};
-      }
-      if(data?.baseline?.items && Array.isArray(data.baseline.items)){
-        return data.baseline;
-      }
-    }
-  }catch(e){console.warn("Baseline GET failed",e);}
-  return readJsonLS(MOD_SNAPSHOT_PREV_KEY,null);
-}
-async function writePrevSnapshot(snap){
-  try{
-    const token = (window.SAVE_TOKEN||window.PUBLISH_TOKEN_V2||localStorage.getItem("PUBLISH_TOKEN_V2")||"");
-    const res = await fetch(BASELINE_ENDPOINT,{
-      method:"POST",
-      headers:{"Content-Type":"application/json",...(token?{"Authorization":"Bearer "+token}:{})},
-      body: JSON.stringify(snap?.items ?? snap)
-    });
-    if(!res.ok) throw new Error("Baseline POST failed");
-    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
-  }catch(e){
-    console.warn("Baseline POST failed",e);
-    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
-  }
-}
-// --- END PATCH ---
-
