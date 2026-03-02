@@ -1148,3 +1148,36 @@ function hbcrApi(path) {
   };
 
 })();
+// --- HBCR BASELINE NORMALIZATION PATCH ---
+async function readPrevSnapshot(){
+  try{
+    const res = await fetch(BASELINE_ENDPOINT,{method:"GET",mode:"cors",cache:"no-store"});
+    if(res.ok){
+      const data = await res.json();
+      if(Array.isArray(data?.baseline)){
+        return {schema:1,items:data.baseline};
+      }
+      if(data?.baseline?.items && Array.isArray(data.baseline.items)){
+        return data.baseline;
+      }
+    }
+  }catch(e){console.warn("Baseline GET failed",e);}
+  return readJsonLS(MOD_SNAPSHOT_PREV_KEY,null);
+}
+async function writePrevSnapshot(snap){
+  try{
+    const token = (window.SAVE_TOKEN||window.PUBLISH_TOKEN_V2||localStorage.getItem("PUBLISH_TOKEN_V2")||"");
+    const res = await fetch(BASELINE_ENDPOINT,{
+      method:"POST",
+      headers:{"Content-Type":"application/json",...(token?{"Authorization":"Bearer "+token}:{})},
+      body: JSON.stringify(snap?.items ?? snap)
+    });
+    if(!res.ok) throw new Error("Baseline POST failed");
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
+  }catch(e){
+    console.warn("Baseline POST failed",e);
+    writeJsonLS(MOD_SNAPSHOT_PREV_KEY,snap);
+  }
+}
+// --- END PATCH ---
+
