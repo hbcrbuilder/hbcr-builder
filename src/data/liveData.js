@@ -1,3 +1,17 @@
+
+// ===============================
+// HBCR API base (Worker)
+// ===============================
+const HBCR_WORKER_BASE = (typeof window !== "undefined" && window.__HBCR_WORKER_BASE__)
+  ? String(window.__HBCR_WORKER_BASE__).replace(/\/$/, "")
+  : "https://hbcr-api.hbcrbuilder.workers.dev";
+
+function hbcrApi(path) {
+  const p = String(path || "");
+  if (p.startsWith("http")) return p;
+  return HBCR_WORKER_BASE + (p.startsWith("/") ? p : ("/" + p));
+}
+
 // src/data/liveData.js
 
 const BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";

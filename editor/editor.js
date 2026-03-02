@@ -1,5 +1,19 @@
 import { getBundle } from "../src/data/liveData.js";
 
+// ===============================
+// HBCR API base (Worker)
+// ===============================
+const HBCR_WORKER_BASE = (typeof window !== "undefined" && window.__HBCR_WORKER_BASE__)
+  ? String(window.__HBCR_WORKER_BASE__).replace(/\/$/, "")
+  : "https://hbcr-api.hbcrbuilder.workers.dev";
+
+function hbcrApi(path) {
+  const p = String(path || "");
+  if (p.startsWith("http")) return p;
+  return HBCR_WORKER_BASE + (p.startsWith("/") ? p : ("/" + p));
+}
+
+
 const LS_KEY = "hbcr_editor_draft";
 
 function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
@@ -440,7 +454,7 @@ reloadBundle();
 // ===============================
 
 const MOD_SOURCE = "hbcr";
-const BASELINE_ENDPOINT = "/api/mod-baseline";
+const BASELINE_ENDPOINT = hbcrApi("/api/mod-baseline");
 
 function buildModSnapshot(bundle) {
   const snapshot = [];
