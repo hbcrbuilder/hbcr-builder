@@ -224,7 +224,7 @@ function hbcrApi(path) {
     filter: 'all',
     query: '',
     bundleIndex: null,
-    mod: { loading: false, saving: false, error: null, tab: 'new', search: '', prev: null, cur: null, diff: null, sel: new Set() },
+    mod: { loading: false, saving: false, error: null, tab: 'new', search: '', limits: { added: {}, removed: {} }, prev: null, cur: null, diff: null, sel: new Set() },
   };
 
   function ensureRightGroup(topbar) {
@@ -1106,20 +1106,30 @@ function diffSnapshots(prev, cur) {
 	              ${title === 'New' ? `<button data-action="apply-type" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:10px;border:1px solid rgba(212,175,55,0.22);background:rgba(0,0,0,0.18);font-weight:900;">${esc(actionLabel)}</button>` : ''}
 	            </div>
 	            <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-	              ${arr.slice(0, 300).map(it => {
-	                const k = `${it.type}|${it.id}`;
-	                const checked = state.mod.sel.has(k) ? 'checked' : '';
-	                return `
-	                  <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
-	                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-	                      <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
-	                      <div style="min-width:0;">
-	                        <div style="font-weight:900;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
-	                        <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
-	                      </div>
-	                    </div>
-	                  </label>`;
-	              }).join('')}
+	              ${(() => {
+  const kind = (title||'').toLowerCase()==='new' ? 'added' : 'removed';
+  const lims = state.mod.limits || (state.mod.limits = { added:{}, removed:{} });
+  const limit = (lims[kind] && lims[kind][t]) ? lims[kind][t] : 80;
+  const shown = arr.slice(0, limit);
+  const rowsHtml = shown.map(it => {
+    const k = `${it.type}|${it.id}`;
+    const checked = state.mod.sel.has(k) ? 'checked' : '';
+    return `
+      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid rgba(212,175,55,0.10);">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <input type="checkbox" data-action="toggle" data-key="${esc(k)}" ${checked} style="accent-color:rgba(212,175,55,0.95);" />
+          <div style="min-width:0;">
+            <div style="font-weight:900;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.id)}</div>
+            <div style="opacity:.70;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.sheet)}</div>
+          </div>
+        </div>
+      </label>`;
+  }).join('');
+  const more = (arr.length > limit)
+    ? `<button data-action="more" data-kind="${esc(kind)}" data-type="${esc(t)}" style="all:unset;cursor:pointer;padding:8px 10px;border-radius:12px;border:1px dashed rgba(212,175,55,0.25);background:rgba(0,0,0,0.10);font-weight:900;opacity:.95;">Show more (${shown.length}/${arr.length})</button>`
+    : '';
+  return rowsHtml + more;
+})()}
 	            </div>
 	          </div>`);
 	      }
@@ -1143,15 +1153,31 @@ function diffSnapshots(prev, cur) {
 	      });
 	    });
 	
-	    const searchEl = ui.results.querySelector('input[data-action=search]');
-	    if (searchEl) {
-	      searchEl.addEventListener('input', () => {
-	        state.mod.search = searchEl.value || '';
-	        renderResults();
-	      });
-	    }
+	    
+const searchEl = ui.results.querySelector('input[data-action=search]');
+if (searchEl) {
+  let tId = null;
+  searchEl.addEventListener('input', () => {
+    state.mod.search = searchEl.value || '';
+    if (tId) clearTimeout(tId);
+    tId = setTimeout(() => renderResults(), 150);
+  });
+}
 
-	    ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
+	    
+// "Show more" (avoid rendering thousands of rows at once)
+ui.results.querySelectorAll('button[data-action=more]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const kind = (btn.getAttribute('data-kind') || 'added');
+    const type = (btn.getAttribute('data-type') || '');
+    const lims = state.mod.limits || (state.mod.limits = { added:{}, removed:{} });
+    if (!lims[kind]) lims[kind] = {};
+    lims[kind][type] = (lims[kind][type] || 80) + 200;
+    renderResults();
+  });
+});
+
+ui.results.querySelector('[data-action=save-baseline]')?.addEventListener('click', async () => {
 	      if (state.mod.saving) return;
 	      const ok = await confirmDialog({
 	        title: "Save new baseline?",
