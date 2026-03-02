@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HBCR Builder Preview</title>
+  <link rel="stylesheet" href="/src/ui.css"/>
+  <style>
+    body{margin:0;background:transparent;}
+    .wrap{padding:14px;}
+    .card{background:rgba(0,0,0,.70);border:1px solid rgba(255,255,255,.10);border-radius:16px;overflow:hidden;}
+    .hdr{display:flex;gap:12px;align-items:center;padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.40)}
+    .icon{width:54px;height:54px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .icon img{width:100%;height:100%;object-fit:cover;display:block}
+    .title{font-family:var(--font-title, serif);letter-spacing:.08em;text-transform:uppercase;font-size:14px;}
+    .sub{opacity:.78;font-size:12px;margin-top:2px;word-break:break-all}
+    .body{padding:12px;}
+    .mock{
+      margin-top:10px;
+      height:340px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:
+        radial-gradient(circle at 30% 35%, rgba(255,215,120,.10), transparent 52%),
+        radial-gradient(circle at 70% 65%, rgba(120,200,255,.08), transparent 55%),
+        rgba(0,0,0,.30);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+    }
+    .mock-btn{width:120px;height:120px;border-radius:999px;border:1px solid rgba(255,215,120,.25);
+      background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+    }
+    .mock-btn .mini{width:44px;height:44px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.35)}
+    .mock-btn .mini img{width:100%;height:100%;object-fit:cover}
+    .mock-btn .lbl{font-size:12px;opacity:.9;max-width:100px;text-align:center;}
+    .hint{opacity:.7;font-size:12px;line-height:1.35}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="hdr">
+        <div class="icon" id="iconWrap">
+          <img id="iconImg" alt="" style="display:none" />
+        </div>
+        <div>
+          <div class="title" id="name">Select an item in Easy Mode</div>
+          <div class="sub" id="meta">Preview will update live as you type.</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="hint">This is a lightweight preview of how the item will appear (name + icon). It avoids freezing by not rendering the full builder.</div>
+        <div class="mock">
+          <div class="mock-btn">
+            <div class="mini"><img id="miniImg" alt="" style="display:none"/></div>
+            <div class="lbl" id="miniLbl">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/editor/builder/preview.js"></script>
+</body>
+</html>

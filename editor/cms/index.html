@@ -3,113 +3,84 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HBCR Content Editor</title>
+  <title>HBCR Content Editor · Easy Mode</title>
   <link rel="icon" type="image/png" href="/assets/ui/hbcr-icon.png"/>
   <link rel="stylesheet" href="/src/ui.css"/>
   <link rel="stylesheet" href="/editor/cms/cms.css"/>
 </head>
 <body>
-  <div class="app-root">
-    <div class="frame">
-      <div class="topbar">
-        <div class="brand">
-          <div class="title">HBCR</div>
-          <div class="subtitle">Content Editor · Easy Mode</div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-          <a class="btn" href="/editor/" style="text-decoration:none">Back</a>
-          <a class="btn" href="/editor/builder/" style="text-decoration:none">Design Mode</a>
-          <a class="btn" href="/editor/logout" style="opacity:.85;text-decoration:none">Logout</a>
+  <div class="app-root cms-root">
+    <header class="cms-topbar">
+      <div class="cms-topbar-left">
+        <img class="cms-logo" src="/assets/ui/hbcr-icon.png" alt="HBCR" />
+        <div>
+          <div class="cms-title">Content Editor <span class="cms-pill">Easy Mode</span></div>
+          <div class="cms-subtitle">Edit content with forms. Preview updates live.</div>
         </div>
       </div>
+      <div class="cms-topbar-right">
+        <a class="btn" href="/editor/builder/">Open Builder (Design Mode)</a>
+        <a class="btn" href="/">Back to Builder</a>
+      </div>
+    </header>
 
-      <div class="divider"></div>
+    <main class="cms-grid">
+      <section class="cms-panel" id="cmsLibrary">
+        <div class="cms-panel-header">
+          <div class="cms-h">Library</div>
+          <button class="btn" id="btnReload">Reload</button>
+        </div>
+        <div class="cms-controls">
+          <label class="cms-label">Type</label>
+          <select class="cms-select" id="selType"></select>
 
-      <div class="content">
-        <div class="screen">
-          <div class="cms-shell">
+          <label class="cms-label">Search</label>
+          <input class="cms-input" id="inpSearch" placeholder="Search name or ID…" />
 
-            <!-- LEFT: Library -->
-            <aside class="cms-col cms-left">
-              <div class="cms-card">
-                <div class="cms-card-title">Library</div>
+          <div class="cms-row" style="margin-top:10px;gap:10px">
+            <button class="btn" id="btnAdd">+ Add New</button>
+            <button class="btn" id="btnExport">Copy TSV (Draft)</button>
+          </div>
 
-                <div class="cms-row">
-                  <label class="cms-label">Type</label>
-                  <select id="cmsType" class="cms-input"></select>
-                </div>
+          <div class="cms-help" id="cmsStatus">Loading bundle…</div>
+        </div>
+        <div class="cms-list" id="listItems"></div>
+      </section>
 
-                <div class="cms-row">
-                  <label class="cms-label">Search</label>
-                  <input id="cmsSearch" class="cms-input" placeholder="Search name or ID…" />
-                </div>
-
-                <div class="cms-actions">
-                  <button id="cmsAdd" class="btn">Add New</button>
-                  <button id="cmsReload" class="btn" style="opacity:.9">Reload Bundle</button>
-                </div>
-
-                <div class="cms-meta" id="cmsMeta">Loading…</div>
-              </div>
-
-              <div class="cms-list" id="cmsList"></div>
-            </aside>
-
-            <!-- CENTER: Form -->
-            <main class="cms-col cms-main">
-              <div class="cms-card">
-                <div class="cms-card-title">Editor</div>
-                <div class="cms-sub" id="cmsBreadcrumb">Pick an item from the list.</div>
-              </div>
-
-              <div class="cms-card" id="cmsFormCard" style="display:none">
-                <div class="cms-form" id="cmsForm"></div>
-
-                <details class="cms-advanced" id="cmsAdvanced">
-                  <summary>Advanced fields</summary>
-                  <div class="cms-form" id="cmsAdvancedForm"></div>
-                </details>
-              </div>
-
-              <div class="cms-card" id="cmsEmptyHint">
-                <div class="cms-sub">
-                  Tip: This editor saves a <b>draft</b> in your browser.
-                  When you're ready, click <b>Export TSV</b> and paste it into Google Sheets.
-                </div>
-              </div>
-            </main>
-
-            <!-- RIGHT: Actions -->
-            <aside class="cms-col cms-right">
-              <div class="cms-card">
-                <div class="cms-card-title">Actions</div>
-
-                <div class="cms-actions-vert">
-                  <button id="cmsSave" class="btn">Save Draft</button>
-                  <button id="cmsRevert" class="btn" style="opacity:.9">Revert Changes</button>
-                  <button id="cmsExport" class="btn" style="opacity:.95">Export TSV</button>
-                  <button id="cmsCopyReport" class="btn" style="opacity:.9">Copy Change Report</button>
-                </div>
-
-                <div class="cms-banner" id="cmsBanner" style="display:none"></div>
-                <div class="cms-meta" id="cmsDraftMeta"></div>
-              </div>
-
-              <div class="cms-card">
-                <div class="cms-card-title">What gets tracked?</div>
-                <div class="cms-sub">
-                  This edits the same data the Builder uses (from <b>/api/bundle</b>).
-                  Save Draft stores changes only in your browser until you export TSV.
-                </div>
-              </div>
-            </aside>
-
+      <section class="cms-panel" id="cmsEditor">
+        <div class="cms-panel-header">
+          <div>
+            <div class="cms-h">Editor</div>
+            <div class="cms-help" id="crumb">Select an item from the left.</div>
+          </div>
+          <div class="cms-actions">
+            <button class="btn" id="btnSave">Save Draft</button>
+            <button class="btn" id="btnRevert" style="opacity:.9">Revert</button>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div class="cms-form" id="form">
+          <div class="cms-empty">No item selected.</div>
+        </div>
+      </section>
+
+      <section class="cms-panel" id="cmsPreview">
+        <div class="cms-panel-header">
+          <div>
+            <div class="cms-h">Live Preview</div>
+            <div class="cms-help">This is a safe preview panel (won’t freeze the browser).</div>
+          </div>
+        </div>
+        <div class="cms-preview-wrap">
+          <iframe id="previewFrame" class="cms-preview" src="/editor/builder/preview.html" title="Builder Preview"></iframe>
+        </div>
+        <div class="cms-help" style="padding:10px 12px">
+          Tip: This preview shows the name + icon as it would appear in the builder. Full builder rendering stays in the Builder screen.
+        </div>
+      </section>
+    </main>
   </div>
 
-  <script type="module" src="/editor/cms/cms.js"></script>
+  <script src="/editor/cms/cms.js"></script>
 </body>
 </html>
