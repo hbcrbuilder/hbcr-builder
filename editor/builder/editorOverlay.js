@@ -392,7 +392,10 @@ function hbcrApi(path) {
           row?.mod_source ?? row?.MOD_SOURCE ??
           row?.origin ?? row?.Origin
         );
-        if (src !== 'hbcr') continue;
+        // Many bundles (including our current /api/bundle shape) do not include a
+        // per-row source field. Treat missing source as in-scope, but if a source
+        // is present, enforce hbcr.
+        if (src && src !== 'hbcr') continue;
         const id = stableRowKey(row);
         if (!id) continue;
         items.push({ type, id, sheet });
