@@ -9,80 +9,84 @@
   <link rel="stylesheet" href="/editor/cms/cms.css"/>
 </head>
 <body>
-  <div class="app-root cms-root">
-    <header class="cms-topbar">
-      <div class="cms-topbar-left">
-        <img class="cms-logo" src="/assets/ui/hbcr-icon.png" alt="HBCR" />
-        <div>
-          <div class="cms-title">Content Editor <span class="cms-pill">Easy Mode</span></div>
-          <div class="cms-subtitle">Edit content with forms. Preview updates live.</div>
+  <div class="cms-stage">
+    <!-- Full-screen Builder Preview (the real builder) -->
+    <iframe id="builderFrame" class="cms-builder" src="/editor/builder/?cmsPreview=1&embed=1" title="HBCR Builder"></iframe>
+
+    <!-- Popout Editor Drawer (Easy Mode) -->
+    <div class="cms-drawer is-open" id="drawer">
+      <header class="cms-topbar">
+        <div class="cms-topbar-left">
+          <img class="cms-logo" src="/assets/ui/hbcr-icon.png" alt="HBCR" />
+          <div>
+            <div class="cms-title">Content Editor <span class="cms-pill">Easy Mode</span></div>
+            <div class="cms-subtitle">Edit with forms. Builder preview is full screen behind this menu.</div>
+          </div>
+        </div>
+        <div class="cms-topbar-right">
+          <button class="btn btn-small" id="btnToggleDrawer" type="button" title="Hide/Show editor menu">Hide</button>
+          <a class="btn btn-small" href="/editor/builder/">Open Builder (Design Mode)</a>
+          <a class="btn btn-small" href="/">Back</a>
+        </div>
+      </header>
+
+      <div class="cms-drawer-body">
+        <div class="cms-tabs">
+          <button class="cms-tab is-active" id="tabLibrary" type="button">Library</button>
+          <button class="cms-tab" id="tabEditor" type="button">Editor</button>
+        </div>
+
+        <div class="cms-tabpanes">
+          <section class="cms-panel" id="cmsLibrary">
+            <div class="cms-panel-header">
+              <div class="cms-h">Library</div>
+              <button class="btn btn-small" id="btnReload">Reload</button>
+            </div>
+            <div class="cms-controls">
+              <label class="cms-label">Type</label>
+              <select class="cms-select" id="selType"></select>
+
+              <label class="cms-label">Search</label>
+              <input class="cms-input" id="inpSearch" placeholder="Search name or ID…" />
+
+              <div class="cms-row" style="margin-top:10px;gap:10px">
+                <button class="btn" id="btnAdd">+ Add New</button>
+                <button class="btn" id="btnExport">Copy TSV (Draft)</button>
+              </div>
+
+              <div class="cms-help" id="cmsStatus">Loading bundle…</div>
+            </div>
+            <div class="cms-list" id="listItems"></div>
+          </section>
+
+          <section class="cms-panel is-hidden" id="cmsEditor">
+            <div class="cms-panel-header">
+              <div>
+                <div class="cms-h">Editor</div>
+                <div class="cms-help" id="crumb">Select an item from the Library.</div>
+              </div>
+              <div class="cms-actions">
+                <label class="cms-check"><input type="checkbox" id="chkAutoApply" /> Auto-apply</label>
+                <button class="btn" id="btnApply">Apply to Preview</button>
+                <button class="btn" id="btnSave">Save Draft</button>
+                <button class="btn" id="btnRevert" style="opacity:.9">Revert</button>
+              </div>
+            </div>
+
+            <div class="cms-help" style="padding:10px 12px">
+              Tip: Auto-apply updates the builder after you pause typing (throttled). If your browser feels slow, turn it off and use Apply.
+            </div>
+
+            <div class="cms-form" id="form">
+              <div class="cms-empty">No item selected.</div>
+            </div>
+          </section>
         </div>
       </div>
-      <div class="cms-topbar-right">
-        <a class="btn" href="/editor/builder/">Open Builder (Design Mode)</a>
-        <a class="btn" href="/">Back to Builder</a>
-      </div>
-    </header>
+    </div>
 
-    <main class="cms-grid">
-      <section class="cms-panel" id="cmsLibrary">
-        <div class="cms-panel-header">
-          <div class="cms-h">Library</div>
-          <button class="btn" id="btnReload">Reload</button>
-        </div>
-        <div class="cms-controls">
-          <label class="cms-label">Type</label>
-          <select class="cms-select" id="selType"></select>
-
-          <label class="cms-label">Search</label>
-          <input class="cms-input" id="inpSearch" placeholder="Search name or ID…" />
-
-          <div class="cms-row" style="margin-top:10px;gap:10px">
-            <button class="btn" id="btnAdd">+ Add New</button>
-            <button class="btn" id="btnExport">Copy TSV (Draft)</button>
-          </div>
-
-          <div class="cms-help" id="cmsStatus">Loading bundle…</div>
-        </div>
-        <div class="cms-list" id="listItems"></div>
-      </section>
-
-      <section class="cms-panel" id="cmsEditor">
-        <div class="cms-panel-header">
-          <div>
-            <div class="cms-h">Editor</div>
-            <div class="cms-help" id="crumb">Select an item from the left.</div>
-          </div>
-          <div class="cms-actions">
-            <button class="btn" id="btnSave">Save Draft</button>
-            <button class="btn" id="btnRevert" style="opacity:.9">Revert</button>
-          </div>
-        </div>
-
-        <div class="cms-form" id="form">
-          <div class="cms-empty">No item selected.</div>
-        </div>
-      </section>
-
-      <section class="cms-panel" id="cmsPreview">
-        <div class="cms-panel-header">
-          <div>
-            <div class="cms-h">Live Preview</div>
-            <div class="cms-help" id="previewHelp">This is a safe preview panel (won’t freeze the browser).</div>
-          </div>
-          <div class="cms-preview-toggle">
-            <button class="btn btn-small is-active" id="btnPreviewLight" type="button" title="Fast preview (recommended)">Light</button>
-            <button class="btn btn-small" id="btnPreviewFull" type="button" title="Full builder preview (updates on Save Draft)">Full Builder</button>
-          </div>
-        </div>
-        <div class="cms-preview-wrap">
-          <iframe id="previewFrame" class="cms-preview" src="/editor/builder/preview.html" title="Builder Preview"></iframe>
-        </div>
-        <div class="cms-help" style="padding:10px 12px">
-          <span id="previewTip">Tip: Light preview shows name + icon only. Switch to Full Builder for a full preview (updates on Save Draft).</span>
-        </div>
-      </section>
-    </main>
+    <!-- Small handle shown when drawer is hidden -->
+    <button class="cms-handle is-hidden" id="drawerHandle" type="button">Editor Menu</button>
   </div>
 
   <script src="/editor/cms/cms.js"></script>

@@ -1,7 +1,8 @@
 /* HBCR Content Editor (Easy Mode)
    - Reads /api/bundle from Workers
    - Lets you edit a selected row as a draft (localStorage)
-   - Sends live preview messages to /editor/builder/preview.html
+   - Shows the REAL builder full-screen behind a popout menu
+   - Applies draft overrides to the builder via postMessage (throttled)
 */
 
 const API_BASE = "https://hbcr-api.hbcrbuilder.workers.dev";
@@ -23,13 +24,21 @@ const btnExport = $("#btnExport");
 const btnSave = $("#btnSave");
 const btnRevert = $("#btnRevert");
 
-const previewFrame = $("#previewFrame");
-const btnPreviewLight = $("#btnPreviewLight");
-const btnPreviewFull  = $("#btnPreviewFull");
-const elPreviewHelp = $("#previewHelp");
-const elPreviewTip  = $("#previewTip");
+const builderFrame = $("#builderFrame");
+const drawer = $("#drawer");
+const btnToggleDrawer = $("#btnToggleDrawer");
+const drawerHandle = $("#drawerHandle");
+const tabLibrary = $("#tabLibrary");
+const tabEditor  = $("#tabEditor");
+const pnlLibrary = $("#cmsLibrary");
+const pnlEditor  = $("#cmsEditor");
 
-let previewMode = "light"; // light | full
+const chkAutoApply = $("#chkAutoApply");
+const btnApply = $("#btnApply");
+
+let applyTimer = null;
+let lastApplyAt = 0;
+const APPLY_THROTTLE_MS = 2000;
 
 
 let bundle = null; // { SheetName: rows[] }
@@ -208,54 +217,48 @@ function findBaseRow(sheet, id){
   return { row: null, idKey: null };
 }
 
-function postPreview(row){
-  try{
-    const msg = {
-      type: 'HBCR_CMS_PREVIEW',
-      sheet: currentSheet,
-      id: currentId,
-      name: safeStr(row?.[currentNameKey] || row?.Name || row?.name || ''),
-      icon: pickIcon(row),
-    };
-    previewFrame?.contentWindow?.postMessage(msg, '*');
-  } catch {}
-}
-
-function setPreviewMode(mode){
-  previewMode = (mode === "full") ? "full" : "light";
-  if(previewMode === "full"){
-    btnPreviewFull?.classList.add("is-active");
-    btnPreviewLight?.classList.remove("is-active");
-    if(elPreviewHelp) elPreviewHelp.textContent = "Full Builder preview (updates when you click Save Draft).";
-    if(elPreviewTip) elPreviewTip.textContent = "Tip: Full Builder preview updates on Save Draft to avoid freezing. Switch back to Light if it feels slow.";
-    if(previewFrame) previewFrame.src = "/editor/builder/?cmsPreview=1";
-  } else {
-    btnPreviewLight?.classList.add("is-active");
-    btnPreviewFull?.classList.remove("is-active");
-    if(elPreviewHelp) elPreviewHelp.textContent = "This is a safe preview panel (won’t freeze the browser).";
-    if(elPreviewTip) elPreviewTip.textContent = "Tip: Light preview shows name + icon only. Switch to Full Builder for a full preview (updates on Save Draft).";
-    if(previewFrame) previewFrame.src = "/editor/builder/preview.html";
-    sendPreview(currentRow);
-  }
-}
-
-btnPreviewLight?.addEventListener("click", ()=> setPreviewMode("light"));
-btnPreviewFull?.addEventListener("click", ()=> {
-  if(!localStorage.getItem("hbcr_cms_full_preview_ok")){
-    const ok = confirm("Full Builder preview can be heavier than Light Preview. It will only update when you click Save Draft. Continue?");
-    if(!ok) return;
-    localStorage.setItem("hbcr_cms_full_preview_ok","1");
-  }
-  setPreviewMode("full");
-});
-
-function pushFullPreviewOverrides(){
+function pushBuilderOverrides(){
   try{
     const all = readDraftAll();
     const msg = { type: "HBCR_CMS_OVERRIDES", draft: all, t: Date.now() };
-    previewFrame?.contentWindow?.postMessage(msg, "*");
+    builderFrame?.contentWindow?.postMessage(msg, "*");
   } catch {}
 }
+
+function applyToPreview(){
+  const now = Date.now();
+  if(now - lastApplyAt < APPLY_THROTTLE_MS) return;
+  lastApplyAt = now;
+  pushBuilderOverrides();
+}
+
+function scheduleAutoApply(){
+  if(!chkAutoApply?.checked) return;
+  if(applyTimer) clearTimeout(applyTimer);
+  applyTimer = setTimeout(()=>applyToPreview(), 550);
+}
+
+// Drawer + tabs
+function setTab(which){
+  const isLib = which === 'library';
+  tabLibrary?.classList.toggle('is-active', isLib);
+  tabEditor?.classList.toggle('is-active', !isLib);
+  pnlLibrary?.classList.toggle('is-hidden', !isLib);
+  pnlEditor?.classList.toggle('is-hidden', isLib);
+}
+
+function setDrawer(open){
+  drawer?.classList.toggle('is-open', !!open);
+  drawerHandle?.classList.toggle('is-hidden', !!open);
+  if(btnToggleDrawer) btnToggleDrawer.textContent = open ? 'Hide' : 'Show';
+}
+
+btnToggleDrawer?.addEventListener('click', ()=> setDrawer(!drawer?.classList.contains('is-open')));
+drawerHandle?.addEventListener('click', ()=> setDrawer(true));
+tabLibrary?.addEventListener('click', ()=> setTab('library'));
+tabEditor?.addEventListener('click', ()=> setTab('editor'));
+
+btnApply?.addEventListener('click', ()=> applyToPreview());
 
 
 function renderForm(){
@@ -296,7 +299,8 @@ function renderForm(){
   // Update breadcrumb
   elCrumb.textContent = `${currentSheet} → ${nameVal || idVal} (id: ${idVal})`;
 
-  postPreview(currentRow);
+  // Auto-apply if enabled (throttled) so maintainers see changes without crashing the browser.
+  scheduleAutoApply();
 }
 
 function fieldReadOnly(label, value){
@@ -314,7 +318,7 @@ function fieldInput(label, value, onChange){
   inp.value = value;
   inp.addEventListener('input', () => {
     onChange(inp.value);
-    // debounced preview
+    // debounced update
     if(searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       // refresh merged row + preview
@@ -374,6 +378,9 @@ function selectItem(id){
   currentRow = mergeDraft(currentSheet, id, baseRow);
   renderList();
   renderForm();
+
+  // Jump to Editor tab when an item is selected.
+  setTab('editor');
 }
 
 async function loadBundle(){
@@ -457,6 +464,9 @@ function saveDraft(){
   // Draft already saved on input. This is just reassurance.
   const count = Object.keys(readDraftAll()).length;
   setStatus(`Draft saved locally. (${count} item(s) changed)`);
+
+  // Apply to builder preview when user explicitly saves.
+  applyToPreview();
 }
 
 function revertDraft(){

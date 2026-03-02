@@ -1,6 +1,47 @@
-/* Easy Mode CMS styling – uses existing bg3 theme vars from /src/ui.css */
+/* Easy Mode CMS styling – popout drawer over full-screen builder */
 
-.cms-root{min-height:100vh; flex-direction:column;}
+.cms-stage{position:relative;min-height:100vh;}
+
+.cms-builder{
+  position:fixed; inset:0;
+  width:100vw; height:100vh;
+  border:0;
+  background:#000;
+}
+
+.cms-drawer{
+  position:fixed; top:0; left:0; bottom:0;
+  width: 460px;
+  max-width: min(460px, 92vw);
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,.18);
+  backdrop-filter:blur(10px);
+  border-right:1px solid rgba(255,255,255,.10);
+  box-shadow: 18px 0 40px rgba(0,0,0,.45);
+  z-index:60;
+}
+
+.cms-drawer.is-open{transform:translateX(0);}
+.cms-drawer:not(.is-open){transform:translateX(-110%);} 
+
+.cms-drawer-body{flex:1;min-height:0;display:flex;flex-direction:column;}
+
+.cms-handle{
+  position:fixed; left:12px; top:50%; transform:translateY(-50%);
+  z-index:70;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.70);
+  backdrop-filter:blur(10px);
+  color:inherit;
+  font-family:var(--font-title, serif);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.is-hidden{display:none !important;}
 
 .cms-topbar{
   position:sticky;top:0;z-index:50;
@@ -19,16 +60,23 @@
 
 .cms-topbar-right{display:flex;gap:10px;flex-wrap:wrap;}
 
-.cms-grid{
-  display:grid;
-  grid-template-columns: 300px 0.9fr 1.3fr;
-  gap:18px;
-  padding:14px 22px 16px;
-  width:100%;
-  max-width:1680px;
-  margin:0 auto;
-  box-sizing:border-box;
+
+.cms-tabs{display:flex;gap:8px;padding:10px 12px;background:rgba(0,0,0,.40);border-bottom:1px solid rgba(255,255,255,.08)}
+.cms-tab{
+  flex:1;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.35);
+  color:inherit;
+  cursor:pointer;
+  font-family:var(--font-title, serif);
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
+.cms-tab.is-active{outline:2px solid rgba(255,215,120,.30);background:rgba(0,0,0,.48)}
+
+.cms-tabpanes{flex:1;min-height:0;display:flex;flex-direction:column;}
 
 .cms-panel{
   background:rgba(0,0,0,.66);
@@ -37,10 +85,10 @@
   border-radius:16px;
   overflow:hidden;
 
-  /* Fill the viewport under the topbar without creating giant empty panels */
+  /* Fill the drawer and scroll internally */
   display:flex;
   flex-direction:column;
-  height: calc(100vh - 130px);
+  flex:1;
   min-height: 0;
 }
 
@@ -89,6 +137,9 @@
 .cms-item-id{opacity:.72;font-size:12px;margin-top:2px;word-break:break-all;}
 
 .cms-actions{display:flex;gap:10px;}
+
+.cms-check{display:flex;align-items:center;gap:8px;opacity:.9;font-size:12px;white-space:nowrap}
+.cms-check input{accent-color:#d9b46a}
 
 .cms-form{
   padding:12px;
