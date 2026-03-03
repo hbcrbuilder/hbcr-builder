@@ -221,6 +221,30 @@
 .cms-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;}
 .cms-modal.is-hidden{display:none;}
 .cms-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);}
+
+.cms-modal-card{
+  position:relative;
+  z-index:1;
+  width:min(560px, 92vw);
+  max-height:88vh;
+  overflow:auto;
+  background:rgba(0,0,0,0.78);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:16px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+  padding:14px;
+}
+.cms-modal-card .cms-modal-title{
+  font-family:var(--font-title,inherit);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  font-size:14px;
+  opacity:.9;
+  margin-bottom:10px;
+}
+.cms-modal-card .cms-modal-body{padding:8px 2px;}
+.cms-modal-card .cms-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+
 .cms-modal-panel{position:relative;width:min(560px,92vw);max-height:88vh;overflow:auto;
   background:rgba(0,0,0,0.78);border:1px solid rgba(255,255,255,0.12);
   border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);padding:14px;}
