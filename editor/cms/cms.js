@@ -8,7 +8,7 @@
 const API_BASE = "https://hbcr-api.hbcrbuilder.workers.dev";
 const BUNDLE_URL = API_BASE + "/api/bundle";
 
-const DRAFT_KEY = "hbcr_cms_draft_v2";// Bumped to clear old drafts
+const DRAFT_KEY = "hbcr_cms_draft_v3";// Bumped to clear old/bad drafts
 const DRAWER_POS_KEY = "hbcr_cms_drawer_pos_v1";
 
 const $ = (sel) => document.querySelector(sel);
@@ -58,7 +58,7 @@ function writeDraftAll(obj){
   localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
 }
 function draftKey(sheet, id){
-  return `::`;
+  return `${sheet}::${id}`;
 }
 
 const PREFERRED_ID_KEYS = {

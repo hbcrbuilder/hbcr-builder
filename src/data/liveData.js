@@ -31,7 +31,7 @@ async function fetchBundle() {
   try {
     const params = new URLSearchParams(window.location?.search || "");
     if (params.get("cmsPreview") === "1") {
-      const raw = localStorage.getItem("hbcr_cms_draft_v2") || localStorage.getItem("hbcr_cms_draft_v1");
+      const raw = localStorage.getItem("hbcr_cms_draft_v3") || localStorage.getItem("hbcr_cms_draft_v2") || localStorage.getItem("hbcr_cms_draft_v1");
       if (raw) {
         const draft = JSON.parse(raw);
         applyCmsDraftOverrides(json, draft);
