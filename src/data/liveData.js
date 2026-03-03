@@ -315,22 +315,32 @@ export async function loadRacesJson() {
 
       const existing = Array.isArray(race.subraces) ? race.subraces : [];
       const map = new Map(existing.map((s) => [String(s.id), s]));
+      const byName = new Map(existing
+        .filter((s)=>s && (s.name||s.Name))
+        .map((s)=>{
+          const n = String(s.name ?? s.Name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+          return [n, String(s.id)];
+        }));
 
       for (const ls of liveSubs) {
         const sid = String(ls.id);
         const base = map.get(sid);
-        if (base) {
+        // If ids differ between local and live, fall back to a normalized name match.
+        const nk = String(ls.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+        const nameMatchedId = (!base && nk && byName.has(nk)) ? byName.get(nk) : null;
+        const base2 = (!base && nameMatchedId) ? map.get(String(nameMatchedId)) : base;
+        if (base2) {
           // Keep local icon/rules, but allow live to update display fields.
-          map.set(sid, {
-            ...base,
-            id: sid,
-            name: ls.name || base.name,
-            description: ls.description || base.description,
+          map.set(nameMatchedId ? String(nameMatchedId) : sid, {
+            ...base2,
+            id: nameMatchedId ? String(nameMatchedId) : sid,
+            name: ls.name || base2.name,
+            description: ls.description || base2.description,
           });
         } else {
           // Live-only subrace: show it with minimal fields.
           map.set(sid, {
-            id: sid,
+            id: nameMatchedId ? String(nameMatchedId) : sid,
             name: ls.name || sid,
             description: ls.description || "",
             icon: null,
@@ -464,16 +474,20 @@ export async function loadClassesJson() {
       for (const ls of liveSubs) {
         const sid = String(ls.id);
         const base = map.get(sid);
-        if (base) {
-          map.set(sid, {
-            ...base,
-            id: sid,
-            name: ls.name || base.name,
-            description: ls.description || base.description,
+        // If ids differ between local and live, fall back to a normalized name match.
+        const nk = String(ls.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+        const nameMatchedId = (!base && nk && byName.has(nk)) ? byName.get(nk) : null;
+        const base2 = (!base && nameMatchedId) ? map.get(String(nameMatchedId)) : base;
+        if (base2) {
+          map.set(nameMatchedId ? String(nameMatchedId) : sid, {
+            ...base2,
+            id: nameMatchedId ? String(nameMatchedId) : sid,
+            name: ls.name || base2.name,
+            description: ls.description || base2.description,
           });
         } else {
           map.set(sid, {
-            id: sid,
+            id: nameMatchedId ? String(nameMatchedId) : sid,
             name: ls.name || sid,
             description: ls.description || "",
             icon: null,
