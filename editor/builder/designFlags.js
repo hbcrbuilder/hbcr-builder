@@ -8,7 +8,7 @@ window.addEventListener('message', (ev) => {
     const d = ev && ev.data;
     if(!d || typeof d !== 'object') return;
     if(d.type === 'HBCR_CMS_OVERRIDES' && d.draft){
-      localStorage.setItem('hbcr_cms_draft_v1', JSON.stringify(d.draft));
+      localStorage.setItem('hbcr_cms_draft_v2', JSON.stringify(d.draft));
       const params = new URLSearchParams(window.location.search || '');
       if(params.get('cmsPreview') === '1'){
         if(!window.__HBCR_CMS_RELOADING__){
