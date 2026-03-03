@@ -9,6 +9,7 @@ const API_BASE = "https://hbcr-api.hbcrbuilder.workers.dev";
 const BUNDLE_URL = API_BASE + "/api/bundle";
 
 const DRAFT_KEY = "hbcr_cms_draft_v1";
+const DRAWER_POS_KEY = "hbcr_cms_drawer_pos_v1";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -57,24 +58,40 @@ function writeDraftAll(obj){
   localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
 }
 function draftKey(sheet, id){
-  return `${sheet}::${id}`;
+  return `::`;
 }
+
+const PREFERRED_ID_KEYS = {
+  Races: "RaceId",
+  Subraces: "SubraceId",
+  Classes: "ClassId",
+  Subclasses: "SubclassId",
+  Spells: "SpellId",
+  Cantrips: "SpellId",
+  Feats: "FeatId",
+  Traits: "TraitId",
+  Equipment: "EquipmentId",
+  Weapons: "WeaponId",
+  ClassFeatures: "FeatureId",
+};
+const PREFERRED_NAME_KEYS = {
+  Races: "RaceName",
+  Subraces: "SubraceName",
+  Classes: "ClassName",
+  Subclasses: "SubclassName",
+  Spells: "SpellName",
+  Cantrips: "SpellName",
+  Feats: "FeatName",
+  Traits: "TraitName",
+  Equipment: "EquipmentName",
+  Weapons: "WeaponName",
+  ClassFeatures: "FeatureName",
+};
 
 function guessIdKey(sheet, row){
   if(!row || typeof row !== 'object') return null;
-  const preferred = {
-    Races: "RaceId",
-    Subraces: "SubraceId",
-    Classes: "ClassId",
-    Subclasses: "SubclassId",
-    Spells: "SpellId",
-    Cantrips: "SpellId",
-    Feats: "FeatId",
-    Traits: "TraitId",
-    Equipment: "EquipmentId",
-    Weapons: "WeaponId",
-  };
-  if(preferred[sheet] && row[preferred[sheet]] != null) return preferred[sheet];
+  const pref = PREFERRED_ID_KEYS[sheet];
+  if(pref && row[pref] != null) return pref;
 
   const keys = Object.keys(row);
   // try common patterns
@@ -88,19 +105,8 @@ function guessIdKey(sheet, row){
 }
 function guessNameKey(sheet, row){
   if(!row || typeof row !== 'object') return null;
-  const preferred = {
-    Races: "RaceName",
-    Subraces: "SubraceName",
-    Classes: "ClassName",
-    Subclasses: "SubclassName",
-    Spells: "SpellName",
-    Cantrips: "SpellName",
-    Feats: "FeatName",
-    Traits: "TraitName",
-    Equipment: "EquipmentName",
-    Weapons: "WeaponName",
-  };
-  if(preferred[sheet] && row[preferred[sheet]] != null) return preferred[sheet];
+  const pref = PREFERRED_NAME_KEYS[sheet];
+  if(pref && row[pref] != null) return pref;
 
   const keys = Object.keys(row);
   for (const k of keys){
@@ -162,6 +168,9 @@ function renderList(){
   const MAX_SHOW = 400;
 
   const items = [];
+  const seen = new Set();
+
+  // 1) Bundle items
   for (const row of rows){
     const idKey = guessIdKey(sheet, row);
     const nameKey = guessNameKey(sheet, row);
@@ -173,8 +182,30 @@ function renderList(){
       if(!hay.includes(q)) continue;
     }
     items.push({ id, name, idKey, nameKey });
+    seen.add(id);
     if(items.length >= MAX_SHOW) break;
   }
+
+  // 2) Draft-only (new) items
+  try{
+    const all = readDraftAll();
+    const idKey = PREFERRED_ID_KEYS[sheet] || "id";
+    const nameKey = PREFERRED_NAME_KEYS[sheet] || "name";
+    for(const k of Object.keys(all)){
+      if(!k.startsWith(sheet + "::")) continue;
+      const id = k.slice((sheet + "::").length);
+      if(!id || seen.has(id)) continue;
+      const d = all[k] || {};
+      const name = safeStr(d[nameKey]).trim() || safeStr(d.Name).trim() || id;
+      if(q){
+        const hay = (name + " " + id).toLowerCase();
+        if(!hay.includes(q)) continue;
+      }
+      items.push({ id, name, idKey, nameKey, isDraftOnly:true });
+      seen.add(id);
+      if(items.length >= MAX_SHOW) break;
+    }
+  } catch {}
 
   elList.innerHTML = "";
   if(items.length === 0){
@@ -191,7 +222,7 @@ function renderList(){
     div.dataset.id = it.id;
     div.innerHTML = `
       <div class="cms-item-name">${escapeHtml(it.name)}</div>
-      <div class="cms-item-id">${escapeHtml(it.id)}</div>
+      <div class="cms-item-id">${escapeHtml(it.id)}${it.isDraftOnly ? " · draft" : ""}</div>
     `;
     div.addEventListener('click', () => selectItem(it.id));
     elList.appendChild(div);
@@ -252,6 +283,83 @@ function setDrawer(open){
   drawerHandle?.classList.toggle('is-hidden', !!open);
   if(btnToggleDrawer) btnToggleDrawer.textContent = open ? 'Hide' : 'Show';
 }
+
+// Draggable + resizable drawer (persists position)
+function loadDrawerPos(){
+  try{ return JSON.parse(localStorage.getItem(DRAWER_POS_KEY) || 'null'); }catch{ return null; }
+}
+function saveDrawerPos(){
+  try{
+    const r = drawer.getBoundingClientRect();
+    const pos = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+    localStorage.setItem(DRAWER_POS_KEY, JSON.stringify(pos));
+  }catch{}
+}
+function applyDrawerPos(pos){
+  if(!pos || !drawer) return;
+  drawer.style.setProperty('--cms-left', pos.x + 'px');
+  drawer.style.setProperty('--cms-top',  pos.y + 'px');
+  drawer.style.setProperty('--cms-w',    pos.w + 'px');
+  drawer.style.setProperty('--cms-h',    pos.h + 'px');
+}
+applyDrawerPos(loadDrawerPos());
+
+(function enableDrawerDrag(){
+  if(!drawer) return;
+  const handle = document.querySelector('.cms-topbar');
+  if(!handle) return;
+
+  let dragging = false;
+  let startX = 0, startY = 0;
+  let baseLeft = 0, baseTop = 0;
+  let raf = 0;
+
+  const isInteractive = (el) => {
+    if(!el) return false;
+    return !!el.closest('button,a,input,select,textarea,label');
+  };
+
+  handle.addEventListener('pointerdown', (e)=>{
+    if(e.button !== 0) return;
+    if(isInteractive(e.target)) return;
+    const r = drawer.getBoundingClientRect();
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    baseLeft = r.left; baseTop = r.top;
+    handle.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const nextLeft = Math.max(6, Math.min(window.innerWidth - 60, baseLeft + dx));
+    const nextTop  = Math.max(6, Math.min(window.innerHeight - 60, baseTop  + dy));
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=>{
+      drawer.style.setProperty('--cms-left', nextLeft + 'px');
+      drawer.style.setProperty('--cms-top',  nextTop  + 'px');
+    });
+  }, { passive:true });
+
+  const stop = ()=>{
+    if(!dragging) return;
+    dragging = false;
+    if(raf) cancelAnimationFrame(raf);
+    saveDrawerPos();
+  };
+  window.addEventListener('pointerup', stop, { passive:true });
+  window.addEventListener('pointercancel', stop, { passive:true });
+
+  // Save size after resize
+  const ro = new ResizeObserver(()=>{
+    // debounce a bit
+    clearTimeout(enableDrawerDrag._t);
+    enableDrawerDrag._t = setTimeout(saveDrawerPos, 250);
+  });
+  ro.observe(drawer);
+})();
 
 btnToggleDrawer?.addEventListener('click', ()=> setDrawer(!drawer?.classList.contains('is-open')));
 drawerHandle?.addEventListener('click', ()=> setDrawer(true));
@@ -358,7 +466,18 @@ function updateDraftField(key, value){
 function refreshCurrent(){
   if(!currentSheet || !currentId) return;
   const { row: baseRow, idKey } = findBaseRow(currentSheet, currentId);
-  if(!baseRow) return;
+
+  if(!baseRow){
+    // draft-only new item
+    const all = readDraftAll();
+    const d = all[draftKey(currentSheet, currentId)];
+    if(d){
+      currentRow = d;
+      renderForm();
+    }
+    return;
+  }
+
   currentIdKey = idKey;
   currentNameKey = guessNameKey(currentSheet, baseRow);
   currentRow = mergeDraft(currentSheet, currentId, baseRow);
@@ -368,11 +487,27 @@ function refreshCurrent(){
 function selectItem(id){
   currentId = id;
   const { row: baseRow, idKey } = findBaseRow(currentSheet, id);
+
+  // Draft-only new item
   if(!baseRow){
+    const all = readDraftAll();
+    const k = draftKey(currentSheet, id);
+    const d = all[k];
+    if(d){
+      currentIdKey = PREFERRED_ID_KEYS[currentSheet] || Object.keys(d).find(x=>/Id$/.test(x)) || 'Id';
+      currentNameKey = PREFERRED_NAME_KEYS[currentSheet] || Object.keys(d).find(x=>/Name$/.test(x)) || 'Name';
+      currentRow = d;
+      renderList();
+      renderForm();
+      setTab('editor');
+      return;
+    }
+
     currentRow = null;
     renderForm();
     return;
   }
+
   currentIdKey = idKey;
   currentNameKey = guessNameKey(currentSheet, baseRow);
   currentRow = mergeDraft(currentSheet, id, baseRow);

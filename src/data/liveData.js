@@ -80,7 +80,11 @@ function applyCmsDraftOverrides(bundle, draft){
     const overrides = perSheet[sheet];
     for(const id of Object.keys(overrides)){
       const idx = map.get(String(id));
-      if(idx == null) continue;
+      if(idx == null){
+        // new item created in CMS: append it to the sheet
+        rows.push({ [idKey]: id, ...overrides[id] });
+        continue;
+      }
       rows[idx] = { ...rows[idx], ...overrides[id] };
     }
   }
