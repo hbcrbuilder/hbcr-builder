@@ -9,6 +9,101 @@ const HBCR_WORKER_BASE = (typeof window !== "undefined" && window.__HBCR_WORKER_
   ? String(window.__HBCR_WORKER_BASE__).replace(/\/$/, "")
   : "https://hbcr-api.hbcrbuilder.workers.dev";
 
+
+// ---------- Floating window (draggable + persistent size/pos) ----------
+const WINDOW_STATE_KEY = "hbcr_cms_window_v1";
+function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+function loadWindowState(){
+  try { return JSON.parse(localStorage.getItem(WINDOW_STATE_KEY) || "null"); } catch { return null; }
+}
+function saveWindowState(state){
+  try { localStorage.setItem(WINDOW_STATE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function applyWindowState(drawer, st){
+  if (!st) return;
+  if (typeof st.top === "number") drawer.style.setProperty("--cms-top", st.top + "px");
+  if (typeof st.left === "number") drawer.style.setProperty("--cms-left", st.left + "px");
+  if (typeof st.w === "number") drawer.style.setProperty("--cms-w", st.w + "px");
+  if (typeof st.h === "number") drawer.style.setProperty("--cms-h", st.h + "px");
+}
+
+function setupDrawerWindowing(){
+  const drawer = document.getElementById("drawer");
+  if (!drawer) return;
+
+  // Restore saved state
+  applyWindowState(drawer, loadWindowState());
+
+  // Drag by topbar, but ignore clicks on controls/links
+  const handle = drawer.querySelector(".cms-topbar");
+  let dragging = false;
+  let startX = 0, startY = 0, startTop = 0, startLeft = 0;
+
+  function isInteractive(el){
+    return !!el.closest("button,a,input,select,textarea,label");
+  }
+
+  handle?.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    if (isInteractive(e.target)) return;
+
+    dragging = true;
+    handle.setPointerCapture?.(e.pointerId);
+    const rect = drawer.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startTop = rect.top;
+    startLeft = rect.left;
+    e.preventDefault();
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = drawer.getBoundingClientRect();
+
+    const newLeft = clamp(startLeft + dx, 8, vw - rect.width - 8);
+    const newTop  = clamp(startTop + dy, 8, vh - rect.height - 8);
+
+    drawer.style.setProperty("--cms-left", newLeft + "px");
+    drawer.style.setProperty("--cms-top", newTop + "px");
+  }, { passive: true });
+
+  window.addEventListener("pointerup", () => {
+    if (!dragging) return;
+    dragging = false;
+
+    const rect = drawer.getBoundingClientRect();
+    saveWindowState({
+      top: Math.round(rect.top),
+      left: Math.round(rect.left),
+      w: Math.round(rect.width),
+      h: Math.round(rect.height),
+    });
+  });
+
+  // Persist resizes (the CSS uses resize: both)
+  const ro = new ResizeObserver(() => {
+    const rect = drawer.getBoundingClientRect();
+    // Update CSS vars so the resize "sticks" with our var-driven sizing
+    drawer.style.setProperty("--cms-w", Math.round(rect.width) + "px");
+    drawer.style.setProperty("--cms-h", Math.round(rect.height) + "px");
+    saveWindowState({
+      top: Math.round(rect.top),
+      left: Math.round(rect.left),
+      w: Math.round(rect.width),
+      h: Math.round(rect.height),
+    });
+  });
+  ro.observe(drawer);
+}
+
 function hbcrApi(path) {
   const p = String(path || "");
   if (p.startsWith("http")) return p;
@@ -485,6 +580,8 @@ function refreshBuilder(){
 
 // ---------- Wire up UI ----------
 function init(){
+  setupDrawerWindowing();
+
   // Hide legacy controls
   for (const id of LEGACY_HIDE_IDS){
     const el = document.getElementById(id);
