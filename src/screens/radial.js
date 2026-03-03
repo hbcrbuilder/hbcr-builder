@@ -50,6 +50,7 @@ async function loadClasses() {
     classesCachePromise = loadClassesJson();
   }
   return await classesCachePromise;
+}
 
 async function loadSubclassesRows() {
   if (!subclassesCachePromise) {
@@ -61,8 +62,6 @@ async function loadSubclassesRows() {
       .catch(() => []);
   }
   return await subclassesCachePromise;
-}
-
 }
 
 async function loadSpells() {
