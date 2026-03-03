@@ -36,7 +36,6 @@ let featsCachePromise = null;
 let classFeaturesCachePromise = null;
 let raceFeaturesCachePromise = null;
 let choicesCachePromise = null;
-let subclassesCachePromise = null;
 
 async function loadRaces() {
   if (!racesCachePromise) {
@@ -50,18 +49,6 @@ async function loadClasses() {
     classesCachePromise = loadClassesJson();
   }
   return await classesCachePromise;
-}
-
-async function loadSubclassesRows() {
-  if (!subclassesCachePromise) {
-    subclassesCachePromise = loadData("./data/subclasses.json", "Subclasses", (rows) => rows)
-      .then((json) => {
-        const arr = Array.isArray(json) ? json : (json?.subclasses || json?.rows || json?.data || []);
-        return Array.isArray(arr) ? arr : [];
-      })
-      .catch(() => []);
-  }
-  return await subclassesCachePromise;
 }
 
 async function loadSpells() {
@@ -599,38 +586,7 @@ export async function RadialScreen({ state }) {
   const races = racesData?.races ?? [];
   const classes = classesData?.classes ?? [];
   const NO_SUBRACE = new Set((races || []).filter(r => !(r?.subraces?.length)).map(r => r.id));
-  // Merge live Subclasses (from Sheets) into classes.full.json so new subclasses can appear without code edits.
-  const liveSubclassRows = await loadSubclassesRows();
-  const classesFullPatched = (()=>{
-    if (!liveSubclassRows?.length) return classesFull;
-    const out = JSON.parse(JSON.stringify(classesFull || {}));
-    out.classes = Array.isArray(out.classes) ? out.classes : [];
-    const byClass = new Map(out.classes.map((c)=>[String(c.id), c]));
-    for (const row of liveSubclassRows) {
-      const classId = String(row.ClassId ?? row.classId ?? row.classID ?? "");
-      const sid = String(row.SubclassId ?? row.subclassId ?? row.id ?? row.Id ?? "");
-      const sname = String(row.SubclassName ?? row.name ?? row.Name ?? sid);
-      if (!classId || !sid) continue;
-      const c = byClass.get(classId);
-      if (!c) continue;
-      c.subclasses = Array.isArray(c.subclasses) ? c.subclasses : [];
-      const norm = (v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
-      const byId = new Map(c.subclasses.map((s)=>[String(s.id), s]));
-      const byName = new Map(c.subclasses.filter(s=>s?.name).map(s=>[norm(s.name), s]));
-      if (byId.has(sid)) {
-        byId.get(sid).name = sname || byId.get(sid).name;
-      } else if (byName.has(norm(sname))) {
-        // If ids differ but names match, don't duplicate.
-        const ex = byName.get(norm(sname));
-        ex.name = sname || ex.name;
-      } else {
-        // Minimal subclass def: no level grants (those live elsewhere), but it will show in UI.
-        c.subclasses.push({ id: sid, name: sname, levels: {} });
-      }
-    }
-    return out;
-  })();
-  const subclassesIndex = indexSubclasses(classesFullPatched);
+  const subclassesIndex = indexSubclasses(classesFull);
   const spells = spellsData?.spells ?? [];
   const traits = traitsData?.traits ?? traitsData ?? [];
   const feats = featsData?.feats ?? [];

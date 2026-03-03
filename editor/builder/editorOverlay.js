@@ -27,21 +27,6 @@ function hbcrApi(path) {
   const DESIGN = !!window.__HBCR_DESIGN__;
   if (!DESIGN) return;
 
-  // ------------------------------------------------------------
-  // Embedded preview mode (CMS full-screen builder behind drawer)
-  // ------------------------------------------------------------
-  // When the Builder is embedded as a preview (e.g. /editor/builder/?cmsPreview=1&embed=1)
-  // we want the *real builder UI* only. The overlay "+ ADD / MOD UPDATES" bar is for
-  // design-mode editing and can confuse preview users.
-  //
-  // IMPORTANT: This is preview-only. Normal Design Mode remains unchanged.
-  try {
-    const sp = new URLSearchParams(location.search || '');
-    const isEmbed = sp.get('embed') === '1' || sp.get('embed') === 'true';
-    const isCmsPreview = sp.get('cmsPreview') === '1' || sp.get('cmsPreview') === 'true';
-    if (isEmbed) return;
-  } catch {}
-
   // -------------------------
   // Storage keys
   // -------------------------

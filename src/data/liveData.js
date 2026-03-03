@@ -26,78 +26,8 @@ async function fetchBundle() {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Bundle fetch failed: ${res.status}`);
-  const json = await res.json();
-  // CMS Full Preview:
-  // Only apply local draft overrides when preview is explicitly enabled.
-  // This prevents stale experimental rows (e.g. a "test" Race) from
-  // appearing for users who still have old drafts in localStorage.
-  try {
-    const params = new URLSearchParams(window.location?.search || "");
-    const wantsPreview = params.get("cmsPreview") === "1";
-    const enabled = localStorage.getItem("hbcr_cms_apply_preview") === "1";
-    if (wantsPreview && enabled) {
-      const raw =
-        localStorage.getItem("hbcr_cms_draft_v3") ||
-        localStorage.getItem("hbcr_cms_draft_v2") ||
-        localStorage.getItem("hbcr_cms_draft_v1");
-      if (raw) {
-        const draft = JSON.parse(raw);
-        applyCmsDraftOverrides(json, draft);
-      }
-    }
-  } catch {}
-  return json;
+  return await res.json();
 }
-
-// Map sheet -> id key (matches CMS)
-const __CMS_ID_KEYS__ = {
-  Races: "RaceId",
-  Subraces: "SubraceId",
-  Classes: "ClassId",
-  Subclasses: "SubclassId",
-  Spells: "SpellId",
-  Cantrips: "SpellId",
-  Feats: "FeatId",
-  Traits: "TraitId",
-  Equipment: "EquipmentId",
-  Weapons: "WeaponId",
-  ClassFeatures: "FeatureId",
-};
-
-function applyCmsDraftOverrides(bundle, draft){
-  if(!bundle || typeof bundle !== 'object' || !draft || typeof draft !== 'object') return;
-  const perSheet = {};
-  for(const k of Object.keys(draft)){
-    const parts = String(k).split('::');
-    if(parts.length < 2) continue;
-    const sheet = parts[0];
-    const id = parts.slice(1).join('::');
-    (perSheet[sheet] ||= {})[id] = draft[k];
-  }
-  for(const sheet of Object.keys(perSheet)){
-    const rows = bundle[sheet];
-    if(!Array.isArray(rows)) continue;
-    const idKey = __CMS_ID_KEYS__[sheet];
-    if(!idKey) continue;
-    const map = new Map();
-    for(let i=0;i<rows.length;i++){
-      const r = rows[i];
-      const rid = r && r[idKey];
-      if(rid != null) map.set(String(rid), i);
-    }
-    const overrides = perSheet[sheet];
-    for(const id of Object.keys(overrides)){
-      const idx = map.get(String(id));
-      if(idx == null){
-        // new item created in CMS: append it to the sheet
-        rows.push({ [idKey]: id, ...overrides[id] });
-        continue;
-      }
-      rows[idx] = { ...rows[idx], ...overrides[id] };
-    }
-  }
-}
-
 
 export async function getBundle() {
   if (!_bundlePromise) _bundlePromise = fetchBundle();
@@ -229,7 +159,6 @@ export async function loadRacesJson() {
 
   // 2) Load live rows (if available) and normalize to {id,name}
   let liveRows = [];
-  let liveSubraceRows = [];
   try {
     const b = await getBundle();
     const fromBundle = b?.Races;
@@ -241,23 +170,6 @@ export async function loadRacesJson() {
           name: r?.RaceName ?? r?.name ?? r?.Name,
         }))
         .filter((r) => r.id);
-    }
-
-    // Also pull Subraces so new subraces added in Sheets/CMS can appear in the UI.
-    // Without this, only the subraces present in local races.json will show.
-    const subFromBundle = b?.Subraces;
-    const subSrc = Array.isArray(subFromBundle)
-      ? subFromBundle
-      : (Array.isArray(subFromBundle?.rows) ? subFromBundle.rows : null);
-    if (subSrc) {
-      liveSubraceRows = subSrc
-        .map((r) => ({
-          id: r?.SubraceId ?? r?.id ?? r?.Id ?? r?.ID,
-          raceId: r?.RaceId ?? r?.raceId ?? r?.RaceTo ?? r?.raceTo,
-          name: r?.SubraceName ?? r?.name ?? r?.Name,
-          description: r?.Description ?? r?.description ?? "",
-        }))
-        .filter((r) => r.id && r.raceId);
     }
   } catch {}
 
@@ -307,88 +219,6 @@ export async function loadRacesJson() {
     if (!seenLocalIds.has(id) && !seenLiveIds.has(id)) merged.push(r);
   }
 
-  // 3) Merge live subraces into the merged races list
-  if (liveSubraceRows.length) {
-    const byRace = new Map();
-    for (const sr of liveSubraceRows) {
-      const rid = String(sr.raceId);
-      if (!byRace.has(rid)) byRace.set(rid, []);
-      byRace.get(rid).push(sr);
-    }
-
-    for (const race of merged) {
-      const rid = String(race.id);
-      const liveSubs = byRace.get(rid) || [];
-      if (!liveSubs.length) continue;
-
-      const existing = Array.isArray(race.subraces) ? race.subraces : [];
-      const map = new Map(existing.map((s) => [String(s.id), s]));
-      const byName = new Map(existing
-        .filter((s)=>s && (s.name||s.Name))
-        .map((s)=>{
-          const n = String(s.name ?? s.Name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-          return [n, String(s.id)];
-        }));
-
-      for (const ls of liveSubs) {
-        const sid = String(ls.id);
-        const base = map.get(sid);
-        // If ids differ between local and live, fall back to a normalized name match.
-        const nk = String(ls.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-        const nameMatchedId = (!base && nk && byName.has(nk)) ? byName.get(nk) : null;
-        const base2 = (!base && nameMatchedId) ? map.get(String(nameMatchedId)) : base;
-        if (base2) {
-          // Keep local icon/rules, but allow live to update display fields.
-          map.set(nameMatchedId ? String(nameMatchedId) : sid, {
-            ...base2,
-            id: nameMatchedId ? String(nameMatchedId) : sid,
-            name: ls.name || base2.name,
-            description: ls.description || base2.description,
-          });
-        } else {
-          // Live-only subrace: show it with minimal fields.
-          map.set(sid, {
-            id: nameMatchedId ? String(nameMatchedId) : sid,
-            name: ls.name || sid,
-            description: ls.description || "",
-            icon: null,
-          });
-        }
-      }
-
-      // Preserve ordering: existing first, then any new ones.
-      const ordered = [];
-      const seen = new Set();
-      for (const s of existing) {
-        const sid = String(s.id);
-        if (seen.has(sid)) continue;
-        if (map.has(sid)) {
-          ordered.push(map.get(sid));
-          seen.add(sid);
-        }
-      }
-      for (const [sid, s] of map.entries()) {
-        if (!seen.has(sid)) ordered.push(s);
-      }
-
-      // Final defensive de-dupe: keep first by id, then by normalized name.
-      const normName = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-      const seenId = new Set();
-      const seenName = new Set();
-      const deduped = [];
-      for (const s of ordered) {
-        const sid = String(s?.id ?? "");
-        const nk = normName(s?.name ?? s?.Name);
-        if (sid && seenId.has(sid)) continue;
-        if (nk && seenName.has(nk)) continue;
-        if (sid) seenId.add(sid);
-        if (nk) seenName.add(nk);
-        deduped.push(s);
-      }
-      race.subraces = deduped;
-    }
-  }
-
   return { ...local, races: merged };
 }
 export const loadSubracesJson = () => loadData("./data/subraces.json", "Subraces");
@@ -407,7 +237,6 @@ export async function loadClassesJson() {
   } catch {}
 
   let liveRows = [];
-  let liveSubclassRows = [];
   try {
     const b = await getBundle();
     const fromBundle = b?.Classes;
@@ -419,22 +248,6 @@ export async function loadClassesJson() {
           name: r?.ClassName ?? r?.name ?? r?.Name,
         }))
         .filter((r) => r.id);
-    }
-
-    // Also pull Subclasses so new subclasses added in Sheets/CMS can appear.
-    const subFromBundle = b?.Subclasses;
-    const subSrc = Array.isArray(subFromBundle)
-      ? subFromBundle
-      : (Array.isArray(subFromBundle?.rows) ? subFromBundle.rows : null);
-    if (subSrc) {
-      liveSubclassRows = subSrc
-        .map((r) => ({
-          id: r?.SubclassId ?? r?.id ?? r?.Id ?? r?.ID,
-          classId: r?.classId ?? r?.ClassId ?? r?.ClassID,
-          name: r?.SubclassName ?? r?.name ?? r?.Name,
-          description: r?.Description ?? r?.description ?? "",
-        }))
-        .filter((r) => r.id && r.classId);
     }
   } catch {}
 
@@ -478,92 +291,115 @@ export async function loadClassesJson() {
     if (!seenLocalIds.has(id) && !seenLiveIds.has(id)) merged.push(c);
   }
 
-  // Merge live subclasses into merged classes list
-  if (liveSubclassRows.length) {
-    const byClass = new Map();
-    for (const sc of liveSubclassRows) {
-      const cid = String(sc.classId);
-      if (!byClass.has(cid)) byClass.set(cid, []);
-      byClass.get(cid).push(sc);
-    }
-
-    for (const cls of merged) {
-      const cid = String(cls.id);
-      const liveSubs = byClass.get(cid) || [];
-      if (!liveSubs.length) continue;
-
-      const existing = Array.isArray(cls.subclasses) ? cls.subclasses : [];
-      const map = new Map(existing.map((s) => [String(s.id), s]));
-      // Helper map: normalized name -> existing subclass id
-      const byName = new Map();
-      for (const s of existing) {
-        const nk = String(s.name || "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "");
-        if (nk && !byName.has(nk)) byName.set(nk, String(s.id));
-      }
-
-      for (const ls of liveSubs) {
-        const sid = String(ls.id);
-        const base = map.get(sid);
-        // If ids differ between local and live, fall back to a normalized name match.
-        const nk = String(ls.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-        const nameMatchedId = !base && nk && byName.has(nk) ? byName.get(nk) : null;
-        const base2 = !base && nameMatchedId ? map.get(String(nameMatchedId)) : base;
-        if (base2) {
-          const outId = nameMatchedId ? String(nameMatchedId) : sid;
-          map.set(outId, {
-            ...base2,
-            id: outId,
-            name: ls.name || base2.name,
-            description: ls.description || base2.description,
-          });
-        } else {
-          const outId = nameMatchedId ? String(nameMatchedId) : sid;
-          map.set(outId, {
-            id: outId,
-            name: ls.name || sid,
-            description: ls.description || "",
-            icon: null,
-          });
-        }
-      }
-
-      const ordered = [];
-      const seen = new Set();
-      for (const s of existing) {
-        const sid = String(s.id);
-        if (seen.has(sid)) continue;
-        if (map.has(sid)) {
-          ordered.push(map.get(sid));
-          seen.add(sid);
-        }
-      }
-      for (const [sid, s] of map.entries()) {
-        if (!seen.has(sid)) ordered.push(s);
-      }
-
-      // Final defensive de-dupe (by id then normalized name)
-      const normName = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-      const seenId = new Set();
-      const seenName = new Set();
-      const deduped = [];
-      for (const s of ordered) {
-        const sid = String(s?.id ?? "");
-        const nk = normName(s?.name ?? s?.Name);
-        if (sid && seenId.has(sid)) continue;
-        if (nk && seenName.has(nk)) continue;
-        if (sid) seenId.add(sid);
-        if (nk) seenName.add(nk);
-        deduped.push(s);
-      }
-      cls.subclasses = deduped;
-    }
-  }
-
   return { ...local, classes: merged };
 }
-export const loadClassesFullJson = () => loadData("./data/classesFull.json", "Classes");
+export async function loadClassesFullJson() {
+  // Local classesFull.json is the canonical source for subclass nesting + level features.
+  let local = { classes: [] };
+  try {
+    const res = await fetch("./data/classesFull.json", { cache: "no-store" });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && typeof j === "object") {
+        local = Array.isArray(j) ? { classes: j } : j;
+      }
+      if (!Array.isArray(local.classes)) local = { ...local, classes: [] };
+    }
+  } catch {}
+
+  // Overlay live class names (optional) + merge live subclasses rows (from Sheets/CMS)
+  try {
+    const b = await getBundle();
+
+    // 1) Optional: overlay class display names from bundle.Classes (keeps local structure)
+    const clsSrc = Array.isArray(b?.Classes) ? b.Classes : (Array.isArray(b?.Classes?.rows) ? b.Classes.rows : null);
+    if (clsSrc && local.classes.length) {
+      const byId = new Map(
+        clsSrc
+          .map(r => ({
+            id: r?.ClassId ?? r?.id ?? r?.Id ?? r?.ID,
+            name: r?.ClassName ?? r?.name ?? r?.Name
+          }))
+          .filter(x => x.id)
+          .map(x => [String(x.id), x])
+      );
+      local.classes = local.classes.map(c => {
+        const o = byId.get(String(c.id));
+        return o ? { ...c, name: o.name || c.name, ClassName: o.name || c.ClassName } : c;
+      });
+    }
+
+    // 2) Merge bundle.Subclasses rows into the nested `classes[].subclasses` list
+    const subSrc = Array.isArray(b?.Subclasses) ? b.Subclasses : (Array.isArray(b?.Subclasses?.rows) ? b.Subclasses.rows : null);
+    if (subSrc && local.classes.length) {
+      const norm = (v) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const classById = new Map(local.classes.map(c => [String(c.id), c]));
+      const classByName = new Map(local.classes.filter(c=>c?.name).map(c => [norm(c.name), c]));
+
+      for (const r of subSrc) {
+        const sid = r?.SubclassId ?? r?.id ?? r?.Id ?? r?.ID;
+        if (!sid) continue;
+
+        const classId = r?.classId ?? r?.ClassId ?? r?.ParentClassId ?? r?.parentClassId;
+        const className = r?.ClassName ?? r?.className;
+
+        let cls = classId ? classById.get(String(classId)) : null;
+        if (!cls && className) cls = classByName.get(norm(className));
+
+        // If we can't find a parent class, skip (better than polluting wrong place)
+        if (!cls) continue;
+
+        if (!Array.isArray(cls.subclasses)) cls.subclasses = [];
+
+        const existingById = new Map(cls.subclasses.map(sc => [String(sc.id), sc]));
+        const sKey = String(sid);
+        const base = existingById.get(sKey);
+
+        const name = r?.SubclassName ?? r?.name ?? r?.Name ?? sKey;
+        const description = r?.Description ?? r?.desc ?? r?.Desc ?? r?.description ?? "";
+
+        if (base) {
+          existingById.set(sKey, { ...base, id: sKey, name, description: description || base.description });
+        } else {
+          // Minimal stub so it appears in the picker. Levels can be filled later.
+          existingById.set(sKey, { id: sKey, name, description, levels: {} });
+        }
+
+        // Rebuild list in stable order (keep existing order, append new at end)
+        const ordered = [];
+        const seen = new Set();
+        for (const sc of cls.subclasses) {
+          const id = String(sc.id);
+          if (seen.has(id)) continue;
+          if (existingById.has(id)) {
+            ordered.push(existingById.get(id));
+            seen.add(id);
+          }
+        }
+        for (const [id, sc] of existingById.entries()) {
+          if (!seen.has(id)) ordered.push(sc);
+        }
+
+        // Final de-dupe by id and normalized name
+        const seenId = new Set();
+        const seenName = new Set();
+        const deduped = [];
+        for (const sc of ordered) {
+          const id = String(sc?.id ?? "");
+          const nk = norm(sc?.name);
+          if (id && seenId.has(id)) continue;
+          if (nk && seenName.has(nk)) continue;
+          if (id) seenId.add(id);
+          if (nk) seenName.add(nk);
+          deduped.push(sc);
+        }
+        cls.subclasses = deduped;
+      }
+    }
+  } catch {}
+
+  return local;
+}
 
 export const loadSubclassesJson = () => loadData("./data/subclasses.json", "Subclasses");
 
