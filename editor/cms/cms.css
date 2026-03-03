@@ -212,3 +212,41 @@
 .cms-preview-toggle{display:flex;gap:8px;align-items:center}
 .btn.btn-small{padding:6px 10px;font-size:12px;line-height:1;border-radius:10px}
 .btn.btn-small.is-active{outline:2px solid rgba(216,188,123,.35)}
+
+/* Modal (Add wizards) */
+.cms-modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.cms-modal{
+  width:min(560px, 96vw);
+  max-height:min(80vh, 820px);
+  overflow:auto;
+  background:rgba(10,10,12,.78);
+  backdrop-filter: blur(10px);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  padding:14px;
+}
+.cms-modal-h{
+  font-weight:700;
+  letter-spacing:.2px;
+  margin-bottom:10px;
+}
+.cms-modal-b{
+  display:grid;
+  gap:10px;
+}
+.cms-modal-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:12px;
+}

@@ -21,7 +21,9 @@ const elCrumb = $("#crumb");
 const elStatus = $("#cmsStatus");
 const btnReload = $("#btnReload");
 const btnAdd = $("#btnAdd");
-const btnExport = $("#btnExport");
+const btnExportPatch = $("#btnExportPatch");
+const btnExportRows = $("#btnExportRows");
+const btnClearDrafts = $("#btnClearDrafts");
 const btnSave = $("#btnSave");
 const btnRevert = $("#btnRevert");
 
@@ -50,6 +52,8 @@ let currentId = null;
 let currentIdKey = null;
 let currentNameKey = null;
 let searchTimer = null;
+
+let iconManifest = null; // { icons: ["/assets/icons/...png", ...] }
 
 function readDraftAll(){
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); } catch { return {}; }
@@ -136,6 +140,16 @@ function normalizeForSearch(s){
 function getRowsForSheet(sheet){
   const rows = bundle?.[sheet];
   return Array.isArray(rows) ? rows : [];
+}
+
+async function loadIconManifest(){
+  try{
+    const res = await fetch('/editor/cms/icon_manifest.json', { cache:'force-cache' });
+    if(!res.ok) return null;
+    const j = await res.json();
+    if(j && Array.isArray(j.icons)) return j;
+  }catch{}
+  return null;
 }
 
 function mergeDraft(sheet, id, baseRow){
@@ -411,6 +425,11 @@ function renderForm(){
   scheduleAutoApply();
 }
 
+function tsvEscape(v){
+  // Google Sheets paste-friendly
+  return safeStr(v).replace(/\t/g,' ').replace(/\r?\n/g,'\\n');
+}
+
 function fieldReadOnly(label, value){
   const wrap = document.createElement('div');
   wrap.className = 'cms-field';
@@ -535,45 +554,12 @@ async function loadBundle(){
 
 function addNew(){
   if(!currentSheet) return;
-  const baseRows = getRowsForSheet(currentSheet);
-  const sample = baseRows[0] || {};
-  const idKey = guessIdKey(currentSheet, sample) || 'Id';
-  const nameKey = guessNameKey(currentSheet, sample) || 'Name';
-
-  const newId = prompt(`New ${currentSheet} ID (must be unique):`);
-  if(!newId) return;
-
-  // ensure not exists
-  const exists = baseRows.some(r => {
-    const k = guessIdKey(currentSheet, r);
-    return k && String(r[k]).trim() === String(newId).trim();
-  });
-  if(exists){
-    alert('That ID already exists in the bundle. Choose another.');
-    return;
-  }
-
-  const newName = prompt('Name (display name):') || String(newId);
-
-  const all = readDraftAll();
-  all[draftKey(currentSheet, String(newId).trim())] = {
-    [idKey]: String(newId).trim(),
-    [nameKey]: String(newName).trim(),
-  };
-  writeDraftAll(all);
-
-  // select it (draft-only)
-  currentId = String(newId).trim();
-  currentIdKey = idKey;
-  currentNameKey = nameKey;
-  currentRow = all[draftKey(currentSheet, currentId)];
-
-  setStatus(`Draft created for ${currentSheet} → ${currentId}.`);
-  renderList();
-  renderForm();
+  if(currentSheet === 'Subclasses') return openAddSubclassWizard();
+  if(currentSheet === 'Subraces') return openAddSubraceWizard();
+  return openAddGenericWizard();
 }
 
-function exportDraftTSV(){
+function exportPatchTSV(){
   const all = readDraftAll();
   const keys = Object.keys(all);
   if(keys.length === 0){
@@ -581,18 +567,323 @@ function exportDraftTSV(){
     return;
   }
 
-  // simple TSV: Sheet, ID, JSON
-  const lines = ['Sheet\tID\tPatchJSON'];
-  for (const k of keys){
+  const lines = ['Sheet\tIdKey\tId\tField\tValue'];
+  for(const k of keys){
     const [sheet, id] = k.split('::');
-    lines.push(`${sheet}\t${id}\t${JSON.stringify(all[k])}`);
+    const patch = all[k] || {};
+    // Determine idKey from bundle sample or preferred
+    const sample = getRowsForSheet(sheet)[0] || patch;
+    const idKey = guessIdKey(sheet, sample) || PREFERRED_ID_KEYS[sheet] || 'Id';
+    for(const field of Object.keys(patch)){
+      lines.push(`${sheet}\t${idKey}\t${id}\t${field}\t${tsvEscape(patch[field])}`);
+    }
   }
 
   const tsv = lines.join('\n');
   navigator.clipboard.writeText(tsv).then(
-    ()=> setStatus(`Copied TSV for ${keys.length} change(s). Paste into your tracking sheet.`),
+    ()=> setStatus(`Copied Patch TSV for ${keys.length} item(s). Paste into Google Sheets (or your patch tab).`),
     ()=> alert('Clipboard blocked. Copy manually from console.')
   );
+}
+
+function exportRowsTSVForCurrentType(){
+  if(!currentSheet){ alert('Pick a Type first.'); return; }
+  const all = readDraftAll();
+  const ids = Object.keys(all)
+    .filter(k => k.startsWith(currentSheet + '::'))
+    .map(k => k.slice((currentSheet+'::').length));
+
+  if(ids.length === 0){
+    alert(`No draft changes for ${currentSheet}.`);
+    return;
+  }
+
+  const baseRows = getRowsForSheet(currentSheet);
+  const sample = baseRows[0] || (all[draftKey(currentSheet, ids[0])] || {});
+  const idKey = guessIdKey(currentSheet, sample) || PREFERRED_ID_KEYS[currentSheet] || 'Id';
+  const nameKey = guessNameKey(currentSheet, sample) || PREFERRED_NAME_KEYS[currentSheet] || null;
+
+  // Column order: sample keys first, then any extra keys from patches
+  const cols = [...Object.keys(sample)];
+  const extra = new Set();
+  for(const id of ids){
+    const patch = all[draftKey(currentSheet, id)] || {};
+    Object.keys(patch).forEach(k => { if(!cols.includes(k)) extra.add(k); });
+  }
+  const extraCols = Array.from(extra).sort((a,b)=>a.localeCompare(b));
+  const headers = cols.concat(extraCols);
+
+  // Ensure idKey and nameKey included early
+  if(!headers.includes(idKey)) headers.unshift(idKey);
+  if(nameKey && !headers.includes(nameKey)) headers.splice(1,0,nameKey);
+
+  const lines = [headers.join('\t')];
+  for(const id of ids){
+    const { row: baseRow } = findBaseRow(currentSheet, id);
+    const patch = all[draftKey(currentSheet, id)] || {};
+    const merged = { ...(baseRow || {}), ...patch };
+    merged[idKey] = merged[idKey] ?? id;
+    const rowVals = headers.map(h => tsvEscape(merged[h] ?? ''));
+    lines.push(rowVals.join('\t'));
+  }
+
+  const tsv = lines.join('\n');
+  navigator.clipboard.writeText(tsv).then(
+    ()=> setStatus(`Copied Rows TSV for ${currentSheet} (${ids.length} row(s)). Paste into that sheet tab.`),
+    ()=> alert('Clipboard blocked. Copy manually from console.')
+  );
+}
+
+function clearDrafts(){
+  if(!confirm('Clear ALL local drafts? This only affects your browser.')) return;
+  writeDraftAll({});
+  currentId = null;
+  currentRow = null;
+  elCrumb.textContent = 'Select an item from the Library.';
+  renderList();
+  renderForm();
+  setStatus('Cleared drafts.');
+  applyToPreview();
+}
+
+function makeModal(title, bodyEl){
+  const overlay = document.createElement('div');
+  overlay.className = 'cms-modal-overlay';
+  overlay.innerHTML = `
+    <div class="cms-modal">
+      <div class="cms-modal-h">${escapeHtml(title)}</div>
+      <div class="cms-modal-b"></div>
+      <div class="cms-modal-actions">
+        <button class="btn" data-act="cancel" type="button">Cancel</button>
+        <button class="btn" data-act="ok" type="button">Create</button>
+      </div>
+    </div>
+  `;
+  overlay.querySelector('.cms-modal-b').appendChild(bodyEl);
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e)=>{
+    if(e.target === overlay) close();
+  });
+  return { overlay, close, okBtn: overlay.querySelector('[data-act="ok"]'), cancelBtn: overlay.querySelector('[data-act="cancel"]') };
+}
+
+function buildIconPicker(initial){
+  const wrap = document.createElement('div');
+  wrap.className = 'cms-field';
+  const lab = document.createElement('label');
+  lab.textContent = 'Icon (optional)';
+  const inp = document.createElement('input');
+  inp.value = initial || '';
+  inp.placeholder = 'Pick an icon path…';
+
+  // datalist
+  const dl = document.createElement('datalist');
+  dl.id = 'cmsIconList';
+  const icons = iconManifest?.icons || [];
+  for(const p of icons.slice(0, 800)){
+    const opt = document.createElement('option');
+    opt.value = p;
+    dl.appendChild(opt);
+  }
+  inp.setAttribute('list', dl.id);
+  wrap.appendChild(lab);
+  wrap.appendChild(inp);
+  wrap.appendChild(dl);
+  return { wrap, input: inp };
+}
+
+function openAddGenericWizard(){
+  const sheet = currentSheet;
+  const baseRows = getRowsForSheet(sheet);
+  const sample = baseRows[0] || {};
+  const idKey = guessIdKey(sheet, sample) || 'Id';
+  const nameKey = guessNameKey(sheet, sample) || 'Name';
+
+  const body = document.createElement('div');
+  const fId = fieldInput('ID (unique)', '', ()=>{});
+  const fName = fieldInput('Name', '', ()=>{});
+  // pull the actual inputs
+  const idInp = fId.querySelector('input');
+  const nameInp = fName.querySelector('input');
+  body.appendChild(fId);
+  body.appendChild(fName);
+  const iconPick = buildIconPicker('');
+  body.appendChild(iconPick.wrap);
+
+  const { close, okBtn, cancelBtn } = makeModal(`Add New ${sheet}`, body);
+  cancelBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', ()=>{
+    const newId = idInp.value.trim();
+    if(!newId){ alert('ID is required.'); return; }
+    const exists = baseRows.some(r => {
+      const k = guessIdKey(sheet, r);
+      return k && String(r[k]).trim() === newId;
+    });
+    if(exists){ alert('That ID already exists. Choose another.'); return; }
+    const newName = (nameInp.value.trim() || newId);
+    const all = readDraftAll();
+    const patch = { [idKey]: newId, [nameKey]: newName };
+    // icon field if any exists in sample
+    const iconKey = ['Icon','IconPath','icon','iconPath'].find(k=> sample[k] != null) || 'Icon';
+    if(iconPick.input.value.trim()) patch[iconKey] = iconPick.input.value.trim();
+    all[draftKey(sheet, newId)] = patch;
+    writeDraftAll(all);
+    close();
+    currentId = newId; currentIdKey = idKey; currentNameKey = nameKey; currentRow = patch;
+    setStatus(`Draft created for ${sheet} → ${newId}.`);
+    renderList();
+    renderForm();
+    setTab('editor');
+  });
+}
+
+function openAddSubclassWizard(){
+  const sheet = 'Subclasses';
+  const baseRows = getRowsForSheet(sheet);
+  const sample = baseRows[0] || {};
+  const idKey = guessIdKey(sheet, sample) || 'SubclassId';
+  const nameKey = guessNameKey(sheet, sample) || 'SubclassName';
+
+  const classes = getRowsForSheet('Classes');
+  const classSample = classes[0] || {};
+  const classIdKey = guessIdKey('Classes', classSample) || 'ClassId';
+  const classNameKey = guessNameKey('Classes', classSample) || 'ClassName';
+  const classOptions = classes
+    .map(r => ({ id: safeStr(r[classIdKey]).trim(), name: safeStr(r[classNameKey]).trim() }))
+    .filter(x => x.id)
+    .sort((a,b)=>(a.name||a.id).localeCompare(b.name||b.id));
+
+  const parentKey = ['ClassId','ParentClassId','BaseClassId'].find(k=> sample[k] != null) || 'ClassId';
+
+  const body = document.createElement('div');
+
+  // Parent dropdown
+  const parentWrap = document.createElement('div');
+  parentWrap.className = 'cms-field';
+  parentWrap.innerHTML = '<label>Parent Class</label>';
+  const sel = document.createElement('select');
+  sel.className = 'cms-select';
+  sel.innerHTML = '<option value="">Select a class…</option>';
+  for(const o of classOptions){
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = o.name ? `${o.name} (${o.id})` : o.id;
+    sel.appendChild(opt);
+  }
+  parentWrap.appendChild(sel);
+  body.appendChild(parentWrap);
+
+  const fId = fieldInput('Subclass ID (unique)', '', ()=>{});
+  const fName = fieldInput('Subclass Name', '', ()=>{});
+  const idInp = fId.querySelector('input');
+  const nameInp = fName.querySelector('input');
+  body.appendChild(fId);
+  body.appendChild(fName);
+  const iconPick = buildIconPicker('');
+  body.appendChild(iconPick.wrap);
+
+  const { close, okBtn, cancelBtn } = makeModal('Add New Subclass', body);
+  cancelBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', ()=>{
+    const parentId = sel.value.trim();
+    if(!parentId){ alert('Pick a Parent Class.'); return; }
+    const newId = idInp.value.trim();
+    if(!newId){ alert('Subclass ID is required.'); return; }
+    const exists = baseRows.some(r => {
+      const k = guessIdKey(sheet, r);
+      return k && String(r[k]).trim() === newId;
+    });
+    if(exists){ alert('That Subclass ID already exists.'); return; }
+    const newName = (nameInp.value.trim() || newId);
+    const patch = { [idKey]: newId, [nameKey]: newName, [parentKey]: parentId };
+    const iconKey = ['Icon','IconPath','icon','iconPath'].find(k=> sample[k] != null) || 'Icon';
+    if(iconPick.input.value.trim()) patch[iconKey] = iconPick.input.value.trim();
+    const all = readDraftAll();
+    all[draftKey(sheet, newId)] = patch;
+    writeDraftAll(all);
+    close();
+    currentSheet = sheet;
+    elType.value = sheet;
+    currentId = newId; currentIdKey = idKey; currentNameKey = nameKey; currentRow = patch;
+    setStatus(`Draft created for Subclasses → ${newId} (parent ${parentId}).`);
+    renderList();
+    renderForm();
+    setTab('editor');
+  });
+}
+
+function openAddSubraceWizard(){
+  const sheet = 'Subraces';
+  const baseRows = getRowsForSheet(sheet);
+  const sample = baseRows[0] || {};
+  const idKey = guessIdKey(sheet, sample) || 'SubraceId';
+  const nameKey = guessNameKey(sheet, sample) || 'SubraceName';
+
+  const races = getRowsForSheet('Races');
+  const raceSample = races[0] || {};
+  const raceIdKey = guessIdKey('Races', raceSample) || 'RaceId';
+  const raceNameKey = guessNameKey('Races', raceSample) || 'RaceName';
+  const raceOptions = races
+    .map(r => ({ id: safeStr(r[raceIdKey]).trim(), name: safeStr(r[raceNameKey]).trim() }))
+    .filter(x => x.id)
+    .sort((a,b)=>(a.name||a.id).localeCompare(b.name||b.id));
+
+  const parentKey = ['RaceId','ParentRaceId','BaseRaceId'].find(k=> sample[k] != null) || 'RaceId';
+
+  const body = document.createElement('div');
+  const parentWrap = document.createElement('div');
+  parentWrap.className = 'cms-field';
+  parentWrap.innerHTML = '<label>Parent Race</label>';
+  const sel = document.createElement('select');
+  sel.className = 'cms-select';
+  sel.innerHTML = '<option value="">Select a race…</option>';
+  for(const o of raceOptions){
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = o.name ? `${o.name} (${o.id})` : o.id;
+    sel.appendChild(opt);
+  }
+  parentWrap.appendChild(sel);
+  body.appendChild(parentWrap);
+
+  const fId = fieldInput('Subrace ID (unique)', '', ()=>{});
+  const fName = fieldInput('Subrace Name', '', ()=>{});
+  const idInp = fId.querySelector('input');
+  const nameInp = fName.querySelector('input');
+  body.appendChild(fId);
+  body.appendChild(fName);
+  const iconPick = buildIconPicker('');
+  body.appendChild(iconPick.wrap);
+
+  const { close, okBtn, cancelBtn } = makeModal('Add New Subrace', body);
+  cancelBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', ()=>{
+    const parentId = sel.value.trim();
+    if(!parentId){ alert('Pick a Parent Race.'); return; }
+    const newId = idInp.value.trim();
+    if(!newId){ alert('Subrace ID is required.'); return; }
+    const exists = baseRows.some(r => {
+      const k = guessIdKey(sheet, r);
+      return k && String(r[k]).trim() === newId;
+    });
+    if(exists){ alert('That Subrace ID already exists.'); return; }
+    const newName = (nameInp.value.trim() || newId);
+    const patch = { [idKey]: newId, [nameKey]: newName, [parentKey]: parentId };
+    const iconKey = ['Icon','IconPath','icon','iconPath'].find(k=> sample[k] != null) || 'Icon';
+    if(iconPick.input.value.trim()) patch[iconKey] = iconPick.input.value.trim();
+    const all = readDraftAll();
+    all[draftKey(sheet, newId)] = patch;
+    writeDraftAll(all);
+    close();
+    currentSheet = sheet;
+    elType.value = sheet;
+    currentId = newId; currentIdKey = idKey; currentNameKey = nameKey; currentRow = patch;
+    setStatus(`Draft created for Subraces → ${newId} (parent ${parentId}).`);
+    renderList();
+    renderForm();
+    setTab('editor');
+  });
 }
 
 function saveDraft(){
@@ -641,12 +932,18 @@ btnReload.addEventListener('click', async () => {
 });
 
 btnAdd.addEventListener('click', addNew);
-btnExport.addEventListener('click', exportDraftTSV);
+btnExportPatch.addEventListener('click', exportPatchTSV);
+btnExportRows.addEventListener('click', exportRowsTSVForCurrentType);
+btnClearDrafts.addEventListener('click', clearDrafts);
 btnSave.addEventListener('click', saveDraft);
 btnRevert.addEventListener('click', revertDraft);
 
 // init
-loadBundle().catch(e => {
+// init
+(async ()=>{
+  iconManifest = await loadIconManifest();
+  await loadBundle();
+})().catch(e => {
   console.error(e);
   setStatus('Failed to load bundle.');
   alert('Failed to load bundle.');
