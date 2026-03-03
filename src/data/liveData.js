@@ -353,6 +353,7 @@ export async function loadRacesJson() {
       const seen = new Set();
       for (const s of existing) {
         const sid = String(s.id);
+        if (seen.has(sid)) continue;
         if (map.has(sid)) {
           ordered.push(map.get(sid));
           seen.add(sid);
@@ -470,24 +471,34 @@ export async function loadClassesJson() {
 
       const existing = Array.isArray(cls.subclasses) ? cls.subclasses : [];
       const map = new Map(existing.map((s) => [String(s.id), s]));
+      // Helper map: normalized name -> existing subclass id
+      const byName = new Map();
+      for (const s of existing) {
+        const nk = String(s.name || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
+        if (nk && !byName.has(nk)) byName.set(nk, String(s.id));
+      }
 
       for (const ls of liveSubs) {
         const sid = String(ls.id);
         const base = map.get(sid);
         // If ids differ between local and live, fall back to a normalized name match.
         const nk = String(ls.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-        const nameMatchedId = (!base && nk && byName.has(nk)) ? byName.get(nk) : null;
-        const base2 = (!base && nameMatchedId) ? map.get(String(nameMatchedId)) : base;
+        const nameMatchedId = !base && nk && byName.has(nk) ? byName.get(nk) : null;
+        const base2 = !base && nameMatchedId ? map.get(String(nameMatchedId)) : base;
         if (base2) {
-          map.set(nameMatchedId ? String(nameMatchedId) : sid, {
+          const outId = nameMatchedId ? String(nameMatchedId) : sid;
+          map.set(outId, {
             ...base2,
-            id: nameMatchedId ? String(nameMatchedId) : sid,
+            id: outId,
             name: ls.name || base2.name,
             description: ls.description || base2.description,
           });
         } else {
-          map.set(sid, {
-            id: nameMatchedId ? String(nameMatchedId) : sid,
+          const outId = nameMatchedId ? String(nameMatchedId) : sid;
+          map.set(outId, {
+            id: outId,
             name: ls.name || sid,
             description: ls.description || "",
             icon: null,
@@ -499,6 +510,7 @@ export async function loadClassesJson() {
       const seen = new Set();
       for (const s of existing) {
         const sid = String(s.id);
+        if (seen.has(sid)) continue;
         if (map.has(sid)) {
           ordered.push(map.get(sid));
           seen.add(sid);
