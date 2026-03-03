@@ -39,7 +39,7 @@ function hbcrApi(path) {
     const sp = new URLSearchParams(location.search || '');
     const isEmbed = sp.get('embed') === '1' || sp.get('embed') === 'true';
     const isCmsPreview = sp.get('cmsPreview') === '1' || sp.get('cmsPreview') === 'true';
-    if (isEmbed && isCmsPreview) return;
+    if (isEmbed) return;
   } catch {}
 
   // -------------------------
