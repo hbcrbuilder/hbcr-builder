@@ -49,9 +49,7 @@
 
               <div class="cms-row" style="margin-top:10px;gap:10px">
                 <button class="btn" id="btnAdd">+ Add New</button>
-                <button class="btn" id="btnExportPatch">Copy Patch TSV</button>
-                <button class="btn" id="btnExportRows" title="Copies full rows for the current Type (safe to paste into that sheet)">Copy Rows TSV</button>
-                <button class="btn" id="btnClearDrafts" title="Removes ALL local draft edits">Clear Drafts</button>
+                <button class="btn" id="btnExport">Copy TSV (Draft)</button>
               </div>
 
               <div class="cms-help" id="cmsStatus">Loading bundle…</div>
@@ -85,7 +83,44 @@
       </div>
     </div>
 
-    <!-- Small handle shown when drawer is hidden -->
+    
+    <!-- Add New Modal -->
+    <div class="cms-modal is-hidden" id="addModal" aria-hidden="true">
+      <div class="cms-modal-backdrop" id="addModalBackdrop"></div>
+      <div class="cms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+        <div class="cms-modal-header">
+          <div class="cms-modal-title" id="addModalTitle">Add New</div>
+          <button class="btn btn-small" id="addModalClose" type="button">Close</button>
+        </div>
+
+        <div class="cms-modal-body">
+          <div class="cms-help" id="addModalHelp">Create a new item for the current type.</div>
+
+          <div class="cms-field is-hidden" id="addParentRow">
+            <label class="cms-label" id="addParentLabel">Parent</label>
+            <select class="cms-input" id="addParentSelect"></select>
+          </div>
+
+          <div class="cms-field">
+            <label class="cms-label">ID</label>
+            <input class="cms-input" id="addId" placeholder="unique id..." />
+          </div>
+
+          <div class="cms-field">
+            <label class="cms-label">Name</label>
+            <input class="cms-input" id="addName" placeholder="display name..." />
+          </div>
+        </div>
+
+        <div class="cms-modal-actions">
+          <button class="btn" id="addModalCreate" type="button">Create</button>
+          <button class="btn" id="addModalCancel" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+
+<!-- Small handle shown when drawer is hidden -->
     <button class="cms-handle is-hidden" id="drawerHandle" type="button">Editor Menu</button>
   </div>
 
