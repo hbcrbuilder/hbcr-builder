@@ -38,22 +38,30 @@
           <section class="cms-panel" id="cmsLibrary">
             <div class="cms-panel-header">
               <div class="cms-h">Library</div>
-              <button class="btn btn-small" id="btnReload">Reload</button>
+              
             </div>
+            
             <div class="cms-controls">
-              <label class="cms-label">Type</label>
+              <div class="cms-quick">
+                <button class="btn" id="btnQuickAddRace">+ Add Race</button>
+                <button class="btn" id="btnQuickAddSubrace">+ Add Subrace</button>
+                <button class="btn" id="btnQuickAddClass">+ Add Class</button>
+                <button class="btn" id="btnQuickAddSubclass">+ Add Subclass</button>
+              </div>
+
+              <label class="cms-label" style="margin-top:10px">Browse</label>
               <select class="cms-select" id="selType"></select>
 
               <label class="cms-label">Search</label>
               <input class="cms-input" id="inpSearch" placeholder="Search name or ID…" />
 
               <div class="cms-row" style="margin-top:10px;gap:10px">
-                <button class="btn" id="btnAdd">+ Add New</button>
-                <button class="btn" id="btnExport">Copy TSV (Draft)</button>
+                <button class="btn btn-small" id="btnReload" type="button">Reload</button>
               </div>
 
               <div class="cms-help" id="cmsStatus">Loading bundle…</div>
             </div>
+
             <div class="cms-list" id="listItems"></div>
           </section>
 
@@ -64,15 +72,10 @@
                 <div class="cms-help" id="crumb">Select an item from the Library.</div>
               </div>
               <div class="cms-actions">
-                <label class="cms-check"><input type="checkbox" id="chkAutoApply" /> Auto-apply</label>
-                <button class="btn" id="btnApply">Apply to Preview</button>
-                <button class="btn" id="btnSave">Save Draft</button>
-                <button class="btn" id="btnRevert" style="opacity:.9">Revert</button>
+                <button class="btn btn-small" id="btnCopyRow">Copy TSV Row</button>
+                <button class="btn btn-small" id="btnCopyHeaderRow">Copy TSV Header + Row</button>
+                <button class="btn btn-small" id="btnRefreshBuilder">Refresh Builder</button>
               </div>
-            </div>
-
-            <div class="cms-help" style="padding:10px 12px">
-              Tip: Auto-apply updates the builder after you pause typing (throttled). If your browser feels slow, turn it off and use Apply.
             </div>
 
             <div class="cms-form" id="form">
@@ -119,6 +122,20 @@
       </div>
     </div>
 
+
+
+    <!-- Simple Modal -->
+    <div class="cms-modal is-hidden" id="modal">
+      <div class="cms-modal-backdrop" id="modalBackdrop"></div>
+      <div class="cms-modal-card">
+        <div class="cms-modal-title" id="modalTitle">Add</div>
+        <div class="cms-modal-body" id="modalBody"></div>
+        <div class="cms-modal-actions">
+          <button class="btn btn-small" id="modalCancel" type="button">Cancel</button>
+          <button class="btn btn-small" id="modalOk" type="button">Create</button>
+        </div>
+      </div>
+    </div>
 
 <!-- Small handle shown when drawer is hidden -->
     <button class="cms-handle is-hidden" id="drawerHandle" type="button">Editor Menu</button>

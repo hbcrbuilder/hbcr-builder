@@ -104,562 +104,485 @@ function setupDrawerWindowing(){
   ro.observe(drawer);
 }
 
+
 function hbcrApi(path) {
   const p = String(path || "");
-  if (p.startsWith("http")) return p;
-  return HBCR_WORKER_BASE + (p.startsWith("/") ? p : ("/" + p));
+  if (!p.startsWith("/")) return HBCR_WORKER_BASE + "/" + p;
+  return HBCR_WORKER_BASE + p;
 }
 
-// ---------- DOM ----------
-const els = {
-  frame: document.getElementById("builderFrame"),
-  drawer: document.getElementById("drawer"),
-  handle: document.getElementById("drawerHandle"),
-  btnToggleDrawer: document.getElementById("btnToggleDrawer"),
-  tabLibrary: document.getElementById("tabLibrary"),
-  tabEditor: document.getElementById("tabEditor"),
-  cmsLibrary: document.getElementById("cmsLibrary"),
-  cmsEditor: document.getElementById("cmsEditor"),
-  cmsStatus: document.getElementById("cmsStatus"),
-  btnReload: document.getElementById("btnReload"),
-  btnApply: document.getElementById("btnApply"),
-  btnExport: document.getElementById("btnExport"),
-  btnSave: document.getElementById("btnSave"),
-  btnRevert: document.getElementById("btnRevert"),
-  selType: document.getElementById("selType"),
-  inpSearch: document.getElementById("inpSearch"),
-  listItems: document.getElementById("listItems"),
-  crumb: document.getElementById("crumb"),
+const els = {};
+let bundle = {};
+let currentType = "Races";
+let currentId = null;
+let currentRow = null;
 
-  addModal: document.getElementById("addModal"),
-  addBackdrop: document.getElementById("addModalBackdrop"),
-  addTitle: document.getElementById("addModalTitle"),
-  addHelp: document.getElementById("addModalHelp"),
-  addParentRow: document.getElementById("addParentRow"),
-  addParentLabel: document.getElementById("addParentLabel"),
-  addParentSelect: document.getElementById("addParentSelect"),
-  addId: document.getElementById("addId"),
-  addName: document.getElementById("addName"),
-  addModalCreate: document.getElementById("addModalCreate"),
-  addModalCancel: document.getElementById("addModalCancel"),
-  addModalClose: document.getElementById("addModalClose"),
+const TYPE_META = {
+  Races:      { idKey:"RaceId",      nameKey:"RaceName",      descKey:"Description", parentKey:null },
+  Subraces:   { idKey:"SubraceId",   nameKey:"SubraceName",   descKey:"Description", parentKey:"RaceId", parentType:"Races" },
+  Classes:    { idKey:"ClassId",     nameKey:"ClassName",     descKey:"Description", parentKey:null },
+  Subclasses: { idKey:"SubclassId",  nameKey:"SubclassName",  descKey:"Description", parentKey:"classId", parentType:"Classes" },
+  Spells:     { idKey:"SpellId",     nameKey:"SpellName",     descKey:"Description", parentKey:null },
 };
 
-const LEGACY_HIDE_IDS = ["chkAutoApply", "btnRevert", "btnSave"]; // not used in manual flow
+function safeStr(x){ return (x==null) ? "" : String(x); }
+function norm(s){ return safeStr(s).trim(); }
 
-// ---------- State ----------
-let bundle = null;            // object keyed by sheet name
-let currentSheet = "Races";   // selected sheet to browse/edit
-let currentRow = null;        // currently selected row (existing) OR new draft row (not saved anywhere)
-let pendingRows = [];         // rows created/edited waiting for copy (manual paste)
-let iconManifest = null;
-
-const SHEETS = [
-  { key: "Races", label: "Races", idKey: "RaceId", nameKey: "RaceName" },
-  { key: "Subraces", label: "Subraces", idKey: "SubraceId", nameKey: "SubraceName", parentKey: "RaceId", parentSheet: "Races", parentLabel: "Parent Race" },
-  { key: "Classes", label: "Classes", idKey: "ClassId", nameKey: "ClassName" },
-  { key: "Subclasses", label: "Subclasses", idKey: "SubclassId", nameKey: "SubclassName", parentKey: "classId", parentSheet: "Classes", parentLabel: "Parent Class" },
-];
-
-// ---------- Helpers ----------
-function safeStr(v){ return (v===null||v===undefined) ? "" : String(v); }
-
-function setStatus(msg, kind="info"){
-  els.cmsStatus.textContent = msg;
-  els.cmsStatus.dataset.kind = kind;
+async function loadBundle(){
+  els.cmsStatus.textContent = "Loading bundle…";
+  const res = await fetch(hbcrApi("/api/bundle"), { cache:"no-store" });
+  if (!res.ok) throw new Error("bundle fetch failed: " + res.status);
+  bundle = await res.json();
+  els.cmsStatus.textContent = "Bundle loaded.";
 }
 
-function showTab(which){
-  const isLib = which === "library";
-  els.cmsLibrary.style.display = isLib ? "" : "none";
-  els.cmsEditor.style.display = isLib ? "none" : "";
-  els.tabLibrary.classList.toggle("is-active", isLib);
-  els.tabEditor.classList.toggle("is-active", !isLib);
-}
-
-function slugify(s){
-  return safeStr(s)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 60) || "new_id";
-}
-
-function getSheetMeta(sheetKey){
-  return SHEETS.find(s => s.key === sheetKey) || null;
-}
-
-function getRows(sheetKey){
-  if (!bundle) return [];
-  const rows = bundle[sheetKey];
+function getSheetRows(type){
+  const rows = bundle?.[type];
   return Array.isArray(rows) ? rows : [];
 }
 
-function guessColumns(sheetKey){
-  const rows = getRows(sheetKey);
+function getColumns(type){
+  const rows = getSheetRows(type);
   if (rows.length) return Object.keys(rows[0]);
-  // fallback to known schema
-  const meta = getSheetMeta(sheetKey);
-  if (!meta) return [];
-  if (sheetKey === "Subclasses") return ["SubclassId","classId","SubclassName","Description","SortOrder","CasterProgression","Source"];
-  if (sheetKey === "Subraces") return ["SubraceId","RaceId","SubraceName","Description","SortOrder","Source"];
-  if (sheetKey === "Classes") return ["ClassId","ClassName","Description","SortOrder","Source"];
-  if (sheetKey === "Races") return ["RaceId","RaceName","Description","SortOrder","Source"];
-  return [];
+  // fallback: use meta keys first
+  const m = TYPE_META[type] || {};
+  const base = [m.idKey, m.parentKey, m.nameKey, m.descKey].filter(Boolean);
+  // de-dupe
+  return [...new Set(base)];
 }
 
-function toTSVRow(sheetKey, rowObj, includeHeader=false){
-  const cols = guessColumns(sheetKey);
-  const esc = (v)=>{
-    // TSV friendly: replace newlines, keep tabs as spaces
-    return safeStr(v).replace(/\r?\n/g, "\\n").replace(/\t/g, "    ");
-  };
-  const row = cols.map(c => esc(rowObj?.[c]));
-  if (!includeHeader) return row.join("\t");
-  return cols.join("\t") + "\n" + row.join("\t");
+function getDisplayName(type, row){
+  const m = TYPE_META[type] || {};
+  return norm(row?.[m.nameKey]) || norm(row?.[m.idKey]) || "(unnamed)";
 }
 
-async function copyText(txt){
-  try{
-    await navigator.clipboard.writeText(txt);
-    setStatus("Copied to clipboard.", "ok");
-  }catch(e){
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-    setStatus("Copied to clipboard.", "ok");
+function listTypes(){
+  // only show types that exist in bundle
+  const keys = Object.keys(bundle || {});
+  const ordered = ["Races","Subraces","Classes","Subclasses","Spells"];
+  return ordered.filter(k => keys.includes(k));
+}
+
+function renderTypeSelect(){
+  const types = listTypes();
+  els.selType.innerHTML = "";
+  for (const t of types){
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    els.selType.appendChild(opt);
   }
+  if (!types.includes(currentType)) currentType = types[0] || "Races";
+  els.selType.value = currentType;
 }
 
-function openAddModal(sheetKey){
-  const meta = getSheetMeta(sheetKey);
-  if (!meta) return;
+function renderList(){
+  const q = norm(els.inpSearch.value).toLowerCase();
+  const rows = getSheetRows(currentType);
+  const m = TYPE_META[currentType] || {};
+  const idKey = m.idKey || "id";
+  const nameKey = m.nameKey || "name";
 
-  // Reset fields
-  els.addId.value = "";
-  els.addName.value = "";
-  els.addParentSelect.innerHTML = "";
+  const out = document.createElement("div");
+  out.className = "cms-list-inner";
 
-  els.addTitle.textContent = `Add ${meta.label.replace(/s$/,"")}`;
-  els.addHelp.textContent = "Fill the fields, then copy TSV and paste into the matching Google Sheet tab.";
+  let shown = 0;
+  for (const r of rows){
+    const id = norm(r?.[idKey]);
+    if (!id) continue;
+    const nm = norm(r?.[nameKey]) || id;
+    const hay = (id + " " + nm).toLowerCase();
+    if (q && !hay.includes(q)) continue;
 
-  // Parent dropdown if needed
-  if (meta.parentKey){
-    els.addParentRow.style.display = "";
-    els.addParentLabel.textContent = meta.parentLabel + ":";
-    const parentRows = getRows(meta.parentSheet);
-    const parentMeta = getSheetMeta(meta.parentSheet);
-    const opts = parentRows
-      .map(r => ({
-        id: safeStr(r[parentMeta.idKey]),
-        name: safeStr(r[parentMeta.nameKey]),
-      }))
-      .filter(o => o.id)
-      .sort((a,b)=>a.name.localeCompare(b.name));
-
-    const ph = document.createElement("option");
-    ph.value = "";
-    ph.textContent = `Choose ${meta.parentLabel.toLowerCase()}…`;
-    els.addParentSelect.appendChild(ph);
-
-    for (const o of opts){
-      const op = document.createElement("option");
-      op.value = o.id;
-      op.textContent = `${o.name || o.id} (${o.id})`;
-      els.addParentSelect.appendChild(op);
-    }
-  }else{
-    els.addParentRow.style.display = "none";
-  }
-
-  els.addModal.dataset.sheet = sheetKey;
-  els.addBackdrop.style.display = "";
-  els.addModal.style.display = "";
-  setTimeout(()=>els.addName.focus(), 0);
-}
-
-function closeAddModal(){
-  els.addBackdrop.style.display = "none";
-  els.addModal.style.display = "none";
-}
-
-function buildNewRow(sheetKey){
-  const meta = getSheetMeta(sheetKey);
-  const idKey = meta.idKey;
-  const nameKey = meta.nameKey;
-
-  const idInput = safeStr(els.addId.value).trim();
-  const nameInput = safeStr(els.addName.value).trim();
-
-  const id = idInput || slugify(nameInput || "new");
-  const row = {};
-  // Fill all known columns with empty string
-  for (const c of guessColumns(sheetKey)) row[c] = "";
-
-  row[idKey] = id;
-  row[nameKey] = nameInput || id;
-
-  if (meta.parentKey){
-    const parent = safeStr(els.addParentSelect.value).trim();
-    if (!parent){
-      setStatus(`Pick a ${meta.parentLabel.toLowerCase()} first.`, "warn");
-      return null;
-    }
-    row[meta.parentKey] = parent;
-  }
-
-  // Soft defaults
-  if ("Source" in row) row["Source"] = row["Source"] || "hbcr";
-  if ("SortOrder" in row) row["SortOrder"] = row["SortOrder"] || "";
-
-  return row;
-}
-
-function renderLibrary(){
-  // Fill quick action buttons + type selector + list
-  // Keep existing UI elements but make it obvious.
-  const meta = getSheetMeta(currentSheet);
-  els.selType.value = currentSheet;
-
-  const rows = getRows(currentSheet);
-  const q = safeStr(els.inpSearch.value).trim().toLowerCase();
-
-  const idKey = meta?.idKey || "id";
-  const nameKey = meta?.nameKey || "name";
-
-  const filtered = rows.filter(r=>{
-    if (!q) return true;
-    const id = safeStr(r[idKey]).toLowerCase();
-    const nm = safeStr(r[nameKey]).toLowerCase();
-    return id.includes(q) || nm.includes(q);
-  }).slice(0, 400);
-
-  els.listItems.innerHTML = "";
-
-  for (const r of filtered){
-    const id = safeStr(r[idKey]);
-    const nm = safeStr(r[nameKey]);
-    const div = document.createElement("div");
-    div.className = "cms-item";
-    div.innerHTML = `
+    const item = document.createElement("div");
+    item.className = "cms-item";
+    item.innerHTML = `
       <div class="cms-item-main">
-        <div class="cms-item-name">${nm || id}</div>
+        <div class="cms-item-name">${nm}</div>
         <div class="cms-item-id">${id}</div>
       </div>
       <button class="btn btn-small" type="button">Edit</button>
     `;
-    div.querySelector("button").addEventListener("click", ()=>{
-      currentRow = { sheet: currentSheet, row: r, mode: "edit" };
-      renderEditor();
-      showTab("editor");
-    });
-    els.listItems.appendChild(div);
+    item.querySelector("button").addEventListener("click", ()=> selectItem(currentType, id));
+    out.appendChild(item);
+    shown++;
+    if (shown >= 250) break; // keep it snappy
   }
 
-  els.crumb.textContent = `Browsing: ${meta?.label || currentSheet} · ${rows.length} rows`;
+  els.listItems.innerHTML = "";
+  els.listItems.appendChild(out);
+  els.cmsStatus.textContent = `Showing ${shown} of ${rows.length} ${currentType}.`;
+}
+
+function selectItem(type, id){
+  currentType = type;
+  currentId = id;
+  const rows = getSheetRows(type);
+  const m = TYPE_META[type] || {};
+  const idKey = m.idKey || "id";
+  currentRow = rows.find(r => norm(r?.[idKey]) === id) || null;
+
+  // switch to editor tab
+  setTab("editor");
+  renderEditor();
+}
+
+function setTab(which){
+  const isLib = which === "library";
+  els.tabLibrary.classList.toggle("is-active", isLib);
+  els.tabEditor.classList.toggle("is-active", !isLib);
+  els.cmsLibrary.classList.toggle("is-hidden", !isLib);
+  els.cmsEditor.classList.toggle("is-hidden", isLib);
 }
 
 function renderEditor(){
   if (!currentRow){
-    els.cmsEditor.innerHTML = `
-      <div class="cms-empty">
-        <div class="cms-empty-title">No item selected</div>
-        <div class="cms-empty-sub">Use the Library tab to add a new item or edit an existing one.</div>
-      </div>
-    `;
+    els.crumb.textContent = "Select an item from the Library.";
+    els.form.innerHTML = `<div class="cms-empty">No item selected.</div>`;
     return;
   }
+  const m = TYPE_META[currentType] || {};
+  const cols = getColumns(currentType);
+  const idKey = m.idKey;
 
-  const { sheet, row, mode } = currentRow;
-  const meta = getSheetMeta(sheet);
-  const cols = guessColumns(sheet);
+  els.crumb.textContent = `${currentType} → ${getDisplayName(currentType, currentRow)} (${norm(currentRow[idKey])})`;
 
-  const idKey = meta.idKey;
-  const nameKey = meta.nameKey;
+  const wrap = document.createElement("div");
+  wrap.className = "cms-form-inner";
 
-  const title = mode === "add" ? `New ${meta.label.replace(/s$/,"")}` : `${meta.label.replace(/s$/,"")} · ${safeStr(row[nameKey]) || safeStr(row[idKey])}`;
-
-  // Build a simple form: Name, Description, Parent (if any), Icon (if available), then "Advanced" for others
-  const parentHtml = meta.parentKey ? `
-    <div class="cms-field">
-      <label>${meta.parentLabel}</label>
-      <select id="edParent">
-        ${renderParentOptions(meta, safeStr(row[meta.parentKey]))}
-      </select>
-    </div>
-  ` : "";
-
-  const iconField = cols.includes("Icon") ? `
-    <div class="cms-field">
-      <label>Icon</label>
-      <input id="edIcon" list="iconList" value="${escapeHtml(safeStr(row.Icon))}" placeholder="Start typing icon path…">
-      ${renderIconDatalist()}
-      <div class="cms-hint">Pick an icon path from the repo assets. Optional.</div>
-    </div>
-  ` : "";
-
-  const descField = cols.includes("Description") ? `
-    <div class="cms-field">
-      <label>Description</label>
-      <textarea id="edDesc" rows="6">${escapeHtml(safeStr(row.Description))}</textarea>
-    </div>
-  ` : "";
-
-  const otherKeys = cols.filter(c => ![idKey,nameKey,meta.parentKey,"Description","Icon"].includes(c));
-
-  const advFields = otherKeys.map(k=>{
-    return `
-      <div class="cms-field">
-        <label>${k}</label>
-        <input data-adv="${escapeHtml(k)}" value="${escapeHtml(safeStr(row[k]))}">
-      </div>
+  // Helper to build input rows
+  function addInput(label, key, kind="text"){
+    const val = safeStr(currentRow?.[key] ?? "");
+    const row = document.createElement("div");
+    row.className = "cms-field";
+    const readOnly = key === idKey ? "readonly" : "";
+    row.innerHTML = `
+      <label class="cms-label">${label}</label>
+      <input class="cms-input" data-key="${key}" type="${kind}" value="${escapeHtml(val)}" ${readOnly}/>
     `;
-  }).join("");
+    wrap.appendChild(row);
+  }
+  function addTextarea(label, key){
+    const val = safeStr(currentRow?.[key] ?? "");
+    const row = document.createElement("div");
+    row.className = "cms-field";
+    row.innerHTML = `
+      <label class="cms-label">${label}</label>
+      <textarea class="cms-input" data-key="${key}" rows="5">${escapeHtml(val)}</textarea>
+    `;
+    wrap.appendChild(row);
+  }
+  function addSelect(label, key, options){
+    const val = safeStr(currentRow?.[key] ?? "");
+    const row = document.createElement("div");
+    row.className = "cms-field";
+    const opts = options.map(o => `<option value="${escapeAttr(o.value)}"${o.value===val?' selected':''}>${escapeHtml(o.label)}</option>`).join("");
+    row.innerHTML = `
+      <label class="cms-label">${label}</label>
+      <select class="cms-select" data-key="${key}">${opts}</select>
+    `;
+    wrap.appendChild(row);
+  }
 
-  els.cmsEditor.innerHTML = `
-    <div class="cms-editor-head">
-      <div class="cms-editor-title">${escapeHtml(title)}</div>
-      <div class="cms-editor-actions">
-        <button class="btn btn-small" id="btnCopyRow" type="button">Copy TSV Row</button>
-        <button class="btn btn-small" id="btnCopyHeaderRow" type="button">Copy Header+Row</button>
-        <button class="btn btn-small" id="btnRefreshBuilder" type="button">Refresh Builder</button>
-      </div>
-    </div>
+  // Main fields first
+  addInput("ID", idKey);
 
-    <div class="cms-form">
-      <div class="cms-field">
-        <label>${idKey}</label>
-        <input id="edId" value="${escapeHtml(safeStr(row[idKey]))}" ${mode==="edit" ? "readonly" : ""}>
-        <div class="cms-hint">${mode==="edit" ? "ID is read-only to avoid breaking references." : "Choose a unique ID. This becomes the sheet row id."}</div>
-      </div>
-
-      ${meta.parentKey ? parentHtml : ""}
-
-      <div class="cms-field">
-        <label>${nameKey}</label>
-        <input id="edName" value="${escapeHtml(safeStr(row[nameKey]))}">
-      </div>
-
-      ${descField}
-      ${iconField}
-
-      <details class="cms-adv">
-        <summary>Advanced fields</summary>
-        <div class="cms-adv-grid">
-          ${advFields || `<div class="cms-hint">No additional fields.</div>`}
-        </div>
-      </details>
-
-      <div class="cms-export-box">
-        <div class="cms-export-title">Manual Paste</div>
-        <div class="cms-export-sub">Copy TSV and paste it into the <b>${escapeHtml(sheet)}</b> tab in Google Sheets. Then refresh the builder.</div>
-        <textarea id="tsvOut" rows="3" readonly></textarea>
-      </div>
-    </div>
-  `;
-
-  const tsvOut = document.getElementById("tsvOut");
-
-  const syncRowFromInputs = ()=>{
-    const newRow = {...row};
-    const edName = document.getElementById("edName");
-    const edDesc = document.getElementById("edDesc");
-    const edParent = document.getElementById("edParent");
-    const edIcon = document.getElementById("edIcon");
-
-    newRow[nameKey] = safeStr(edName?.value).trim();
-
-    if (meta.parentKey && edParent) newRow[meta.parentKey] = safeStr(edParent.value).trim();
-    if (cols.includes("Description") && edDesc) newRow.Description = safeStr(edDesc.value);
-    if (cols.includes("Icon") && edIcon) newRow.Icon = safeStr(edIcon.value).trim();
-
-    // adv fields
-    for (const inp of document.querySelectorAll("[data-adv]")){
-      const k = inp.getAttribute("data-adv");
-      newRow[k] = safeStr(inp.value);
+  if (m.parentKey){
+    const parentType = m.parentType;
+    const parentMeta = TYPE_META[parentType];
+    const opts = [{value:"", label:"(choose)"}];
+    for (const pr of getSheetRows(parentType)){
+      const pid = norm(pr?.[parentMeta.idKey]);
+      if (!pid) continue;
+      const pl = norm(pr?.[parentMeta.nameKey]) || pid;
+      opts.push({ value: pid, label: `${pl} (${pid})` });
     }
-
-    // keep id stable
-    newRow[idKey] = safeStr(document.getElementById("edId")?.value).trim() || newRow[idKey];
-
-    return newRow;
-  };
-
-  const updateTSV = ()=>{
-    const newRow = syncRowFromInputs();
-    tsvOut.value = toTSVRow(sheet, newRow, false);
-    currentRow.row = newRow;
-  };
-  updateTSV();
-
-  for (const el of els.cmsEditor.querySelectorAll("input,textarea,select")){
-    el.addEventListener("input", ()=>updateTSV());
-    el.addEventListener("change", ()=>updateTSV());
+    addSelect(m.parentType === "Classes" ? "Parent Class" : "Parent Race", m.parentKey, opts);
   }
 
-  document.getElementById("btnCopyRow").addEventListener("click", ()=>{
-    copyText(toTSVRow(sheet, syncRowFromInputs(), false));
-  });
-  document.getElementById("btnCopyHeaderRow").addEventListener("click", ()=>{
-    copyText(toTSVRow(sheet, syncRowFromInputs(), true));
-  });
-  document.getElementById("btnRefreshBuilder").addEventListener("click", ()=>{
-    refreshBuilder();
-  });
-}
+  addInput("Name", m.nameKey);
 
-function renderParentOptions(meta, currentVal){
-  const parentRows = getRows(meta.parentSheet);
-  const parentMeta = getSheetMeta(meta.parentSheet);
-  const opts = parentRows
-    .map(r => ({ id: safeStr(r[parentMeta.idKey]), name: safeStr(r[parentMeta.nameKey]) }))
-    .filter(o => o.id)
-    .sort((a,b)=>a.name.localeCompare(b.name));
-
-  const parts = [];
-  parts.push(`<option value="">Choose ${escapeHtml(meta.parentLabel.toLowerCase())}…</option>`);
-  for (const o of opts){
-    const sel = o.id === currentVal ? "selected" : "";
-    parts.push(`<option value="${escapeHtml(o.id)}" ${sel}>${escapeHtml(o.name || o.id)} (${escapeHtml(o.id)})</option>`);
+  if (m.descKey && cols.includes(m.descKey)){
+    addTextarea("Description", m.descKey);
   }
-  return parts.join("");
-}
 
-function renderIconDatalist(){
-  if (!iconManifest || !Array.isArray(iconManifest.icons)) return "";
-  const options = iconManifest.icons.slice(0, 1200).map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
-  return `<datalist id="iconList">${options}</datalist>`;
+  // Show other columns in an "Advanced" collapsible
+  const adv = document.createElement("details");
+  adv.className = "cms-advanced";
+  adv.innerHTML = `<summary>Advanced fields</summary>`;
+  const advWrap = document.createElement("div");
+  advWrap.className = "cms-advanced-inner";
+
+  const mainKeys = new Set([m.idKey,m.parentKey,m.nameKey,m.descKey].filter(Boolean));
+  for (const k of cols){
+    if (mainKeys.has(k)) continue;
+    const v = safeStr(currentRow?.[k] ?? "");
+    const row = document.createElement("div");
+    row.className = "cms-field";
+    row.innerHTML = `
+      <label class="cms-label">${escapeHtml(k)}</label>
+      <input class="cms-input" data-key="${escapeAttr(k)}" value="${escapeHtml(v)}"/>
+    `;
+    advWrap.appendChild(row);
+  }
+  adv.appendChild(advWrap);
+
+  wrap.appendChild(adv);
+
+  // Wire inputs
+  wrap.querySelectorAll("[data-key]").forEach(el=>{
+    el.addEventListener("input", ()=>{
+      const key = el.getAttribute("data-key");
+      currentRow[key] = el.value;
+    });
+    el.addEventListener("change", ()=>{
+      const key = el.getAttribute("data-key");
+      currentRow[key] = el.value;
+    });
+  });
+
+  els.form.innerHTML = "";
+  els.form.appendChild(wrap);
 }
 
 function escapeHtml(s){
-  return safeStr(s)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#39;");
+  return safeStr(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g, "&quot;"); }
 
-async function loadIconManifest(){
+function tsvSanitizeCell(v){
+  return safeStr(v).replace(/\t/g, " ").replace(/\r?\n/g, "\\n");
+}
+function buildTSVRow(type, row, includeHeader){
+  const cols = getColumns(type);
+  const header = cols.join("\t");
+  const line = cols.map(c => tsvSanitizeCell(row?.[c] ?? "")).join("\t");
+  return includeHeader ? (header + "\n" + line) : line;
+}
+async function copyText(txt){
   try{
-    const res = await fetch("/editor/cms/icon_manifest.json", { cache: "no-store" });
-    if (!res.ok) return null;
-    iconManifest = await res.json();
-  }catch{}
-}
-
-async function loadBundle(){
-  setStatus("Loading bundle…", "info");
-  const res = await fetch(hbcrApi("/api/bundle"), { cache: "no-store", mode: "cors" });
-  if (!res.ok){
-    setStatus(`Bundle fetch failed: ${res.status}`, "error");
-    return;
-  }
-  bundle = await res.json();
-  setStatus("Bundle loaded.", "ok");
-  renderLibrary();
-  if (currentRow) renderEditor();
-}
-
-function refreshBuilder(){
-  // Full reload the iframe so it pulls latest /api/bundle after you paste to Sheets.
-  try{
-    els.frame.contentWindow.location.reload();
+    await navigator.clipboard.writeText(txt);
+    toast("Copied to clipboard.");
   }catch{
-    // fallback: reset src
-    const src = els.frame.getAttribute("src");
-    els.frame.setAttribute("src", src);
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy");
+    ta.remove();
+    toast("Copied to clipboard.");
   }
-  setStatus("Builder refreshed.", "ok");
 }
 
-// ---------- Wire up UI ----------
-function init(){
-  setupDrawerWindowing();
+function toast(msg){
+  // minimal toast using existing styles; reuse cmsStatus line
+  els.cmsStatus.textContent = msg;
+  setTimeout(()=> renderList(), 800);
+}
 
-  // Hide legacy controls
-  for (const id of LEGACY_HIDE_IDS){
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
+// -------- Modal (Add New) --------
+let modalOkHandler = null;
+function openModal(title, bodyEl, onOk){
+  els.modalTitle.textContent = title;
+  els.modalBody.innerHTML = "";
+  els.modalBody.appendChild(bodyEl);
+  modalOkHandler = onOk;
+  els.modal.classList.remove("is-hidden");
+}
+function closeModal(){
+  els.modal.classList.add("is-hidden");
+  modalOkHandler = null;
+}
+
+function makeField(label, inputEl){
+  const wrap = document.createElement("div");
+  wrap.className = "cms-field";
+  const lab = document.createElement("label");
+  lab.className = "cms-label";
+  lab.textContent = label;
+  wrap.appendChild(lab);
+  wrap.appendChild(inputEl);
+  return wrap;
+}
+
+function slugify(s){
+  return norm(s).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"");
+}
+
+function startAdd(type){
+  currentType = type;
+  els.selType.value = type;
+  setTab("editor");
+
+  const m = TYPE_META[type];
+  const body = document.createElement("div");
+
+  const inpName = document.createElement("input");
+  inpName.className = "cms-input";
+  inpName.placeholder = "Name…";
+
+  const inpId = document.createElement("input");
+  inpId.className = "cms-input";
+  inpId.placeholder = "ID…";
+
+  let selParent = null;
+  if (m.parentKey){
+    selParent = document.createElement("select");
+    selParent.className = "cms-select";
+    const parentType = m.parentType;
+    const parentMeta = TYPE_META[parentType];
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "(choose)";
+    selParent.appendChild(opt0);
+    for (const pr of getSheetRows(parentType)){
+      const pid = norm(pr?.[parentMeta.idKey]);
+      if (!pid) continue;
+      const pl = norm(pr?.[parentMeta.nameKey]) || pid;
+      const opt = document.createElement("option");
+      opt.value = pid;
+      opt.textContent = `${pl} (${pid})`;
+      selParent.appendChild(opt);
+    }
+    body.appendChild(makeField(parentType==="Classes" ? "Parent Class" : "Parent Race", selParent));
   }
 
-  // Remove "Apply" meaning; repurpose
-  if (els.btnApply) els.btnApply.textContent = "Refresh Builder";
-  if (els.btnReload) els.btnReload.textContent = "Reload Bundle";
-  if (els.btnExport) els.btnExport.style.display = "none";
-  if (els.btnSave) els.btnSave.style.display = "none";
-  if (els.btnRevert) els.btnRevert.style.display = "none";
+  body.appendChild(makeField("Name", inpName));
+  body.appendChild(makeField("ID", inpId));
 
-  // Tabs
-  els.tabLibrary.addEventListener("click", ()=>showTab("library"));
-  els.tabEditor.addEventListener("click", ()=>showTab("editor"));
+  inpName.addEventListener("input", ()=>{
+    if (!norm(inpId.value)){
+      inpId.value = slugify(inpName.value);
+    }
+  });
 
-  // Drawer toggle
+  openModal(`Add ${type.slice(0,-1)}`, body, ()=>{
+    const id = norm(inpId.value);
+    const name = norm(inpName.value);
+    const parent = selParent ? norm(selParent.value) : "";
+    if (!id){ toast("ID is required."); return; }
+    if (!name){ toast("Name is required."); return; }
+    if (selParent && !parent){ toast("Choose a parent first."); return; }
+
+    // Build new row with correct keys and empty defaults
+    const cols = getColumns(type);
+    const row = {};
+    for (const c of cols) row[c] = "";
+    row[m.idKey] = id;
+    row[m.nameKey] = name;
+    if (m.parentKey) row[m.parentKey] = parent;
+
+    // Add to local view (NOT to builder; user will paste TSV)
+    bundle[type] = getSheetRows(type).concat([row]);
+
+    closeModal();
+    // select and render
+    renderList();
+    selectItem(type, id);
+    toast("Row created locally. Copy TSV and paste into Sheets.");
+  });
+}
+
+// -------- UI wiring --------
+function wireUI(){
+  els.builderFrame = document.getElementById("builderFrame");
+  els.drawer = document.getElementById("drawer");
+  els.drawerHandle = document.getElementById("drawerHandle");
+  els.btnToggleDrawer = document.getElementById("btnToggleDrawer");
+
+  els.tabLibrary = document.getElementById("tabLibrary");
+  els.tabEditor = document.getElementById("tabEditor");
+  els.cmsLibrary = document.getElementById("cmsLibrary");
+  els.cmsEditor = document.getElementById("cmsEditor");
+
+  els.selType = document.getElementById("selType");
+  els.inpSearch = document.getElementById("inpSearch");
+  els.listItems = document.getElementById("listItems");
+  els.cmsStatus = document.getElementById("cmsStatus");
+
+  els.crumb = document.getElementById("crumb");
+  els.form = document.getElementById("form");
+
+  els.btnCopyRow = document.getElementById("btnCopyRow");
+  els.btnCopyHeaderRow = document.getElementById("btnCopyHeaderRow");
+  els.btnRefreshBuilder = document.getElementById("btnRefreshBuilder");
+
+  // quick add
+  document.getElementById("btnQuickAddRace").addEventListener("click", ()=> startAdd("Races"));
+  document.getElementById("btnQuickAddSubrace").addEventListener("click", ()=> startAdd("Subraces"));
+  document.getElementById("btnQuickAddClass").addEventListener("click", ()=> startAdd("Classes"));
+  document.getElementById("btnQuickAddSubclass").addEventListener("click", ()=> startAdd("Subclasses"));
+
+  // tabs
+  els.tabLibrary.addEventListener("click", ()=> setTab("library"));
+  els.tabEditor.addEventListener("click", ()=> setTab("editor"));
+
+  // type/search
+  els.selType.addEventListener("change", ()=>{
+    currentType = els.selType.value;
+    renderList();
+  });
+  els.inpSearch.addEventListener("input", ()=> renderList());
+
+  // reload
+  const btnReload = document.getElementById("btnReload");
+  btnReload.addEventListener("click", async ()=>{
+    await loadBundle();
+    renderTypeSelect();
+    renderList();
+    toast("Reloaded.");
+  });
+
+  // copy
+  els.btnCopyRow.addEventListener("click", ()=>{
+    if (!currentRow) return toast("Select an item first.");
+    copyText(buildTSVRow(currentType, currentRow, false));
+  });
+  els.btnCopyHeaderRow.addEventListener("click", ()=>{
+    if (!currentRow) return toast("Select an item first.");
+    copyText(buildTSVRow(currentType, currentRow, true));
+  });
+
+  // refresh builder
+  els.btnRefreshBuilder.addEventListener("click", ()=>{
+    const base = "/editor/builder/?embed=1";
+    els.builderFrame.src = base + "&t=" + Date.now();
+    toast("Builder refreshed.");
+  });
+
+  // drawer hide/show
   els.btnToggleDrawer.addEventListener("click", ()=>{
     const open = els.drawer.classList.toggle("is-open");
+    els.drawerHandle.classList.toggle("is-hidden", open);
     els.btnToggleDrawer.textContent = open ? "Hide" : "Show";
-    els.handle.style.display = open ? "none" : "";
   });
-  els.handle.addEventListener("click", ()=>{
+  els.drawerHandle.addEventListener("click", ()=>{
     els.drawer.classList.add("is-open");
+    els.drawerHandle.classList.add("is-hidden");
     els.btnToggleDrawer.textContent = "Hide";
-    els.handle.style.display = "none";
   });
 
-  // Type selector
-  els.selType.innerHTML = SHEETS.map(s=>`<option value="${escapeHtml(s.key)}">${escapeHtml(s.label)}</option>`).join("");
-  els.selType.value = currentSheet;
-  els.selType.addEventListener("change", ()=>{
-    currentSheet = els.selType.value;
-    currentRow = null;
-    renderLibrary();
-    renderEditor();
-    showTab("library");
+  // modal
+  els.modal = document.getElementById("modal");
+  els.modalTitle = document.getElementById("modalTitle");
+  els.modalBody = document.getElementById("modalBody");
+  document.getElementById("modalCancel").addEventListener("click", closeModal);
+  document.getElementById("modalBackdrop").addEventListener("click", closeModal);
+  document.getElementById("modalOk").addEventListener("click", ()=>{
+    if (modalOkHandler) modalOkHandler();
   });
-
-  // Search
-  els.inpSearch.addEventListener("input", ()=>renderLibrary());
-
-  // Buttons
-  els.btnReload.addEventListener("click", ()=>loadBundle());
-  els.btnApply.addEventListener("click", ()=>refreshBuilder());
-
-  // Add button: opens modal for current sheet
-  document.getElementById("btnAdd").addEventListener("click", ()=>{
-    openAddModal(currentSheet);
-  });
-
-  // Modal handlers
-  const onCreate = ()=>{
-    const sheetKey = els.addModal.dataset.sheet || currentSheet;
-    const row = buildNewRow(sheetKey);
-    if (!row) return;
-
-    // Immediately open editor on this new row (but does not touch builder)
-    currentRow = { sheet: sheetKey, row, mode: "add" };
-    closeAddModal();
-    renderLibrary(); // stay consistent
-    renderEditor();
-    showTab("editor");
-    setStatus(`Created row for ${sheetKey}. Copy TSV and paste into Sheets.`, "ok");
-  };
-
-  els.addModalCreate.addEventListener("click", onCreate);
-  els.addModalCancel.addEventListener("click", closeAddModal);
-  els.addModalClose.addEventListener("click", closeAddModal);
-  els.addBackdrop.addEventListener("click", closeAddModal);
-
-  showTab("library");
 }
 
-// boot
-(async ()=>{
-  await loadIconManifest();
-  init();
+async function main(){
+  setupDrawerWindowing();
+  wireUI();
   await loadBundle();
-})();
+  renderTypeSelect();
+  renderList();
+  setTab("library");
+}
+
+main().catch(err=>{
+  console.error(err);
+  const el = document.getElementById("cmsStatus");
+  if (el) el.textContent = "Error: " + (err?.message || err);
+});
