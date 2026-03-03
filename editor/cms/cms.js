@@ -595,7 +595,8 @@ function wireUI(){
     const id = norm(currentRow?.[idKey]);
     if (!id) return toast("Missing ID.");
     setDraftEntry(currentType, id, currentRow);
-    // reload builder iframe in preview mode
+    // enable preview mode + reload builder iframe
+    try { localStorage.setItem("hbcr_cms_apply_preview", "1"); } catch {}
     const base = "/editor/builder/?embed=1&cmsPreview=1";
     els.builderFrame.src = base + "&t=" + Date.now();
     toast("Preview updated (local only). If it looks good, copy TSV to Sheets.");
@@ -608,6 +609,7 @@ function wireUI(){
     const id = norm(currentRow?.[idKey]);
     if (!id) return toast("Missing ID.");
     const removed = clearDraftEntry(currentType, id);
+    try { localStorage.setItem("hbcr_cms_apply_preview", "1"); } catch {}
     const base = "/editor/builder/?embed=1&cmsPreview=1";
     els.builderFrame.src = base + "&t=" + Date.now();
     toast(removed ? "Preview cleared for this item." : "Nothing to clear for this item.");
@@ -615,6 +617,8 @@ function wireUI(){
 
   // refresh builder
   els.btnRefreshBuilder.addEventListener("click", ()=>{
+    // disable preview mode so stale drafts don't leak into the normal builder
+    try { localStorage.setItem("hbcr_cms_apply_preview", "0"); } catch {}
     const base = "/editor/builder/?embed=1";
     els.builderFrame.src = base + "&t=" + Date.now();
     toast("Builder refreshed.");
@@ -646,6 +650,12 @@ function wireUI(){
 async function main(){
   setupDrawerWindowing();
   wireUI();
+
+  // Default to normal builder (no draft overrides) on load.
+  try { localStorage.setItem("hbcr_cms_apply_preview", "0"); } catch {}
+  const frame = document.getElementById("builderFrame");
+  if (frame) frame.src = "/editor/builder/?embed=1&t=" + Date.now();
+
   await loadBundle();
   renderTypeSelect();
   renderList();

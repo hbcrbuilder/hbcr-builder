@@ -27,11 +27,19 @@ async function fetchBundle() {
   });
   if (!res.ok) throw new Error(`Bundle fetch failed: ${res.status}`);
   const json = await res.json();
-  // CMS Full Preview: apply local draft overrides (hbcr_cms_draft_v1)
+  // CMS Full Preview:
+  // Only apply local draft overrides when preview is explicitly enabled.
+  // This prevents stale experimental rows (e.g. a "test" Race) from
+  // appearing for users who still have old drafts in localStorage.
   try {
     const params = new URLSearchParams(window.location?.search || "");
-    if (params.get("cmsPreview") === "1") {
-      const raw = localStorage.getItem("hbcr_cms_draft_v3") || localStorage.getItem("hbcr_cms_draft_v2") || localStorage.getItem("hbcr_cms_draft_v1");
+    const wantsPreview = params.get("cmsPreview") === "1";
+    const enabled = localStorage.getItem("hbcr_cms_apply_preview") === "1";
+    if (wantsPreview && enabled) {
+      const raw =
+        localStorage.getItem("hbcr_cms_draft_v3") ||
+        localStorage.getItem("hbcr_cms_draft_v2") ||
+        localStorage.getItem("hbcr_cms_draft_v1");
       if (raw) {
         const draft = JSON.parse(raw);
         applyCmsDraftOverrides(json, draft);
@@ -362,7 +370,22 @@ export async function loadRacesJson() {
       for (const [sid, s] of map.entries()) {
         if (!seen.has(sid)) ordered.push(s);
       }
-      race.subraces = ordered;
+
+      // Final defensive de-dupe: keep first by id, then by normalized name.
+      const normName = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const seenId = new Set();
+      const seenName = new Set();
+      const deduped = [];
+      for (const s of ordered) {
+        const sid = String(s?.id ?? "");
+        const nk = normName(s?.name ?? s?.Name);
+        if (sid && seenId.has(sid)) continue;
+        if (nk && seenName.has(nk)) continue;
+        if (sid) seenId.add(sid);
+        if (nk) seenName.add(nk);
+        deduped.push(s);
+      }
+      race.subraces = deduped;
     }
   }
 
@@ -519,7 +542,22 @@ export async function loadClassesJson() {
       for (const [sid, s] of map.entries()) {
         if (!seen.has(sid)) ordered.push(s);
       }
-      cls.subclasses = ordered;
+
+      // Final defensive de-dupe (by id then normalized name)
+      const normName = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const seenId = new Set();
+      const seenName = new Set();
+      const deduped = [];
+      for (const s of ordered) {
+        const sid = String(s?.id ?? "");
+        const nk = normName(s?.name ?? s?.Name);
+        if (sid && seenId.has(sid)) continue;
+        if (nk && seenName.has(nk)) continue;
+        if (sid) seenId.add(sid);
+        if (nk) seenName.add(nk);
+        deduped.push(s);
+      }
+      cls.subclasses = deduped;
     }
   }
 
