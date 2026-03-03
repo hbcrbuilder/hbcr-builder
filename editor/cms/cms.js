@@ -117,6 +117,49 @@ let currentType = "Races";
 let currentId = null;
 let currentRow = null;
 
+// Local preview patch storage (read by src/data/liveData.js when ?cmsPreview=1)
+const CMS_DRAFT_KEY = "hbcr_cms_draft_v3";
+
+function loadCmsDraft(){
+  try{
+    const raw = localStorage.getItem(CMS_DRAFT_KEY);
+    const obj = raw ? JSON.parse(raw) : {};
+    return (obj && typeof obj === 'object') ? obj : {};
+  }catch{
+    return {};
+  }
+}
+
+function saveCmsDraft(d){
+  try{ localStorage.setItem(CMS_DRAFT_KEY, JSON.stringify(d || {})); }catch{}
+}
+
+function setDraftEntry(type, id, row){
+  const m = TYPE_META[type] || {};
+  const idKey = m.idKey;
+  const draft = loadCmsDraft();
+  const key = `${type}::${id}`;
+  const out = {};
+  // store only non-id fields (liveData will add idKey on insert)
+  for (const k of Object.keys(row || {})){
+    if (k === idKey) continue;
+    out[k] = row[k];
+  }
+  draft[key] = out;
+  saveCmsDraft(draft);
+}
+
+function clearDraftEntry(type, id){
+  const draft = loadCmsDraft();
+  const key = `${type}::${id}`;
+  if (draft && Object.prototype.hasOwnProperty.call(draft, key)){
+    delete draft[key];
+    saveCmsDraft(draft);
+    return true;
+  }
+  return false;
+}
+
 const TYPE_META = {
   Races:      { idKey:"RaceId",      nameKey:"RaceName",      descKey:"Description", parentKey:null },
   Subraces:   { idKey:"SubraceId",   nameKey:"SubraceName",   descKey:"Description", parentKey:"RaceId", parentType:"Races" },
@@ -504,6 +547,8 @@ function wireUI(){
 
   els.btnCopyRow = document.getElementById("btnCopyRow");
   els.btnCopyHeaderRow = document.getElementById("btnCopyHeaderRow");
+  els.btnUpdatePreview = document.getElementById("btnUpdatePreview");
+  els.btnClearPreview = document.getElementById("btnClearPreview");
   els.btnRefreshBuilder = document.getElementById("btnRefreshBuilder");
 
   // quick add
@@ -540,6 +585,32 @@ function wireUI(){
   els.btnCopyHeaderRow.addEventListener("click", ()=>{
     if (!currentRow) return toast("Select an item first.");
     copyText(buildTSVRow(currentType, currentRow, true));
+  });
+
+  // Update Builder preview behind the menu (Option A)
+  els.btnUpdatePreview.addEventListener("click", ()=>{
+    if (!currentRow) return toast("Select an item first.");
+    const m = TYPE_META[currentType] || {};
+    const idKey = m.idKey;
+    const id = norm(currentRow?.[idKey]);
+    if (!id) return toast("Missing ID.");
+    setDraftEntry(currentType, id, currentRow);
+    // reload builder iframe in preview mode
+    const base = "/editor/builder/?embed=1&cmsPreview=1";
+    els.builderFrame.src = base + "&t=" + Date.now();
+    toast("Preview updated (local only). If it looks good, copy TSV to Sheets.");
+  });
+
+  els.btnClearPreview.addEventListener("click", ()=>{
+    if (!currentRow) return toast("Select an item first.");
+    const m = TYPE_META[currentType] || {};
+    const idKey = m.idKey;
+    const id = norm(currentRow?.[idKey]);
+    if (!id) return toast("Missing ID.");
+    const removed = clearDraftEntry(currentType, id);
+    const base = "/editor/builder/?embed=1&cmsPreview=1";
+    els.builderFrame.src = base + "&t=" + Date.now();
+    toast(removed ? "Preview cleared for this item." : "Nothing to clear for this item.");
   });
 
   // refresh builder
