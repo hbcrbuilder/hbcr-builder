@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HBCR Editor · Export</title>
+  <link rel="icon" type="image/png" href="/assets/ui/hbcr-icon.png"/>
+  <link rel="stylesheet" href="/editor/cmgr/cmgr.css"/>
+</head>
+<body>
+  <div class="layout">
+    <div class="left">
+      <div class="top">
+        <div class="brand">
+          <div>
+            <div class="title">HBCR Content Manager</div>
+            <div class="sub">No-code edits → Export TSV → Paste into Sheets</div>
+          </div>
+        </div>
+        <div class="small"><span id="changesCount">0</span> change(s)</div>
+      </div>
+
+      <div class="nav" id="nav"></div>
+
+      <div class="actions">
+        <button class="btn primary" id="addBtn">+ Add</button>
+        <button class="btn" id="openLegacyBtn" title="Old CMS screen">Legacy CMS</button>
+        <button class="btn danger" id="resetBtn" title="Clears local changes + preview overlay">Reset Local</button>
+        <label class="small" style="display:flex;gap:6px;align-items:center;margin-left:auto">
+          <input type="checkbox" id="previewToggle"/> Preview
+        </label>
+      </div>
+
+      <div class="content" id="content"></div>
+
+      <div style="padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between">
+        <a class="small" href="/editor/logout">Logout</a>
+        <a class="small" href="/editor/builder/">Design Mode</a>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="previewbar">
+        <div style="font-weight:700">Builder Preview</div>
+        <div class="status" id="previewStatus">Preview OFF</div>
+      </div>
+      <iframe id="builderFrame" src="/?cmsPreview=1"></iframe>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="card">
+      <div class="hd">
+        <div style="font-weight:800" id="modalTitle">Edit</div>
+        <button class="btn" id="modalCancel">Close</button>
+      </div>
+      <div class="bd">
+        <div id="modalError" class="notice bad" style="display:none"></div>
+        <div id="modalForm"></div>
+      </div>
+      <div class="ft">
+        <button class="btn" id="modalCancel2" style="display:none"></button>
+        <button class="btn primary" id="modalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // make both close buttons work (header one is #modalCancel)
+    document.addEventListener('DOMContentLoaded', () => {
+      const c1 = document.getElementById('modalCancel');
+      const c2 = document.getElementById('modalCancel2');
+      if(c2) c2.onclick = () => c1 && c1.click();
+    });
+  </script>
+  <script src="/editor/cmgr/cmgr.js"></script>
+</body>
+</html>
