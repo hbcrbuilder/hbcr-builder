@@ -164,8 +164,6 @@ const TYPE_META = {
   Races:      { idKey:"RaceId",      nameKey:"RaceName",      descKey:"Description", parentKey:null },
   Subraces:   { idKey:"SubraceId",   nameKey:"SubraceName",   descKey:"Description", parentKey:"RaceId", parentType:"Races" },
   Classes:    { idKey:"ClassId",     nameKey:"ClassName",     descKey:"Description", parentKey:null },
-  // IMPORTANT: Google Sheets column is "ClassId" (capital C). Using "classId" breaks TSV export
-  // and causes parent-linking bugs (subclass shows up under the wrong class or not at all).
   Subclasses: { idKey:"SubclassId",  nameKey:"SubclassName",  descKey:"Description", parentKey:"ClassId", parentType:"Classes" },
   Spells:     { idKey:"SpellId",     nameKey:"SpellName",     descKey:"Description", parentKey:null },
 };
@@ -274,10 +272,16 @@ function selectItem(type, id){
 
 function setTab(which){
   const isLib = which === "library";
+  const isEditor = which === "editor";
+  const isDiff = which === "diff";
+
   els.tabLibrary.classList.toggle("is-active", isLib);
-  els.tabEditor.classList.toggle("is-active", !isLib);
+  els.tabEditor.classList.toggle("is-active", isEditor);
+  if (els.tabDiff) els.tabDiff.classList.toggle("is-active", isDiff);
+
   els.cmsLibrary.classList.toggle("is-hidden", !isLib);
-  els.cmsEditor.classList.toggle("is-hidden", isLib);
+  els.cmsEditor.classList.toggle("is-hidden", !isEditor);
+  if (els.cmsDiff) els.cmsDiff.classList.toggle("is-hidden", !isDiff);
 }
 
 function renderEditor(){
@@ -289,13 +293,6 @@ function renderEditor(){
   const m = TYPE_META[currentType] || {};
   const cols = getColumns(currentType);
   const idKey = m.idKey;
-
-  // Back-compat: some older drafts/bundles used `classId` for subclasses.
-  // Keep `ClassId` as the canonical column so TSV export stays correct.
-  if (currentType === "Subclasses"){
-    if (!norm(currentRow?.ClassId) && norm(currentRow?.classId)) currentRow.ClassId = currentRow.classId;
-    if (!norm(currentRow?.classId) && norm(currentRow?.ClassId)) currentRow.classId = currentRow.ClassId;
-  }
 
   els.crumb.textContent = `${currentType} → ${getDisplayName(currentType, currentRow)} (${norm(currentRow[idKey])})`;
 
@@ -543,10 +540,22 @@ function wireUI(){
 
   els.tabLibrary = document.getElementById("tabLibrary");
   els.tabEditor = document.getElementById("tabEditor");
+  els.tabDiff = document.getElementById("tabDiff");
   els.cmsLibrary = document.getElementById("cmsLibrary");
   els.cmsEditor = document.getElementById("cmsEditor");
-
-  els.selType = document.getElementById("selType");
+  els.cmsDiff = document.getElementById("cmsDiff");
+  // Diff tool elements
+  els.diffType = document.getElementById("diffType");
+  els.diffOld = document.getElementById("diffOld");
+  els.diffNew = document.getElementById("diffNew");
+  els.btnRunDiff = document.getElementById("btnRunDiff");
+  els.diffSummary = document.getElementById("diffSummary");
+  els.diffAdded = document.getElementById("diffAdded");
+  els.diffChanged = document.getElementById("diffChanged");
+  els.diffRemoved = document.getElementById("diffRemoved");
+  els.btnCopyAdded = document.getElementById("btnCopyAdded");
+  els.btnCopyChanged = document.getElementById("btnCopyChanged");
+els.selType = document.getElementById("selType");
   els.inpSearch = document.getElementById("inpSearch");
   els.listItems = document.getElementById("listItems");
   els.cmsStatus = document.getElementById("cmsStatus");
@@ -559,7 +568,6 @@ function wireUI(){
   els.btnUpdatePreview = document.getElementById("btnUpdatePreview");
   els.btnClearPreview = document.getElementById("btnClearPreview");
   els.btnRefreshBuilder = document.getElementById("btnRefreshBuilder");
-  els.btnResetLocal = document.getElementById("btnResetLocal");
 
   // quick add
   document.getElementById("btnQuickAddRace").addEventListener("click", ()=> startAdd("Races"));
@@ -570,6 +578,7 @@ function wireUI(){
   // tabs
   els.tabLibrary.addEventListener("click", ()=> setTab("library"));
   els.tabEditor.addEventListener("click", ()=> setTab("editor"));
+  if (els.tabDiff) els.tabDiff.addEventListener("click", ()=> setTab("diff"));
 
   // type/search
   els.selType.addEventListener("change", ()=>{
@@ -581,7 +590,9 @@ function wireUI(){
   // reload
   const btnReload = document.getElementById("btnReload");
   btnReload.addEventListener("click", async ()=>{
-    await loadBundle();
+    wireDiffTool();
+
+  await loadBundle();
     renderTypeSelect();
     renderList();
     toast("Reloaded.");
@@ -634,25 +645,6 @@ function wireUI(){
     toast("Builder refreshed.");
   });
 
-  // One-click cleanup for "ghost" rows caused by old localStorage drafts.
-  // This does NOT touch server data — only the maintainer's browser.
-  els.btnResetLocal?.addEventListener("click", ()=>{
-    try{
-      localStorage.removeItem(CMS_DRAFT_KEY);
-      localStorage.removeItem("hbcr_cms_apply_preview");
-
-      // Design-mode drafts (layout/bindings) and mod snapshot caches can also confuse people.
-      localStorage.removeItem("hbcr_design_draft");
-      localStorage.removeItem("hbcr_editor_lastSeenRowKeys");
-      localStorage.removeItem("hbcr_mod_snapshot_prev_v1");
-    }catch{}
-
-    // reload builder without preview mode
-    const base = "/editor/builder/?embed=1";
-    els.builderFrame.src = base + "&t=" + Date.now();
-    toast("Local drafts cleared.");
-  });
-
   // drawer hide/show
   els.btnToggleDrawer.addEventListener("click", ()=>{
     const open = els.drawer.classList.toggle("is-open");
@@ -696,3 +688,142 @@ main().catch(err=>{
   const el = document.getElementById("cmsStatus");
   if (el) el.textContent = "Error: " + (err?.message || err);
 });
+
+
+// ---------- Diff Tool (Paste old/new TSV and see what's changed) ----------
+function parseTSV(text){
+  const raw = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!raw) return { headers: [], rows: [] };
+  const lines = raw.split("\n").filter(l => l.trim().length);
+  const headers = lines[0].split("\t").map(h => h.trim());
+  const rows = [];
+  for (let i=1;i<lines.length;i++){
+    const cols = lines[i].split("\t");
+    const row = {};
+    for (let c=0;c<headers.length;c++){
+      row[headers[c]] = (cols[c] ?? "");
+    }
+    rows.push(row);
+  }
+  return { headers, rows };
+}
+
+function normalizeRowForCompare(row, headers){
+  const out = {};
+  for (const h of headers){
+    out[h] = (row[h] ?? "").toString().trim();
+  }
+  return JSON.stringify(out);
+}
+
+function buildIndex(rows, idKey, headers){
+  const idx = new Map();
+  const dupes = [];
+  for (const r of rows){
+    const id = (r[idKey] ?? "").toString().trim();
+    if (!id) continue;
+    const sig = normalizeRowForCompare(r, headers);
+    if (idx.has(id)) dupes.push(id);
+    idx.set(id, { row: r, sig });
+  }
+  return { idx, dupes };
+}
+
+function rowsToTSV(headers, rows){
+  const esc = (v)=> (v==null ? "" : String(v)).replace(/\r?\n/g, " ");
+  const lines = [];
+  lines.push(headers.join("\t"));
+  for (const r of rows){
+    lines.push(headers.map(h => esc(r[h] ?? "")).join("\t"));
+  }
+  return lines.join("\n");
+}
+
+function runDiff(){
+  const type = els.diffType.value;
+  const meta = TYPE_META[type];
+  if (!meta){
+    els.diffSummary.textContent = "Unknown type.";
+    return;
+  }
+
+  const oldParsed = parseTSV(els.diffOld.value);
+  const newParsed = parseTSV(els.diffNew.value);
+
+  let headers = (newParsed.headers && newParsed.headers.length) ? newParsed.headers.slice() : oldParsed.headers.slice();
+  if (!headers.includes(meta.idKey)){
+    els.diffSummary.textContent = `Missing required ID column: ${meta.idKey}`;
+    return;
+  }
+
+  const oldIndex = buildIndex(oldParsed.rows, meta.idKey, headers);
+  const newIndex = buildIndex(newParsed.rows, meta.idKey, headers);
+
+  const added = [];
+  const changed = [];
+  const removed = [];
+
+  for (const [id, cur] of newIndex.idx.entries()){
+    const prev = oldIndex.idx.get(id);
+    if (!prev) added.push(cur.row);
+    else if (prev.sig !== cur.sig) changed.push(cur.row);
+  }
+  for (const [id, prev] of oldIndex.idx.entries()){
+    if (!newIndex.idx.has(id)) removed.push(prev.row);
+  }
+
+  const dupeMsg = [];
+  if (oldIndex.dupes.length) dupeMsg.push(`Old TSV had duplicate IDs: ${oldIndex.dupes.slice(0,10).join(", ")}${oldIndex.dupes.length>10?"…":""}`);
+  if (newIndex.dupes.length) dupeMsg.push(`New TSV had duplicate IDs: ${newIndex.dupes.slice(0,10).join(", ")}${newIndex.dupes.length>10?"…":""}`);
+
+  els.diffSummary.textContent =
+    `${type}: +${added.length} added, ~${changed.length} changed, -${removed.length} removed` +
+    (dupeMsg.length ? ` • WARNING: ${dupeMsg.join(" • ")}` : "");
+
+  const fmt = (r)=>{
+    const id = (r[meta.idKey] ?? "").toString().trim();
+    const name = meta.nameKey && r[meta.nameKey] ? String(r[meta.nameKey]).trim() : "";
+    const parent = meta.parentKey && r[meta.parentKey] ? String(r[meta.parentKey]).trim() : "";
+    return parent ? `${id} — ${name} (parent: ${parent})` : `${id} — ${name}`;
+  };
+
+  els.diffAdded.textContent = added.slice(0,200).map(fmt).join("\n") || "(none)";
+  els.diffChanged.textContent = changed.slice(0,200).map(fmt).join("\n") || "(none)";
+  els.diffRemoved.textContent = removed.slice(0,200).map(fmt).join("\n") || "(none)";
+
+  els._diffLast = { type, headers, added, changed };
+}
+
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    toast("Copied to clipboard.");
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("Copied to clipboard.");
+  }
+}
+
+function wireDiffTool(){
+  if (!els.btnRunDiff) return;
+  els.btnRunDiff.addEventListener("click", runDiff);
+
+  els.btnCopyAdded.addEventListener("click", ()=>{
+    const d = els._diffLast;
+    if (!d) return toast("Run diff first.");
+    copyText(rowsToTSV(d.headers, d.added));
+  });
+  els.btnCopyChanged.addEventListener("click", ()=>{
+    const d = els._diffLast;
+    if (!d) return toast("Run diff first.");
+    copyText(rowsToTSV(d.headers, d.changed));
+  });
+}
+

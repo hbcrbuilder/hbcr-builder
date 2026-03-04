@@ -23,7 +23,6 @@
         </div>
         <div class="cms-topbar-right">
           <button class="btn btn-small" id="btnToggleDrawer" type="button" title="Hide/Show editor menu">Hide</button>
-          <button class="btn btn-small" id="btnResetLocal" type="button" title="Clears local preview/draft cache so you don't see ghost rows">Reset Local Drafts</button>
           <a class="btn btn-small" href="/editor/builder/">Open Builder (Design Mode)</a>
           <a class="btn btn-small" href="/">Back</a>
         </div>
@@ -33,6 +32,7 @@
         <div class="cms-tabs">
           <button class="cms-tab is-active" id="tabLibrary" type="button">Library</button>
           <button class="cms-tab" id="tabEditor" type="button">Editor</button>
+          <button class="cms-tab" id="tabDiff" type="button">Diff</button>
         </div>
 
         <div class="cms-tabpanes">
@@ -85,6 +85,59 @@
               <div class="cms-empty">No item selected.</div>
             </div>
           </section>
+
+          <section class="cms-panel is-hidden" id="cmsDiff">
+            <div class="cms-panel-header">
+              <div>
+                <div class="cms-h">Mod Diff</div>
+                <div class="cms-help">Paste TSV exports (old vs new) to see what's added/changed/removed, and copy only the rows you need to paste into Sheets.</div>
+              </div>
+              <div class="cms-actions">
+                <button class="btn btn-small" id="btnRunDiff" type="button">Run Diff</button>
+                <button class="btn btn-small" id="btnCopyAdded" type="button" title="Copy TSV header + all added rows">Copy Added TSV</button>
+                <button class="btn btn-small" id="btnCopyChanged" type="button" title="Copy TSV header + all changed rows">Copy Changed TSV</button>
+              </div>
+            </div>
+
+            <div class="cms-controls">
+              <label class="cms-label">Type</label>
+              <select class="cms-select" id="diffType">
+                <option>Races</option>
+                <option>Subraces</option>
+                <option>Classes</option>
+                <option>Subclasses</option>
+              </select>
+
+              <div class="cms-row" style="margin-top:10px; gap:10px">
+                <div style="flex:1">
+                  <label class="cms-label">OLD TSV (current live)</label>
+                  <textarea class="cms-textarea" id="diffOld" placeholder="Paste OLD TSV export here…"></textarea>
+                </div>
+                <div style="flex:1">
+                  <label class="cms-label">NEW TSV (updated mod)</label>
+                  <textarea class="cms-textarea" id="diffNew" placeholder="Paste NEW TSV export here…"></textarea>
+                </div>
+              </div>
+
+              <div class="cms-help" id="diffSummary" style="margin-top:10px"></div>
+
+              <div class="cms-row" style="margin-top:10px; gap:10px">
+                <div style="flex:1">
+                  <label class="cms-label">Added</label>
+                  <pre class="cms-pre" id="diffAdded">(none)</pre>
+                </div>
+                <div style="flex:1">
+                  <label class="cms-label">Changed</label>
+                  <pre class="cms-pre" id="diffChanged">(none)</pre>
+                </div>
+                <div style="flex:1">
+                  <label class="cms-label">Removed</label>
+                  <pre class="cms-pre" id="diffRemoved">(none)</pre>
+                </div>
+              </div>
+            </div>
+          </section>
+
         </div>
       </div>
     </div>

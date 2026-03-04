@@ -261,3 +261,24 @@
 
 
 .cms-topbar .btn{ cursor: pointer; }
+
+/* Diff tool */
+.cms-textarea{
+  width: 100%;
+  min-height: 220px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.35);
+  color: rgba(255,255,255,0.92);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  resize: vertical;
+}
+.cms-pre{
+  min-height: 220px;
+  max-height: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
