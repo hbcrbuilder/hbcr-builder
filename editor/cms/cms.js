@@ -164,7 +164,9 @@ const TYPE_META = {
   Races:      { idKey:"RaceId",      nameKey:"RaceName",      descKey:"Description", parentKey:null },
   Subraces:   { idKey:"SubraceId",   nameKey:"SubraceName",   descKey:"Description", parentKey:"RaceId", parentType:"Races" },
   Classes:    { idKey:"ClassId",     nameKey:"ClassName",     descKey:"Description", parentKey:null },
-  Subclasses: { idKey:"SubclassId",  nameKey:"SubclassName",  descKey:"Description", parentKey:"classId", parentType:"Classes" },
+  // IMPORTANT: Google Sheets column is "ClassId" (capital C). Using "classId" breaks TSV export
+  // and causes parent-linking bugs (subclass shows up under the wrong class or not at all).
+  Subclasses: { idKey:"SubclassId",  nameKey:"SubclassName",  descKey:"Description", parentKey:"ClassId", parentType:"Classes" },
   Spells:     { idKey:"SpellId",     nameKey:"SpellName",     descKey:"Description", parentKey:null },
 };
 
@@ -287,6 +289,13 @@ function renderEditor(){
   const m = TYPE_META[currentType] || {};
   const cols = getColumns(currentType);
   const idKey = m.idKey;
+
+  // Back-compat: some older drafts/bundles used `classId` for subclasses.
+  // Keep `ClassId` as the canonical column so TSV export stays correct.
+  if (currentType === "Subclasses"){
+    if (!norm(currentRow?.ClassId) && norm(currentRow?.classId)) currentRow.ClassId = currentRow.classId;
+    if (!norm(currentRow?.classId) && norm(currentRow?.ClassId)) currentRow.classId = currentRow.ClassId;
+  }
 
   els.crumb.textContent = `${currentType} → ${getDisplayName(currentType, currentRow)} (${norm(currentRow[idKey])})`;
 
@@ -550,6 +559,7 @@ function wireUI(){
   els.btnUpdatePreview = document.getElementById("btnUpdatePreview");
   els.btnClearPreview = document.getElementById("btnClearPreview");
   els.btnRefreshBuilder = document.getElementById("btnRefreshBuilder");
+  els.btnResetLocal = document.getElementById("btnResetLocal");
 
   // quick add
   document.getElementById("btnQuickAddRace").addEventListener("click", ()=> startAdd("Races"));
@@ -622,6 +632,25 @@ function wireUI(){
     const base = "/editor/builder/?embed=1";
     els.builderFrame.src = base + "&t=" + Date.now();
     toast("Builder refreshed.");
+  });
+
+  // One-click cleanup for "ghost" rows caused by old localStorage drafts.
+  // This does NOT touch server data — only the maintainer's browser.
+  els.btnResetLocal?.addEventListener("click", ()=>{
+    try{
+      localStorage.removeItem(CMS_DRAFT_KEY);
+      localStorage.removeItem("hbcr_cms_apply_preview");
+
+      // Design-mode drafts (layout/bindings) and mod snapshot caches can also confuse people.
+      localStorage.removeItem("hbcr_design_draft");
+      localStorage.removeItem("hbcr_editor_lastSeenRowKeys");
+      localStorage.removeItem("hbcr_mod_snapshot_prev_v1");
+    }catch{}
+
+    // reload builder without preview mode
+    const base = "/editor/builder/?embed=1";
+    els.builderFrame.src = base + "&t=" + Date.now();
+    toast("Local drafts cleared.");
   });
 
   // drawer hide/show
