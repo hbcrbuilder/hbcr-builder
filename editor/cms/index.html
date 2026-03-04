@@ -3,198 +3,109 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HBCR Content Editor · Easy Mode</title>
+  <title>HBCR Content Manager</title>
   <link rel="icon" type="image/png" href="/assets/ui/hbcr-icon.png"/>
   <link rel="stylesheet" href="/src/ui.css"/>
   <link rel="stylesheet" href="/editor/cms/cms.css"/>
 </head>
 <body>
-  <div class="cms-stage">
-    <!-- Full-screen Builder Preview (the real builder) -->
-    <iframe id="builderFrame" class="cms-builder" src="/editor/builder/?embed=1" title="HBCR Builder"></iframe>
+  <div class="stage">
+    <!-- Real Builder behind the editor -->
+    <iframe id="builderFrame" class="builder" src="/editor/builder/?embed=1&cmsPreview=1" title="HBCR Builder"></iframe>
 
-    <!-- Popout Editor Drawer (Easy Mode) -->
-    <div class="cms-drawer is-open" id="drawer">
-      <header class="cms-topbar">
-        <div class="cms-topbar-left">
-          <img class="cms-logo" src="/assets/ui/hbcr-icon.png" alt="HBCR" />
+    <!-- Editor panel -->
+    <div class="panel">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/ui/hbcr-icon.png" alt="HBCR" />
           <div>
-            <div class="cms-title">Content Editor <span class="cms-pill">Easy Mode</span></div>          </div>
+            <div class="title">Content Manager</div>
+            <div class="sub">Non-technical workflow · Export TSV for Google Sheets</div>
+          </div>
         </div>
-        <div class="cms-topbar-right">
-          <button class="btn btn-small" id="btnToggleDrawer" type="button" title="Hide/Show editor menu">Hide</button>
-          <a class="btn btn-small" href="/editor/builder/">Open Builder (Design Mode)</a>
+        <div class="top-actions">
+          <label class="toggle"><input id="togPreview" type="checkbox" /> Live preview</label>
+          <button class="btn btn-small" id="btnRefreshBuilder" type="button">Refresh Preview</button>
+          <button class="btn btn-small" id="btnReset" type="button" title="Clears local changes + preview overlay">Reset Local</button>
           <a class="btn btn-small" href="/">Back</a>
         </div>
       </header>
 
-      <div class="cms-drawer-body">
-        <div class="cms-tabs">
-          <button class="cms-tab is-active" id="tabLibrary" type="button">Library</button>
-          <button class="cms-tab" id="tabEditor" type="button">Editor</button>
-          <button class="cms-tab" id="tabDiff" type="button">Diff</button>
+      <div class="body">
+        <!-- Main view -->
+        <div id="mainView">
+          <div class="typebar">
+            <button class="typebtn is-active" id="btnType_Races" type="button">Races</button>
+            <button class="typebtn" id="btnType_Subraces" type="button">Subraces</button>
+            <button class="typebtn" id="btnType_Classes" type="button">Classes</button>
+            <button class="typebtn" id="btnType_Subclasses" type="button">Subclasses</button>
+            <div class="spacer"></div>
+            <button class="btn" id="btnExport" type="button">Export Changes</button>
+          </div>
+
+          <div class="split">
+            <!-- List -->
+            <section class="card list">
+              <div class="cardhead">
+                <div>
+                  <div class="h" id="panelTitle">Races</div>
+                  <div class="muted" id="count">0 items</div>
+                </div>
+                <div class="row">
+                  <input class="input" id="search" placeholder="Search…" />
+                  <button class="btn btn-small" id="btnReload" type="button">Reload</button>
+                  <button class="btn" id="btnAdd" type="button">+ Add</button>
+                </div>
+              </div>
+
+              <div class="tablewrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Parent</th>
+                      <th>ID</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableBody"></tbody>
+                </table>
+              </div>
+              <div class="status" id="status">Loading…</div>
+            </section>
+
+            <!-- Form -->
+            <section class="card form">
+              <div class="cardhead">
+                <div>
+                  <div class="h" id="formTitle">Add</div>
+                  <div class="muted" id="formHelp"></div>
+                </div>
+                <div class="row">
+                  <button class="btn btn-small" id="btnDelete" type="button" title="Marks this ID as deleted for export">Delete</button>
+                  <button class="btn" id="btnSave" type="button">Save</button>
+                </div>
+              </div>
+              <div id="form" class="formbody">
+                <div class="empty">Click <b>+ Add</b> or <b>Edit</b> to start.</div>
+              </div>
+            </section>
+          </div>
         </div>
 
-        <div class="cms-tabpanes">
-          <section class="cms-panel" id="cmsLibrary">
-            <div class="cms-panel-header">
-              <div class="cms-h">Library</div>
-              
-            </div>
-            
-            <div class="cms-controls">
-              <div class="cms-quick">
-                <button class="btn" id="btnQuickAddRace">+ Add Race</button>
-                <button class="btn" id="btnQuickAddSubrace">+ Add Subrace</button>
-                <button class="btn" id="btnQuickAddClass">+ Add Class</button>
-                <button class="btn" id="btnQuickAddSubclass">+ Add Subclass</button>
-              </div>
-
-              <label class="cms-label" style="margin-top:10px">Browse</label>
-              <select class="cms-select" id="selType"></select>
-
-              <label class="cms-label">Search</label>
-              <input class="cms-input" id="inpSearch" placeholder="Search name or ID…" />
-
-              <div class="cms-row" style="margin-top:10px;gap:10px">
-                <button class="btn btn-small" id="btnReload" type="button">Reload</button>
-              </div>
-
-              <div class="cms-help" id="cmsStatus">Loading bundle…</div>
-            </div>
-
-            <div class="cms-list" id="listItems"></div>
-          </section>
-
-          <section class="cms-panel is-hidden" id="cmsEditor">
-            <div class="cms-panel-header">
-              <div>
-                <div class="cms-h">Editor</div>
-                <div class="cms-help" id="crumb">Select an item from the Library.</div>
-              </div>
-              <div class="cms-actions">
-                <button class="btn btn-small" id="btnCopyRow">Copy TSV Row</button>
-                <button class="btn btn-small" id="btnCopyHeaderRow">Copy TSV Header + Row</button>
-                <button class="btn btn-small" id="btnUpdatePreview" title="Applies this item to the Builder preview behind the menu">Update Preview</button>
-                <button class="btn btn-small" id="btnClearPreview" title="Removes this item from the local Builder preview">Clear Preview</button>
-                <button class="btn btn-small" id="btnRefreshBuilder">Refresh Builder</button>
-              </div>
-            </div>
-
-            <div class="cms-form" id="form">
-              <div class="cms-empty">No item selected.</div>
-            </div>
-          </section>
-
-          <section class="cms-panel is-hidden" id="cmsDiff">
-            <div class="cms-panel-header">
-              <div>
-                <div class="cms-h">Mod Diff</div>
-                <div class="cms-help">Paste TSV exports (old vs new) to see what's added/changed/removed, and copy only the rows you need to paste into Sheets.</div>
-              </div>
-              <div class="cms-actions">
-                <button class="btn btn-small" id="btnRunDiff" type="button">Run Diff</button>
-                <button class="btn btn-small" id="btnCopyAdded" type="button" title="Copy TSV header + all added rows">Copy Added TSV</button>
-                <button class="btn btn-small" id="btnCopyChanged" type="button" title="Copy TSV header + all changed rows">Copy Changed TSV</button>
-              </div>
-            </div>
-
-            <div class="cms-controls">
-              <label class="cms-label">Type</label>
-              <select class="cms-select" id="diffType">
-                <option>Races</option>
-                <option>Subraces</option>
-                <option>Classes</option>
-                <option>Subclasses</option>
-              </select>
-
-              <div class="cms-row" style="margin-top:10px; gap:10px">
-                <div style="flex:1">
-                  <label class="cms-label">OLD TSV (current live)</label>
-                  <textarea class="cms-textarea" id="diffOld" placeholder="Paste OLD TSV export here…"></textarea>
-                </div>
-                <div style="flex:1">
-                  <label class="cms-label">NEW TSV (updated mod)</label>
-                  <textarea class="cms-textarea" id="diffNew" placeholder="Paste NEW TSV export here…"></textarea>
-                </div>
-              </div>
-
-              <div class="cms-help" id="diffSummary" style="margin-top:10px"></div>
-
-              <div class="cms-row" style="margin-top:10px; gap:10px">
-                <div style="flex:1">
-                  <label class="cms-label">Added</label>
-                  <pre class="cms-pre" id="diffAdded">(none)</pre>
-                </div>
-                <div style="flex:1">
-                  <label class="cms-label">Changed</label>
-                  <pre class="cms-pre" id="diffChanged">(none)</pre>
-                </div>
-                <div style="flex:1">
-                  <label class="cms-label">Removed</label>
-                  <pre class="cms-pre" id="diffRemoved">(none)</pre>
-                </div>
-              </div>
-            </div>
-          </section>
-
+        <!-- Export view -->
+        <div id="exportView" class="is-hidden">
+          <div class="exportbar">
+            <button class="btn" id="btnBack" type="button">← Back</button>
+            <div class="h">Export Changes (TSV)</div>
+            <div class="muted">Copy each block and paste into the matching Google Sheet.</div>
+          </div>
+          <div id="exportOut" class="exportout"></div>
         </div>
       </div>
     </div>
 
-    
-    <!-- Add New Modal -->
-    <div class="cms-modal is-hidden" id="addModal" aria-hidden="true">
-      <div class="cms-modal-backdrop" id="addModalBackdrop"></div>
-      <div class="cms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
-        <div class="cms-modal-header">
-          <div class="cms-modal-title" id="addModalTitle">Add New</div>
-          <button class="btn btn-small" id="addModalClose" type="button">Close</button>
-        </div>
-
-        <div class="cms-modal-body">
-          <div class="cms-help" id="addModalHelp">Create a new item for the current type.</div>
-
-          <div class="cms-field is-hidden" id="addParentRow">
-            <label class="cms-label" id="addParentLabel">Parent</label>
-            <select class="cms-input" id="addParentSelect"></select>
-          </div>
-
-          <div class="cms-field">
-            <label class="cms-label">ID</label>
-            <input class="cms-input" id="addId" placeholder="unique id..." />
-          </div>
-
-          <div class="cms-field">
-            <label class="cms-label">Name</label>
-            <input class="cms-input" id="addName" placeholder="display name..." />
-          </div>
-        </div>
-
-        <div class="cms-modal-actions">
-          <button class="btn" id="addModalCreate" type="button">Create</button>
-          <button class="btn" id="addModalCancel" type="button">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-
-
-    <!-- Simple Modal -->
-    <div class="cms-modal is-hidden" id="modal">
-      <div class="cms-modal-backdrop" id="modalBackdrop"></div>
-      <div class="cms-modal-card">
-        <div class="cms-modal-title" id="modalTitle">Add</div>
-        <div class="cms-modal-body" id="modalBody"></div>
-        <div class="cms-modal-actions">
-          <button class="btn btn-small" id="modalCancel" type="button">Cancel</button>
-          <button class="btn btn-small" id="modalOk" type="button">Create</button>
-        </div>
-      </div>
-    </div>
-
-<!-- Small handle shown when drawer is hidden -->
-    <button class="cms-handle is-hidden" id="drawerHandle" type="button">Editor Menu</button>
+    <div id="toast" class="toast" aria-live="polite"></div>
   </div>
 
   <script src="/editor/cms/cms.js"></script>

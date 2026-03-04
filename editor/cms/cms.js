@@ -1,829 +1,732 @@
-
-// HBCR Easy Mode Content Editor (Manual Paste Workflow)
-// - Reads bundle from Worker (/api/bundle)
-// - Provides simple "Add" wizards with parent dropdowns
-// - Exports TSV rows for manual paste into Google Sheets
-// - Shows the real Builder behind the editor (no injection, no overrides)
+// HBCR Content Manager (Non-technical maintainer UX)
+// Goals:
+// - Never require the maintainer to write IDs or TSV manually
+// - Parent selection is always a dropdown (Subrace -> Race, Subclass -> Class)
+// - Track changes locally and export TSV blocks for Google Sheets
+// - Optional live preview in the Builder behind the editor (via liveData cmsPreview overlay)
 
 const HBCR_WORKER_BASE = (typeof window !== "undefined" && window.__HBCR_WORKER_BASE__)
   ? String(window.__HBCR_WORKER_BASE__).replace(/\/$/, "")
   : "https://hbcr-api.hbcrbuilder.workers.dev";
 
-
-// ---------- Floating window (draggable + persistent size/pos) ----------
-const WINDOW_STATE_KEY = "hbcr_cms_window_v1";
-function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
-function loadWindowState(){
-  try { return JSON.parse(localStorage.getItem(WINDOW_STATE_KEY) || "null"); } catch { return null; }
-}
-function saveWindowState(state){
-  try { localStorage.setItem(WINDOW_STATE_KEY, JSON.stringify(state)); } catch {}
-}
-
-function applyWindowState(drawer, st){
-  if (!st) return;
-  if (typeof st.top === "number") drawer.style.setProperty("--cms-top", st.top + "px");
-  if (typeof st.left === "number") drawer.style.setProperty("--cms-left", st.left + "px");
-  if (typeof st.w === "number") drawer.style.setProperty("--cms-w", st.w + "px");
-  if (typeof st.h === "number") drawer.style.setProperty("--cms-h", st.h + "px");
-}
-
-function setupDrawerWindowing(){
-  const drawer = document.getElementById("drawer");
-  if (!drawer) return;
-
-  // Restore saved state
-  applyWindowState(drawer, loadWindowState());
-
-  // Drag by topbar, but ignore clicks on controls/links
-  const handle = drawer.querySelector(".cms-topbar");
-  let dragging = false;
-  let startX = 0, startY = 0, startTop = 0, startLeft = 0;
-
-  function isInteractive(el){
-    return !!el.closest("button,a,input,select,textarea,label");
-  }
-
-  handle?.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) return;
-    if (isInteractive(e.target)) return;
-
-    dragging = true;
-    handle.setPointerCapture?.(e.pointerId);
-    const rect = drawer.getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
-    startTop = rect.top;
-    startLeft = rect.left;
-    e.preventDefault();
-  });
-
-  window.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const rect = drawer.getBoundingClientRect();
-
-    const newLeft = clamp(startLeft + dx, 8, vw - rect.width - 8);
-    const newTop  = clamp(startTop + dy, 8, vh - rect.height - 8);
-
-    drawer.style.setProperty("--cms-left", newLeft + "px");
-    drawer.style.setProperty("--cms-top", newTop + "px");
-  }, { passive: true });
-
-  window.addEventListener("pointerup", () => {
-    if (!dragging) return;
-    dragging = false;
-
-    const rect = drawer.getBoundingClientRect();
-    saveWindowState({
-      top: Math.round(rect.top),
-      left: Math.round(rect.left),
-      w: Math.round(rect.width),
-      h: Math.round(rect.height),
-    });
-  });
-
-  // Persist resizes (the CSS uses resize: both)
-  const ro = new ResizeObserver(() => {
-    const rect = drawer.getBoundingClientRect();
-    // Update CSS vars so the resize "sticks" with our var-driven sizing
-    drawer.style.setProperty("--cms-w", Math.round(rect.width) + "px");
-    drawer.style.setProperty("--cms-h", Math.round(rect.height) + "px");
-    saveWindowState({
-      top: Math.round(rect.top),
-      left: Math.round(rect.left),
-      w: Math.round(rect.width),
-      h: Math.round(rect.height),
-    });
-  });
-  ro.observe(drawer);
-}
-
-
 function hbcrApi(path) {
   const p = String(path || "");
+  if (p.startsWith("http")) return p;
   if (!p.startsWith("/")) return HBCR_WORKER_BASE + "/" + p;
   return HBCR_WORKER_BASE + p;
 }
 
-const els = {};
-let bundle = {};
-let currentType = "Races";
-let currentId = null;
-let currentRow = null;
-
-// Local preview patch storage (read by src/data/liveData.js when ?cmsPreview=1)
-const CMS_DRAFT_KEY = "hbcr_cms_draft_v3";
-
-function loadCmsDraft(){
-  try{
-    const raw = localStorage.getItem(CMS_DRAFT_KEY);
-    const obj = raw ? JSON.parse(raw) : {};
-    return (obj && typeof obj === 'object') ? obj : {};
-  }catch{
-    return {};
-  }
-}
-
-function saveCmsDraft(d){
-  try{ localStorage.setItem(CMS_DRAFT_KEY, JSON.stringify(d || {})); }catch{}
-}
-
-function setDraftEntry(type, id, row){
-  const m = TYPE_META[type] || {};
-  const idKey = m.idKey;
-  const draft = loadCmsDraft();
-  const key = `${type}::${id}`;
-  const out = {};
-  // store only non-id fields (liveData will add idKey on insert)
-  for (const k of Object.keys(row || {})){
-    if (k === idKey) continue;
-    out[k] = row[k];
-  }
-  draft[key] = out;
-  saveCmsDraft(draft);
-}
-
-function clearDraftEntry(type, id){
-  const draft = loadCmsDraft();
-  const key = `${type}::${id}`;
-  if (draft && Object.prototype.hasOwnProperty.call(draft, key)){
-    delete draft[key];
-    saveCmsDraft(draft);
-    return true;
-  }
-  return false;
-}
-
+// ==============================
+// Types
+// ==============================
 const TYPE_META = {
-  Races:      { idKey:"RaceId",      nameKey:"RaceName",      descKey:"Description", parentKey:null },
-  Subraces:   { idKey:"SubraceId",   nameKey:"SubraceName",   descKey:"Description", parentKey:"RaceId", parentType:"Races" },
-  Classes:    { idKey:"ClassId",     nameKey:"ClassName",     descKey:"Description", parentKey:null },
-  Subclasses: { idKey:"SubclassId",  nameKey:"SubclassName",  descKey:"Description", parentKey:"ClassId", parentType:"Classes" },
-  Spells:     { idKey:"SpellId",     nameKey:"SpellName",     descKey:"Description", parentKey:null },
+  Races:      { idKey: "RaceId",      nameKey: "RaceName",      descKey: "Description", parentKey: null,        parentType: null },
+  Subraces:   { idKey: "SubraceId",   nameKey: "SubraceName",   descKey: "Description", parentKey: "RaceId",   parentType: "Races" },
+  Classes:    { idKey: "ClassId",     nameKey: "ClassName",     descKey: "Description", parentKey: null,        parentType: null },
+  Subclasses: { idKey: "SubclassId",  nameKey: "SubclassName",  descKey: "Description", parentKey: "ClassId",  parentType: "Classes" },
 };
 
-function safeStr(x){ return (x==null) ? "" : String(x); }
-function norm(s){ return safeStr(s).trim(); }
+const ORDERED_TYPES = ["Races", "Subraces", "Classes", "Subclasses"];
 
-async function loadBundle(){
-  els.cmsStatus.textContent = "Loading bundle…";
-  const res = await fetch(hbcrApi("/api/bundle"), { cache:"no-store" });
+// ==============================
+// Storage
+// ==============================
+const CHANGES_KEY = "hbcr_cms_changes_v1";
+const CMS_DRAFT_KEY = "hbcr_cms_draft_v3";            // read by src/data/liveData.js
+const CMS_APPLY_KEY = "hbcr_cms_apply_preview";        // read by src/data/liveData.js
+
+function loadJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const obj = JSON.parse(raw);
+    return (obj && typeof obj === "object") ? obj : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJson(key, obj) {
+  try { localStorage.setItem(key, JSON.stringify(obj)); } catch {}
+}
+
+function loadChanges() {
+  return loadJson(CHANGES_KEY, { upserts: {}, deletes: {} });
+}
+
+function saveChanges(ch) {
+  saveJson(CHANGES_KEY, ch || { upserts: {}, deletes: {} });
+}
+
+function loadDraft() {
+  return loadJson(CMS_DRAFT_KEY, {});
+}
+
+function saveDraft(d) {
+  saveJson(CMS_DRAFT_KEY, d || {});
+}
+
+function setPreviewEnabled(enabled) {
+  try { localStorage.setItem(CMS_APPLY_KEY, enabled ? "1" : "0"); } catch {}
+}
+
+function isPreviewEnabled() {
+  try { return String(localStorage.getItem(CMS_APPLY_KEY) || "0") === "1"; } catch { return false; }
+}
+
+// Mirror changes into the draft overlay so the embedded Builder can preview.
+function syncChangesToDraft(bundle) {
+  const ch = loadChanges();
+  const draft = {};
+
+  const upserts = ch.upserts || {};
+  for (const type of Object.keys(upserts)) {
+    const m = TYPE_META[type];
+    if (!m) continue;
+    const byId = upserts[type] || {};
+    for (const id of Object.keys(byId)) {
+      const row = byId[id];
+      if (!row || typeof row !== "object") continue;
+      // Ensure canonical idKey is present.
+      const withId = { ...row, [m.idKey]: id };
+      draft[`${type}::${id}`] = withId;
+    }
+  }
+
+  // NOTE: deletes are not applied to preview overlay (bundle-only deletion would
+  // require a more invasive builder-side filter). For maintainers, previewing
+  // deletions is less important than safe additions/edits.
+
+  saveDraft(draft);
+}
+
+// ==============================
+// Helpers
+// ==============================
+function safeStr(x) { return (x == null) ? "" : String(x); }
+function norm(s) { return safeStr(s).trim(); }
+
+function slugify(s) {
+  return norm(s)
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
+}
+
+function tsvEscape(s) {
+  const v = safeStr(s);
+  // TSV doesn't need quoting unless you want; we just replace tabs/newlines.
+  return v.replace(/\t/g, " ").replace(/\r?\n/g, " ");
+}
+
+function copyToClipboard(text) {
+  return navigator.clipboard.writeText(text);
+}
+
+function el(id) { return document.getElementById(id); }
+
+// ==============================
+// State
+// ==============================
+let bundle = {};
+let currentType = "Races";
+let selectedId = null;
+
+// ==============================
+// Bundle access
+// ==============================
+async function loadBundle() {
+  setStatus("Loading bundle…");
+  const res = await fetch(hbcrApi("/api/bundle"), { cache: "no-store" });
   if (!res.ok) throw new Error("bundle fetch failed: " + res.status);
   bundle = await res.json();
-  els.cmsStatus.textContent = "Bundle loaded.";
+  setStatus("Bundle loaded.");
 }
 
-function getSheetRows(type){
-  const rows = bundle?.[type];
-  return Array.isArray(rows) ? rows : [];
+function sheetRows(type) {
+  const arr = bundle?.[type];
+  return Array.isArray(arr) ? arr : [];
 }
 
-function getColumns(type){
-  const rows = getSheetRows(type);
+function getColumns(type) {
+  const rows = sheetRows(type);
   if (rows.length) return Object.keys(rows[0]);
-  // fallback: use meta keys first
-  const m = TYPE_META[type] || {};
-  const base = [m.idKey, m.parentKey, m.nameKey, m.descKey].filter(Boolean);
-  // de-dupe
-  return [...new Set(base)];
+  const m = TYPE_META[type];
+  if (!m) return [];
+  return [m.idKey, m.parentKey, m.nameKey, m.descKey].filter(Boolean);
 }
 
-function getDisplayName(type, row){
-  const m = TYPE_META[type] || {};
-  return norm(row?.[m.nameKey]) || norm(row?.[m.idKey]) || "(unnamed)";
+function getRowById(type, id) {
+  const m = TYPE_META[type];
+  if (!m) return null;
+  const idKey = m.idKey;
+  const fromBundle = sheetRows(type).find(r => norm(r?.[idKey]) === norm(id));
+
+  const ch = loadChanges();
+  const up = ch.upserts?.[type]?.[id];
+  if (up) return { ...fromBundle, ...up, [idKey]: id };
+  return fromBundle || null;
 }
 
-function listTypes(){
-  // only show types that exist in bundle
-  const keys = Object.keys(bundle || {});
-  const ordered = ["Races","Subraces","Classes","Subclasses","Spells"];
-  return ordered.filter(k => keys.includes(k));
-}
+function listItems(type, search) {
+  const m = TYPE_META[type];
+  const idKey = m.idKey;
+  const nameKey = m.nameKey;
+  const parentKey = m.parentKey;
 
-function renderTypeSelect(){
-  const types = listTypes();
-  els.selType.innerHTML = "";
-  for (const t of types){
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
-    els.selType.appendChild(opt);
-  }
-  if (!types.includes(currentType)) currentType = types[0] || "Races";
-  els.selType.value = currentType;
-}
+  const ch = loadChanges();
+  const deletes = new Set(Object.keys(ch.deletes?.[type] || {}));
 
-function renderList(){
-  const q = norm(els.inpSearch.value).toLowerCase();
-  const rows = getSheetRows(currentType);
-  const m = TYPE_META[currentType] || {};
-  const idKey = m.idKey || "id";
-  const nameKey = m.nameKey || "name";
+  // Base from bundle
+  const base = sheetRows(type)
+    .map(r => ({ ...r }))
+    .filter(r => !deletes.has(norm(r?.[idKey])));
 
-  const out = document.createElement("div");
-  out.className = "cms-list-inner";
-
-  let shown = 0;
-  for (const r of rows){
+  // Apply upserts (existing edits + new rows)
+  const upserts = ch.upserts?.[type] || {};
+  const seen = new Map();
+  for (const r of base) {
     const id = norm(r?.[idKey]);
     if (!id) continue;
-    const nm = norm(r?.[nameKey]) || id;
-    const hay = (id + " " + nm).toLowerCase();
-    if (q && !hay.includes(q)) continue;
-
-    const item = document.createElement("div");
-    item.className = "cms-item";
-    item.innerHTML = `
-      <div class="cms-item-main">
-        <div class="cms-item-name">${nm}</div>
-        <div class="cms-item-id">${id}</div>
-      </div>
-      <button class="btn btn-small" type="button">Edit</button>
-    `;
-    item.querySelector("button").addEventListener("click", ()=> selectItem(currentType, id));
-    out.appendChild(item);
-    shown++;
-    if (shown >= 250) break; // keep it snappy
+    const up = upserts[id];
+    const merged = up ? { ...r, ...up, [idKey]: id } : r;
+    seen.set(id, merged);
   }
-
-  els.listItems.innerHTML = "";
-  els.listItems.appendChild(out);
-  els.cmsStatus.textContent = `Showing ${shown} of ${rows.length} ${currentType}.`;
-}
-
-function selectItem(type, id){
-  currentType = type;
-  currentId = id;
-  const rows = getSheetRows(type);
-  const m = TYPE_META[type] || {};
-  const idKey = m.idKey || "id";
-  currentRow = rows.find(r => norm(r?.[idKey]) === id) || null;
-
-  // switch to editor tab
-  setTab("editor");
-  renderEditor();
-}
-
-function setTab(which){
-  const isLib = which === "library";
-  const isEditor = which === "editor";
-  const isDiff = which === "diff";
-
-  els.tabLibrary.classList.toggle("is-active", isLib);
-  els.tabEditor.classList.toggle("is-active", isEditor);
-  if (els.tabDiff) els.tabDiff.classList.toggle("is-active", isDiff);
-
-  els.cmsLibrary.classList.toggle("is-hidden", !isLib);
-  els.cmsEditor.classList.toggle("is-hidden", !isEditor);
-  if (els.cmsDiff) els.cmsDiff.classList.toggle("is-hidden", !isDiff);
-}
-
-function renderEditor(){
-  if (!currentRow){
-    els.crumb.textContent = "Select an item from the Library.";
-    els.form.innerHTML = `<div class="cms-empty">No item selected.</div>`;
-    return;
-  }
-  const m = TYPE_META[currentType] || {};
-  const cols = getColumns(currentType);
-  const idKey = m.idKey;
-
-  els.crumb.textContent = `${currentType} → ${getDisplayName(currentType, currentRow)} (${norm(currentRow[idKey])})`;
-
-  const wrap = document.createElement("div");
-  wrap.className = "cms-form-inner";
-
-  // Helper to build input rows
-  function addInput(label, key, kind="text"){
-    const val = safeStr(currentRow?.[key] ?? "");
-    const row = document.createElement("div");
-    row.className = "cms-field";
-    const readOnly = key === idKey ? "readonly" : "";
-    row.innerHTML = `
-      <label class="cms-label">${label}</label>
-      <input class="cms-input" data-key="${key}" type="${kind}" value="${escapeHtml(val)}" ${readOnly}/>
-    `;
-    wrap.appendChild(row);
-  }
-  function addTextarea(label, key){
-    const val = safeStr(currentRow?.[key] ?? "");
-    const row = document.createElement("div");
-    row.className = "cms-field";
-    row.innerHTML = `
-      <label class="cms-label">${label}</label>
-      <textarea class="cms-input" data-key="${key}" rows="5">${escapeHtml(val)}</textarea>
-    `;
-    wrap.appendChild(row);
-  }
-  function addSelect(label, key, options){
-    const val = safeStr(currentRow?.[key] ?? "");
-    const row = document.createElement("div");
-    row.className = "cms-field";
-    const opts = options.map(o => `<option value="${escapeAttr(o.value)}"${o.value===val?' selected':''}>${escapeHtml(o.label)}</option>`).join("");
-    row.innerHTML = `
-      <label class="cms-label">${label}</label>
-      <select class="cms-select" data-key="${key}">${opts}</select>
-    `;
-    wrap.appendChild(row);
-  }
-
-  // Main fields first
-  addInput("ID", idKey);
-
-  if (m.parentKey){
-    const parentType = m.parentType;
-    const parentMeta = TYPE_META[parentType];
-    const opts = [{value:"", label:"(choose)"}];
-    for (const pr of getSheetRows(parentType)){
-      const pid = norm(pr?.[parentMeta.idKey]);
-      if (!pid) continue;
-      const pl = norm(pr?.[parentMeta.nameKey]) || pid;
-      opts.push({ value: pid, label: `${pl} (${pid})` });
+  for (const id of Object.keys(upserts)) {
+    if (deletes.has(norm(id))) continue;
+    if (!seen.has(norm(id))) {
+      const row = upserts[id];
+      seen.set(norm(id), { ...row, [idKey]: id });
     }
-    addSelect(m.parentType === "Classes" ? "Parent Class" : "Parent Race", m.parentKey, opts);
   }
 
-  addInput("Name", m.nameKey);
+  let items = Array.from(seen.values());
 
-  if (m.descKey && cols.includes(m.descKey)){
-    addTextarea("Description", m.descKey);
-  }
-
-  // Show other columns in an "Advanced" collapsible
-  const adv = document.createElement("details");
-  adv.className = "cms-advanced";
-  adv.innerHTML = `<summary>Advanced fields</summary>`;
-  const advWrap = document.createElement("div");
-  advWrap.className = "cms-advanced-inner";
-
-  const mainKeys = new Set([m.idKey,m.parentKey,m.nameKey,m.descKey].filter(Boolean));
-  for (const k of cols){
-    if (mainKeys.has(k)) continue;
-    const v = safeStr(currentRow?.[k] ?? "");
-    const row = document.createElement("div");
-    row.className = "cms-field";
-    row.innerHTML = `
-      <label class="cms-label">${escapeHtml(k)}</label>
-      <input class="cms-input" data-key="${escapeAttr(k)}" value="${escapeHtml(v)}"/>
-    `;
-    advWrap.appendChild(row);
-  }
-  adv.appendChild(advWrap);
-
-  wrap.appendChild(adv);
-
-  // Wire inputs
-  wrap.querySelectorAll("[data-key]").forEach(el=>{
-    el.addEventListener("input", ()=>{
-      const key = el.getAttribute("data-key");
-      currentRow[key] = el.value;
+  const q = norm(search).toLowerCase();
+  if (q) {
+    items = items.filter(r => {
+      const id = norm(r?.[idKey]).toLowerCase();
+      const nm = norm(r?.[nameKey]).toLowerCase();
+      const parent = parentKey ? norm(r?.[parentKey]).toLowerCase() : "";
+      return id.includes(q) || nm.includes(q) || parent.includes(q);
     });
-    el.addEventListener("change", ()=>{
-      const key = el.getAttribute("data-key");
-      currentRow[key] = el.value;
-    });
+  }
+
+  items.sort((a, b) => {
+    const an = norm(a?.[nameKey]).toLowerCase();
+    const bn = norm(b?.[nameKey]).toLowerCase();
+    if (an && bn) return an.localeCompare(bn);
+    return norm(a?.[idKey]).localeCompare(norm(b?.[idKey]));
   });
 
-  els.form.innerHTML = "";
-  els.form.appendChild(wrap);
+  return items;
 }
 
-function escapeHtml(s){
-  return safeStr(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// ==============================
+// UI rendering
+// ==============================
+function setStatus(msg) {
+  el("status").textContent = msg;
 }
-function escapeAttr(s){ return escapeHtml(s).replace(/"/g, "&quot;"); }
 
-function tsvSanitizeCell(v){
-  return safeStr(v).replace(/\t/g, " ").replace(/\r?\n/g, "\\n");
+function setType(type) {
+  if (!TYPE_META[type]) return;
+  currentType = type;
+  selectedId = null;
+  // Highlight buttons
+  for (const t of ORDERED_TYPES) {
+    const b = el(`btnType_${t}`);
+    if (!b) continue;
+    b.classList.toggle("is-active", t === currentType);
+  }
+  el("panelTitle").textContent = type;
+  renderTable();
+  renderForm(null);
 }
-function buildTSVRow(type, row, includeHeader){
-  const cols = getColumns(type);
-  const header = cols.join("\t");
-  const line = cols.map(c => tsvSanitizeCell(row?.[c] ?? "")).join("\t");
-  return includeHeader ? (header + "\n" + line) : line;
-}
-async function copyText(txt){
-  try{
-    await navigator.clipboard.writeText(txt);
-    toast("Copied to clipboard.");
-  }catch{
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = txt; document.body.appendChild(ta);
-    ta.select(); document.execCommand("copy");
-    ta.remove();
-    toast("Copied to clipboard.");
+
+function renderTable() {
+  const m = TYPE_META[currentType];
+  const list = el("tableBody");
+  list.innerHTML = "";
+
+  const rows = listItems(currentType, el("search").value);
+  el("count").textContent = `${rows.length} items`;
+
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    const id = norm(r?.[m.idKey]);
+    tr.dataset.id = id;
+    if (id && id === selectedId) tr.classList.add("is-selected");
+
+    const tdName = document.createElement("td");
+    tdName.textContent = norm(r?.[m.nameKey]) || "(unnamed)";
+    const tdParent = document.createElement("td");
+    tdParent.textContent = m.parentKey ? (norm(r?.[m.parentKey]) || "—") : "—";
+    const tdId = document.createElement("td");
+    tdId.className = "mono";
+    tdId.textContent = id || "";
+    const tdEdit = document.createElement("td");
+    const btn = document.createElement("button");
+    btn.className = "btn btn-small";
+    btn.textContent = "Edit";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectRow(id);
+    });
+    tdEdit.appendChild(btn);
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdParent);
+    tr.appendChild(tdId);
+    tr.appendChild(tdEdit);
+
+    tr.addEventListener("click", () => selectRow(id));
+    list.appendChild(tr);
   }
 }
 
-function toast(msg){
-  // minimal toast using existing styles; reuse cmsStatus line
-  els.cmsStatus.textContent = msg;
-  setTimeout(()=> renderList(), 800);
+function selectRow(id) {
+  selectedId = id;
+  // re-render selection highlight
+  for (const tr of el("tableBody").querySelectorAll("tr")) {
+    tr.classList.toggle("is-selected", tr.dataset.id === id);
+  }
+  const row = getRowById(currentType, id);
+  renderForm(row);
 }
 
-// -------- Modal (Add New) --------
-let modalOkHandler = null;
-function openModal(title, bodyEl, onOk){
-  els.modalTitle.textContent = title;
-  els.modalBody.innerHTML = "";
-  els.modalBody.appendChild(bodyEl);
-  modalOkHandler = onOk;
-  els.modal.classList.remove("is-hidden");
-}
-function closeModal(){
-  els.modal.classList.add("is-hidden");
-  modalOkHandler = null;
+function renderParentOptions(parentType) {
+  const pm = TYPE_META[parentType];
+  const opts = sheetRows(parentType)
+    .map(r => ({ id: norm(r?.[pm.idKey]), name: norm(r?.[pm.nameKey]) }))
+    .filter(o => o.id);
+  opts.sort((a,b) => a.name.localeCompare(b.name));
+  return opts;
 }
 
-function makeField(label, inputEl){
-  const wrap = document.createElement("div");
-  wrap.className = "cms-field";
-  const lab = document.createElement("label");
-  lab.className = "cms-label";
-  lab.textContent = label;
-  wrap.appendChild(lab);
-  wrap.appendChild(inputEl);
-  return wrap;
-}
+function renderForm(row) {
+  const m = TYPE_META[currentType];
+  const form = el("form");
+  form.innerHTML = "";
 
-function slugify(s){
-  return norm(s).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"");
-}
+  const isNew = !row;
+  const title = isNew ? `Add ${currentType.slice(0, -1)}` : `Edit ${currentType.slice(0, -1)}`;
+  el("formTitle").textContent = title;
 
-function startAdd(type){
-  currentType = type;
-  els.selType.value = type;
-  setTab("editor");
+  const help = el("formHelp");
+  help.textContent = isNew
+    ? "Fill the simple fields. ID is generated automatically."
+    : "Edit fields and click Save. Export Changes generates TSV for Sheets.";
 
-  const m = TYPE_META[type];
-  const body = document.createElement("div");
+  const working = row ? { ...row } : {};
+  let workingId = norm(working?.[m.idKey]);
 
-  const inpName = document.createElement("input");
-  inpName.className = "cms-input";
-  inpName.placeholder = "Name…";
-
-  const inpId = document.createElement("input");
-  inpId.className = "cms-input";
-  inpId.placeholder = "ID…";
-
-  let selParent = null;
-  if (m.parentKey){
-    selParent = document.createElement("select");
-    selParent.className = "cms-select";
-    const parentType = m.parentType;
-    const parentMeta = TYPE_META[parentType];
+  // Parent
+  if (m.parentKey) {
+    const field = document.createElement("div");
+    field.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = (m.parentType === "Races") ? "Parent Race" : "Parent Class";
+    const sel = document.createElement("select");
+    sel.id = "inpParent";
     const opt0 = document.createElement("option");
     opt0.value = "";
-    opt0.textContent = "(choose)";
-    selParent.appendChild(opt0);
-    for (const pr of getSheetRows(parentType)){
-      const pid = norm(pr?.[parentMeta.idKey]);
-      if (!pid) continue;
-      const pl = norm(pr?.[parentMeta.nameKey]) || pid;
+    opt0.textContent = "— Select —";
+    sel.appendChild(opt0);
+    for (const o of renderParentOptions(m.parentType)) {
       const opt = document.createElement("option");
-      opt.value = pid;
-      opt.textContent = `${pl} (${pid})`;
-      selParent.appendChild(opt);
+      opt.value = o.id;
+      opt.textContent = o.name ? `${o.name} (${o.id})` : o.id;
+      sel.appendChild(opt);
     }
-    body.appendChild(makeField(parentType==="Classes" ? "Parent Class" : "Parent Race", selParent));
+    sel.value = norm(working?.[m.parentKey]);
+    field.appendChild(lab);
+    field.appendChild(sel);
+    form.appendChild(field);
   }
 
-  body.appendChild(makeField("Name", inpName));
-  body.appendChild(makeField("ID", inpId));
-
-  inpName.addEventListener("input", ()=>{
-    if (!norm(inpId.value)){
-      inpId.value = slugify(inpName.value);
-    }
-  });
-
-  openModal(`Add ${type.slice(0,-1)}`, body, ()=>{
-    const id = norm(inpId.value);
-    const name = norm(inpName.value);
-    const parent = selParent ? norm(selParent.value) : "";
-    if (!id){ toast("ID is required."); return; }
-    if (!name){ toast("Name is required."); return; }
-    if (selParent && !parent){ toast("Choose a parent first."); return; }
-
-    // Build new row with correct keys and empty defaults
-    const cols = getColumns(type);
-    const row = {};
-    for (const c of cols) row[c] = "";
-    row[m.idKey] = id;
-    row[m.nameKey] = name;
-    if (m.parentKey) row[m.parentKey] = parent;
-
-    // Add to local view (NOT to builder; user will paste TSV)
-    bundle[type] = getSheetRows(type).concat([row]);
-
-    closeModal();
-    // select and render
-    renderList();
-    selectItem(type, id);
-    toast("Row created locally. Copy TSV and paste into Sheets.");
-  });
-}
-
-// -------- UI wiring --------
-function wireUI(){
-  els.builderFrame = document.getElementById("builderFrame");
-  els.drawer = document.getElementById("drawer");
-  els.drawerHandle = document.getElementById("drawerHandle");
-  els.btnToggleDrawer = document.getElementById("btnToggleDrawer");
-
-  els.tabLibrary = document.getElementById("tabLibrary");
-  els.tabEditor = document.getElementById("tabEditor");
-  els.tabDiff = document.getElementById("tabDiff");
-  els.cmsLibrary = document.getElementById("cmsLibrary");
-  els.cmsEditor = document.getElementById("cmsEditor");
-  els.cmsDiff = document.getElementById("cmsDiff");
-  // Diff tool elements
-  els.diffType = document.getElementById("diffType");
-  els.diffOld = document.getElementById("diffOld");
-  els.diffNew = document.getElementById("diffNew");
-  els.btnRunDiff = document.getElementById("btnRunDiff");
-  els.diffSummary = document.getElementById("diffSummary");
-  els.diffAdded = document.getElementById("diffAdded");
-  els.diffChanged = document.getElementById("diffChanged");
-  els.diffRemoved = document.getElementById("diffRemoved");
-  els.btnCopyAdded = document.getElementById("btnCopyAdded");
-  els.btnCopyChanged = document.getElementById("btnCopyChanged");
-els.selType = document.getElementById("selType");
-  els.inpSearch = document.getElementById("inpSearch");
-  els.listItems = document.getElementById("listItems");
-  els.cmsStatus = document.getElementById("cmsStatus");
-
-  els.crumb = document.getElementById("crumb");
-  els.form = document.getElementById("form");
-
-  els.btnCopyRow = document.getElementById("btnCopyRow");
-  els.btnCopyHeaderRow = document.getElementById("btnCopyHeaderRow");
-  els.btnUpdatePreview = document.getElementById("btnUpdatePreview");
-  els.btnClearPreview = document.getElementById("btnClearPreview");
-  els.btnRefreshBuilder = document.getElementById("btnRefreshBuilder");
-
-  // quick add
-  document.getElementById("btnQuickAddRace").addEventListener("click", ()=> startAdd("Races"));
-  document.getElementById("btnQuickAddSubrace").addEventListener("click", ()=> startAdd("Subraces"));
-  document.getElementById("btnQuickAddClass").addEventListener("click", ()=> startAdd("Classes"));
-  document.getElementById("btnQuickAddSubclass").addEventListener("click", ()=> startAdd("Subclasses"));
-
-  // tabs
-  els.tabLibrary.addEventListener("click", ()=> setTab("library"));
-  els.tabEditor.addEventListener("click", ()=> setTab("editor"));
-  if (els.tabDiff) els.tabDiff.addEventListener("click", ()=> setTab("diff"));
-
-  // type/search
-  els.selType.addEventListener("change", ()=>{
-    currentType = els.selType.value;
-    renderList();
-  });
-  els.inpSearch.addEventListener("input", ()=> renderList());
-
-  // reload
-  const btnReload = document.getElementById("btnReload");
-  btnReload.addEventListener("click", async ()=>{
-    wireDiffTool();
-
-  await loadBundle();
-    renderTypeSelect();
-    renderList();
-    toast("Reloaded.");
-  });
-
-  // copy
-  els.btnCopyRow.addEventListener("click", ()=>{
-    if (!currentRow) return toast("Select an item first.");
-    copyText(buildTSVRow(currentType, currentRow, false));
-  });
-  els.btnCopyHeaderRow.addEventListener("click", ()=>{
-    if (!currentRow) return toast("Select an item first.");
-    copyText(buildTSVRow(currentType, currentRow, true));
-  });
-
-  // Update Builder preview behind the menu (Option A)
-  els.btnUpdatePreview.addEventListener("click", ()=>{
-    if (!currentRow) return toast("Select an item first.");
-    const m = TYPE_META[currentType] || {};
-    const idKey = m.idKey;
-    const id = norm(currentRow?.[idKey]);
-    if (!id) return toast("Missing ID.");
-    setDraftEntry(currentType, id, currentRow);
-    // enable preview mode + reload builder iframe
-    try { localStorage.setItem("hbcr_cms_apply_preview", "1"); } catch {}
-    const base = "/editor/builder/?embed=1&cmsPreview=1";
-    els.builderFrame.src = base + "&t=" + Date.now();
-    toast("Preview updated (local only). If it looks good, copy TSV to Sheets.");
-  });
-
-  els.btnClearPreview.addEventListener("click", ()=>{
-    if (!currentRow) return toast("Select an item first.");
-    const m = TYPE_META[currentType] || {};
-    const idKey = m.idKey;
-    const id = norm(currentRow?.[idKey]);
-    if (!id) return toast("Missing ID.");
-    const removed = clearDraftEntry(currentType, id);
-    try { localStorage.setItem("hbcr_cms_apply_preview", "1"); } catch {}
-    const base = "/editor/builder/?embed=1&cmsPreview=1";
-    els.builderFrame.src = base + "&t=" + Date.now();
-    toast(removed ? "Preview cleared for this item." : "Nothing to clear for this item.");
-  });
-
-  // refresh builder
-  els.btnRefreshBuilder.addEventListener("click", ()=>{
-    // disable preview mode so stale drafts don't leak into the normal builder
-    try { localStorage.setItem("hbcr_cms_apply_preview", "0"); } catch {}
-    const base = "/editor/builder/?embed=1";
-    els.builderFrame.src = base + "&t=" + Date.now();
-    toast("Builder refreshed.");
-  });
-
-  // drawer hide/show
-  els.btnToggleDrawer.addEventListener("click", ()=>{
-    const open = els.drawer.classList.toggle("is-open");
-    els.drawerHandle.classList.toggle("is-hidden", open);
-    els.btnToggleDrawer.textContent = open ? "Hide" : "Show";
-  });
-  els.drawerHandle.addEventListener("click", ()=>{
-    els.drawer.classList.add("is-open");
-    els.drawerHandle.classList.add("is-hidden");
-    els.btnToggleDrawer.textContent = "Hide";
-  });
-
-  // modal
-  els.modal = document.getElementById("modal");
-  els.modalTitle = document.getElementById("modalTitle");
-  els.modalBody = document.getElementById("modalBody");
-  document.getElementById("modalCancel").addEventListener("click", closeModal);
-  document.getElementById("modalBackdrop").addEventListener("click", closeModal);
-  document.getElementById("modalOk").addEventListener("click", ()=>{
-    if (modalOkHandler) modalOkHandler();
-  });
-}
-
-async function main(){
-  setupDrawerWindowing();
-  wireUI();
-
-  // Default to normal builder (no draft overrides) on load.
-  try { localStorage.setItem("hbcr_cms_apply_preview", "0"); } catch {}
-  const frame = document.getElementById("builderFrame");
-  if (frame) frame.src = "/editor/builder/?embed=1&t=" + Date.now();
-
-  await loadBundle();
-  renderTypeSelect();
-  renderList();
-  setTab("library");
-}
-
-main().catch(err=>{
-  console.error(err);
-  const el = document.getElementById("cmsStatus");
-  if (el) el.textContent = "Error: " + (err?.message || err);
-});
-
-
-// ---------- Diff Tool (Paste old/new TSV and see what's changed) ----------
-function parseTSV(text){
-  const raw = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
-  if (!raw) return { headers: [], rows: [] };
-  const lines = raw.split("\n").filter(l => l.trim().length);
-  const headers = lines[0].split("\t").map(h => h.trim());
-  const rows = [];
-  for (let i=1;i<lines.length;i++){
-    const cols = lines[i].split("\t");
-    const row = {};
-    for (let c=0;c<headers.length;c++){
-      row[headers[c]] = (cols[c] ?? "");
-    }
-    rows.push(row);
-  }
-  return { headers, rows };
-}
-
-function normalizeRowForCompare(row, headers){
-  const out = {};
-  for (const h of headers){
-    out[h] = (row[h] ?? "").toString().trim();
-  }
-  return JSON.stringify(out);
-}
-
-function buildIndex(rows, idKey, headers){
-  const idx = new Map();
-  const dupes = [];
-  for (const r of rows){
-    const id = (r[idKey] ?? "").toString().trim();
-    if (!id) continue;
-    const sig = normalizeRowForCompare(r, headers);
-    if (idx.has(id)) dupes.push(id);
-    idx.set(id, { row: r, sig });
-  }
-  return { idx, dupes };
-}
-
-function rowsToTSV(headers, rows){
-  const esc = (v)=> (v==null ? "" : String(v)).replace(/\r?\n/g, " ");
-  const lines = [];
-  lines.push(headers.join("\t"));
-  for (const r of rows){
-    lines.push(headers.map(h => esc(r[h] ?? "")).join("\t"));
-  }
-  return lines.join("\n");
-}
-
-function runDiff(){
-  const type = els.diffType.value;
-  const meta = TYPE_META[type];
-  if (!meta){
-    els.diffSummary.textContent = "Unknown type.";
-    return;
+  // Name
+  {
+    const field = document.createElement("div");
+    field.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = "Name";
+    const inp = document.createElement("input");
+    inp.id = "inpName";
+    inp.placeholder = "e.g. Berserker";
+    inp.value = norm(working?.[m.nameKey]);
+    field.appendChild(lab);
+    field.appendChild(inp);
+    form.appendChild(field);
   }
 
-  const oldParsed = parseTSV(els.diffOld.value);
-  const newParsed = parseTSV(els.diffNew.value);
-
-  let headers = (newParsed.headers && newParsed.headers.length) ? newParsed.headers.slice() : oldParsed.headers.slice();
-  if (!headers.includes(meta.idKey)){
-    els.diffSummary.textContent = `Missing required ID column: ${meta.idKey}`;
-    return;
-  }
-
-  const oldIndex = buildIndex(oldParsed.rows, meta.idKey, headers);
-  const newIndex = buildIndex(newParsed.rows, meta.idKey, headers);
-
-  const added = [];
-  const changed = [];
-  const removed = [];
-
-  for (const [id, cur] of newIndex.idx.entries()){
-    const prev = oldIndex.idx.get(id);
-    if (!prev) added.push(cur.row);
-    else if (prev.sig !== cur.sig) changed.push(cur.row);
-  }
-  for (const [id, prev] of oldIndex.idx.entries()){
-    if (!newIndex.idx.has(id)) removed.push(prev.row);
-  }
-
-  const dupeMsg = [];
-  if (oldIndex.dupes.length) dupeMsg.push(`Old TSV had duplicate IDs: ${oldIndex.dupes.slice(0,10).join(", ")}${oldIndex.dupes.length>10?"…":""}`);
-  if (newIndex.dupes.length) dupeMsg.push(`New TSV had duplicate IDs: ${newIndex.dupes.slice(0,10).join(", ")}${newIndex.dupes.length>10?"…":""}`);
-
-  els.diffSummary.textContent =
-    `${type}: +${added.length} added, ~${changed.length} changed, -${removed.length} removed` +
-    (dupeMsg.length ? ` • WARNING: ${dupeMsg.join(" • ")}` : "");
-
-  const fmt = (r)=>{
-    const id = (r[meta.idKey] ?? "").toString().trim();
-    const name = meta.nameKey && r[meta.nameKey] ? String(r[meta.nameKey]).trim() : "";
-    const parent = meta.parentKey && r[meta.parentKey] ? String(r[meta.parentKey]).trim() : "";
-    return parent ? `${id} — ${name} (parent: ${parent})` : `${id} — ${name}`;
-  };
-
-  els.diffAdded.textContent = added.slice(0,200).map(fmt).join("\n") || "(none)";
-  els.diffChanged.textContent = changed.slice(0,200).map(fmt).join("\n") || "(none)";
-  els.diffRemoved.textContent = removed.slice(0,200).map(fmt).join("\n") || "(none)";
-
-  els._diffLast = { type, headers, added, changed };
-}
-
-async function copyText(text){
-  try{
-    await navigator.clipboard.writeText(text);
-    toast("Copied to clipboard.");
-  }catch{
+  // Description
+  {
+    const field = document.createElement("div");
+    field.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = "Description (optional)";
     const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-    toast("Copied to clipboard.");
+    ta.id = "inpDesc";
+    ta.placeholder = "Short description…";
+    ta.value = norm(working?.[m.descKey]);
+    field.appendChild(lab);
+    field.appendChild(ta);
+    form.appendChild(field);
+  }
+
+  // Icon (optional, if the sheet has something icon-ish)
+  const cols = new Set(getColumns(currentType));
+  const iconKey = cols.has("Icon") ? "Icon"
+    : cols.has("icon") ? "icon"
+    : cols.has("IconUrl") ? "IconUrl"
+    : cols.has("iconUrl") ? "iconUrl"
+    : null;
+  if (iconKey) {
+    const field = document.createElement("div");
+    field.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = "Icon (optional)";
+    const inp = document.createElement("input");
+    inp.id = "inpIcon";
+    inp.placeholder = "icon path or url";
+    inp.value = norm(working?.[iconKey]);
+    field.appendChild(lab);
+    field.appendChild(inp);
+    form.appendChild(field);
+  }
+
+  // Advanced (ID + extra columns)
+  const adv = document.createElement("details");
+  adv.className = "advanced";
+  const sum = document.createElement("summary");
+  sum.textContent = "Advanced (IDs / extra columns)";
+  adv.appendChild(sum);
+
+  // ID
+  {
+    const field = document.createElement("div");
+    field.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = "ID";
+    const inp = document.createElement("input");
+    inp.id = "inpId";
+    inp.placeholder = "auto-generated";
+    inp.value = workingId;
+    field.appendChild(lab);
+    field.appendChild(inp);
+    adv.appendChild(field);
+  }
+
+  // Extra columns (simple key/value editor)
+  const extraKeys = getColumns(currentType)
+    .filter(k => ![m.idKey, m.parentKey, m.nameKey, m.descKey, iconKey].includes(k));
+
+  if (extraKeys.length) {
+    const h = document.createElement("div");
+    h.className = "hint";
+    h.textContent = "Extra fields (usually leave blank):";
+    adv.appendChild(h);
+
+    for (const k of extraKeys) {
+      const field = document.createElement("div");
+      field.className = "field";
+      const lab = document.createElement("label");
+      lab.textContent = k;
+      const inp = document.createElement("input");
+      inp.dataset.extraKey = k;
+      inp.value = safeStr(working?.[k]);
+      field.appendChild(lab);
+      field.appendChild(inp);
+      adv.appendChild(field);
+    }
+  }
+  form.appendChild(adv);
+
+  // Auto-generate ID from name for NEW rows (unless user edits ID in Advanced)
+  const nameEl = el("inpName");
+  const idEl = el("inpId");
+  if (isNew) {
+    let idTouched = false;
+    idEl.addEventListener("input", () => { idTouched = true; });
+    nameEl.addEventListener("input", () => {
+      if (idTouched) return;
+      const base = slugify(nameEl.value);
+      const parent = m.parentKey ? slugify(el("inpParent")?.value || "") : "";
+      const suggested = (m.parentKey && parent)
+        ? `${parent}_${base}`.replace(/_+/g, "_")
+        : base;
+      idEl.value = suggested;
+    });
+    // trigger once
+    nameEl.dispatchEvent(new Event("input"));
   }
 }
 
-function wireDiffTool(){
-  if (!els.btnRunDiff) return;
-  els.btnRunDiff.addEventListener("click", runDiff);
+function collectFormRow() {
+  const m = TYPE_META[currentType];
+  const cols = getColumns(currentType);
+  const colsSet = new Set(cols);
+  const id = norm(el("inpId").value);
+  const name = norm(el("inpName").value);
 
-  els.btnCopyAdded.addEventListener("click", ()=>{
-    const d = els._diffLast;
-    if (!d) return toast("Run diff first.");
-    copyText(rowsToTSV(d.headers, d.added));
-  });
-  els.btnCopyChanged.addEventListener("click", ()=>{
-    const d = els._diffLast;
-    if (!d) return toast("Run diff first.");
-    copyText(rowsToTSV(d.headers, d.changed));
-  });
+  if (!name) return { ok: false, error: "Name is required." };
+  if (!id) return { ok: false, error: "ID is required (it should auto-generate)." };
+
+  const row = {};
+  row[m.idKey] = id;
+  row[m.nameKey] = name;
+
+  if (m.parentKey) {
+    const parent = norm(el("inpParent").value);
+    if (!parent) return { ok: false, error: "Parent selection is required." };
+    row[m.parentKey] = parent;
+  }
+
+  row[m.descKey] = norm(el("inpDesc").value);
+
+  // optional icon
+  const iconEl = el("inpIcon");
+  if (iconEl) {
+    const iconKey = colsSet.has("Icon") ? "Icon"
+      : colsSet.has("icon") ? "icon"
+      : colsSet.has("IconUrl") ? "IconUrl"
+      : colsSet.has("iconUrl") ? "iconUrl"
+      : null;
+    if (iconKey) row[iconKey] = norm(iconEl.value);
+  }
+
+  // extras
+  for (const inp of el("form").querySelectorAll("input[data-extra-key]")) {
+    const k = inp.dataset.extraKey;
+    row[k] = safeStr(inp.value);
+  }
+
+  return { ok: true, id, row };
 }
 
+function upsertRow(type, id, row) {
+  const ch = loadChanges();
+  ch.upserts ||= {};
+  ch.upserts[type] ||= {};
+  ch.deletes ||= {};
+  ch.deletes[type] ||= {};
+  delete ch.deletes[type][id];
+  ch.upserts[type][id] = row;
+  saveChanges(ch);
+  syncChangesToDraft(bundle);
+}
+
+function markDeleted(type, id) {
+  const ch = loadChanges();
+  ch.deletes ||= {};
+  ch.deletes[type] ||= {};
+  ch.upserts ||= {};
+  ch.upserts[type] ||= {};
+  delete ch.upserts[type][id];
+  ch.deletes[type][id] = true;
+  saveChanges(ch);
+  syncChangesToDraft(bundle);
+}
+
+function buildTsvForType(type) {
+  const m = TYPE_META[type];
+  const ch = loadChanges();
+  const byId = ch.upserts?.[type] || {};
+  const ids = Object.keys(byId);
+  if (!ids.length) return { header: "", body: "", rows: 0 };
+
+  // Column order: canonical keys first, then bundle columns, then any extras from edits
+  const baseCols = [m.idKey, m.parentKey, m.nameKey, m.descKey].filter(Boolean);
+  const bundleCols = getColumns(type);
+  const extra = new Set();
+  for (const id of ids) {
+    for (const k of Object.keys(byId[id] || {})) extra.add(k);
+  }
+  const cols = [...new Set([...baseCols, ...bundleCols, ...extra])].filter(Boolean);
+
+  const lines = [];
+  lines.push(cols.join("\t"));
+  for (const id of ids) {
+    const r = { ...byId[id], [m.idKey]: id };
+    const vals = cols.map(k => tsvEscape(r?.[k]));
+    lines.push(vals.join("\t"));
+  }
+  return { header: cols.join("\t"), body: lines.join("\n"), rows: ids.length };
+}
+
+function renderExport() {
+  const out = el("exportOut");
+  out.innerHTML = "";
+
+  let total = 0;
+  for (const t of ORDERED_TYPES) {
+    const blk = buildTsvForType(t);
+    if (!blk.rows) continue;
+    total += blk.rows;
+
+    const card = document.createElement("div");
+    card.className = "export-card";
+
+    const h = document.createElement("div");
+    h.className = "export-head";
+    h.textContent = `${t}: ${blk.rows} row(s)`;
+
+    const btn = document.createElement("button");
+    btn.className = "btn btn-small";
+    btn.textContent = "Copy TSV";
+    btn.addEventListener("click", async () => {
+      await copyToClipboard(blk.body);
+      toast("Copied TSV");
+    });
+
+    const pre = document.createElement("pre");
+    pre.textContent = blk.body;
+
+    const row = document.createElement("div");
+    row.className = "export-actions";
+    row.appendChild(btn);
+
+    card.appendChild(h);
+    card.appendChild(row);
+    card.appendChild(pre);
+    out.appendChild(card);
+  }
+
+  if (!total) {
+    out.innerHTML = `<div class="empty">No saved changes yet. Add or edit something, then Export.</div>`;
+  }
+}
+
+// ==============================
+// Toast
+// ==============================
+let toastTimer = null;
+function toast(msg) {
+  const t = el("toast");
+  t.textContent = msg;
+  t.classList.add("is-on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("is-on"), 1200);
+}
+
+// ==============================
+// Events
+// ==============================
+function wireEvents() {
+  for (const t of ORDERED_TYPES) {
+    el(`btnType_${t}`).addEventListener("click", () => setType(t));
+  }
+
+  el("search").addEventListener("input", () => renderTable());
+  el("btnReload").addEventListener("click", async () => {
+    await loadBundle();
+    syncChangesToDraft(bundle);
+    renderTable();
+    toast("Reloaded");
+  });
+
+  el("btnAdd").addEventListener("click", () => {
+    selectedId = null;
+    renderTable();
+    renderForm(null);
+  });
+
+  el("btnSave").addEventListener("click", () => {
+    const res = collectFormRow();
+    if (!res.ok) {
+      alert(res.error);
+      return;
+    }
+    const m = TYPE_META[currentType];
+    const id = res.id;
+    // If renaming ID of an existing row, treat as new ID (safe), but warn.
+    // For maintainers: they should generally avoid changing IDs.
+    const existing = sheetRows(currentType).some(r => norm(r?.[m.idKey]) === id);
+    upsertRow(currentType, id, res.row);
+    selectedId = id;
+    renderTable();
+    selectRow(id);
+    toast(existing ? "Saved" : "Added");
+    if (isPreviewEnabled()) refreshBuilder();
+  });
+
+  el("btnDelete").addEventListener("click", () => {
+    if (!selectedId) {
+      alert("Select an item first.");
+      return;
+    }
+    if (!confirm(`Mark ${selectedId} as deleted? (This only affects export; it will not remove it from preview automatically.)`)) return;
+    markDeleted(currentType, selectedId);
+    selectedId = null;
+    renderTable();
+    renderForm(null);
+    toast("Marked deleted");
+  });
+
+  el("btnExport").addEventListener("click", () => {
+    el("mainView").classList.add("is-hidden");
+    el("exportView").classList.remove("is-hidden");
+    renderExport();
+  });
+  el("btnBack").addEventListener("click", () => {
+    el("exportView").classList.add("is-hidden");
+    el("mainView").classList.remove("is-hidden");
+  });
+
+  el("togPreview").addEventListener("change", (e) => {
+    setPreviewEnabled(!!e.target.checked);
+    toast(e.target.checked ? "Preview ON" : "Preview OFF");
+    refreshBuilder(true);
+  });
+
+  el("btnReset").addEventListener("click", () => {
+    if (!confirm("Clear all local editor data (changes + preview overlay)?")) return;
+    try {
+      localStorage.removeItem(CHANGES_KEY);
+      localStorage.removeItem(CMS_DRAFT_KEY);
+      localStorage.removeItem(CMS_APPLY_KEY);
+    } catch {}
+    el("togPreview").checked = false;
+    toast("Reset");
+    refreshBuilder(true);
+    renderTable();
+    renderForm(null);
+  });
+
+  el("btnRefreshBuilder").addEventListener("click", () => refreshBuilder(true));
+}
+
+function refreshBuilder(hard) {
+  const frame = el("builderFrame");
+  if (!frame) return;
+  try {
+    const url = new URL(frame.src, window.location.origin);
+    // Ensure preview param stays in place; liveData looks for cmsPreview=1
+    url.searchParams.set("embed", "1");
+    url.searchParams.set("cmsPreview", "1");
+    if (hard) url.searchParams.set("t", String(Date.now()));
+    frame.src = url.toString();
+  } catch {
+    frame.src = "/editor/builder/?embed=1&cmsPreview=1&t=" + Date.now();
+  }
+}
+
+// ==============================
+// Boot
+// ==============================
+async function boot() {
+  el("togPreview").checked = isPreviewEnabled();
+  wireEvents();
+  await loadBundle();
+  syncChangesToDraft(bundle);
+  setType(currentType);
+  refreshBuilder(false);
+}
+
+boot().catch((err) => {
+  console.error(err);
+  setStatus("Failed to load: " + (err?.message || String(err)));
+});
