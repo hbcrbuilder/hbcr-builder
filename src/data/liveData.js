@@ -19,6 +19,111 @@ const BUNDLE_URL = "https://hbcr-api.hbcrbuilder.workers.dev/api/bundle";
 // cache the bundle in-memory
 let _bundlePromise = null;
 
+// ===============================
+// CMS Preview Overlay (Easy Mode)
+// ===============================
+// When the Content Editor runs with the Builder embedded behind it, we allow a LOCAL
+// (browser-only) overlay of a single edited/added row so the maintainer can verify
+// the UI before pasting TSV into Google Sheets.
+//
+// Enabled only when:
+//  - URL includes ?cmsPreview=1
+//  - localStorage.hbcr_cms_apply_preview === "1"
+const CMS_DRAFT_KEY = "hbcr_cms_draft_v3";
+const CMS_APPLY_KEY = "hbcr_cms_apply_preview";
+
+function cmsPreviewEnabled() {
+  try {
+    if (typeof window === "undefined") return false;
+    const sp = new URLSearchParams(window.location.search || "");
+    if (sp.get("cmsPreview") !== "1") return false;
+    return String(localStorage.getItem(CMS_APPLY_KEY) || "0") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function readCmsDraft() {
+  try {
+    const raw = localStorage.getItem(CMS_DRAFT_KEY);
+    if (!raw) return {};
+    const obj = JSON.parse(raw);
+    return (obj && typeof obj === "object") ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
+// Apply local draft rows onto a fetched bundle.
+// Draft keys are like: "Races::race_test"  -> row object with sheet columns.
+function applyCmsDraftToBundle(bundle) {
+  const draft = readCmsDraft();
+  const out = { ...(bundle || {}) };
+
+  const META = {
+    Races: { idKey: "RaceId" },
+    Subraces: { idKey: "SubraceId" },
+    Classes: { idKey: "ClassId" },
+    Subclasses: { idKey: "SubclassId" },
+    Spells: { idKey: "SpellId" },
+    Cantrips: { idKey: "CantripId" },
+    Traits: { idKey: "TraitId" },
+    Feats: { idKey: "FeatId" },
+    ClassFeatures: { idKey: "FeatureId" },
+  };
+
+  const normId = (v) => String(v ?? "").trim();
+
+  for (const k of Object.keys(draft)) {
+    const parts = String(k).split("::");
+    if (parts.length !== 2) continue;
+    const sheet = parts[0];
+    const idFromKey = parts[1];
+
+    const meta = META[sheet];
+    if (!meta) continue;
+
+    const row = draft[k];
+    if (!row || typeof row !== "object") continue;
+
+    const id = normId(row[meta.idKey] ?? row.id ?? row.Id ?? idFromKey);
+    if (!id) continue;
+
+    // ensure sheet array exists
+    const arr = Array.isArray(out[sheet]) ? out[sheet].slice() : [];
+    // set idKey if missing
+    const newRow = { ...row, [meta.idKey]: id };
+
+    // upsert by idKey
+    let replaced = false;
+    for (let i = 0; i < arr.length; i++) {
+      const rid = normId(arr[i]?.[meta.idKey] ?? arr[i]?.id ?? arr[i]?.Id ?? "");
+      if (rid === id) {
+        arr[i] = { ...arr[i], ...newRow };
+        replaced = true;
+        break;
+      }
+    }
+    if (!replaced) arr.push(newRow);
+
+    // de-dupe (keep first occurrence per id)
+    const seen = new Set();
+    const deduped = [];
+    for (const r of arr) {
+      const rid = normId(r?.[meta.idKey] ?? r?.id ?? r?.Id ?? "");
+      if (!rid) continue;
+      if (seen.has(rid)) continue;
+      seen.add(rid);
+      deduped.push(r);
+    }
+
+    out[sheet] = deduped;
+  }
+
+  return out;
+}
+
+
 async function fetchBundle() {
   const res = await fetch(`${BUNDLE_URL}?t=${Date.now()}`, {
     method: "GET",
@@ -31,7 +136,8 @@ async function fetchBundle() {
 
 export async function getBundle() {
   if (!_bundlePromise) _bundlePromise = fetchBundle();
-  return _bundlePromise;
+  const b = await _bundlePromise;
+  return cmsPreviewEnabled() ? applyCmsDraftToBundle(b) : b;
 }
 
 // Generic loader:
