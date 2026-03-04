@@ -255,7 +255,7 @@ export async function loadRacesJson() {
   // 1) Load local rich data (source of truth for icons + subrace nesting)
   let local = { races: [] };
   try {
-    const res = await fetch("./data/races.json", { cache: "no-store" });
+    const res = await fetch("/data/races.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       local = (j && typeof j === "object") ? j : { races: [] };
@@ -319,6 +319,65 @@ export async function loadRacesJson() {
     seenLiveIds.add(id);
   }
 
+
+  // 2b) Merge live Subraces rows into nested race.subraces so the Subrace radial works
+  // even when local races.json is unavailable (e.g. builder embedded under /editor/* routes).
+  try {
+    const b2 = await getBundle();
+    const subSrc = Array.isArray(b2?.Subraces) ? b2.Subraces : (Array.isArray(b2?.Subraces?.rows) ? b2.Subraces.rows : null);
+    if (subSrc && merged.length) {
+      const norm = (v) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const raceById = new Map(merged.map(r => [String(r.id), r]));
+      const raceByName = new Map(merged.filter(r=>r?.name).map(r => [norm(r.name), r]));
+
+      for (const r of subSrc) {
+        const sid = r?.SubraceId ?? r?.id ?? r?.Id ?? r?.ID;
+        if (!sid) continue;
+
+        const raceId = r?.raceId ?? r?.RaceId ?? r?.ParentRaceId ?? r?.parentRaceId;
+        const raceName = r?.RaceName ?? r?.raceName;
+
+        let parent = raceId ? raceById.get(String(raceId)) : null;
+        if (!parent && raceName) parent = raceByName.get(norm(raceName));
+        if (!parent) continue;
+
+        if (!Array.isArray(parent.subraces)) parent.subraces = [];
+
+        const existing = new Map(parent.subraces.map(sr => [String(sr.id), sr]));
+        const key = String(sid);
+        const name = r?.SubraceName ?? r?.name ?? r?.Name ?? key;
+
+        const base = existing.get(key);
+        if (base) existing.set(key, { ...base, id: key, name });
+        else existing.set(key, { id: key, name, icon: null });
+
+        // preserve order, append new at end
+        const ordered = [];
+        const seen = new Set();
+        for (const sr of parent.subraces) {
+          const id = String(sr?.id ?? "");
+          if (!id || seen.has(id)) continue;
+          if (existing.has(id)) {
+            ordered.push(existing.get(id));
+            seen.add(id);
+          }
+        }
+        for (const [id, sr] of existing.entries()) {
+          if (!seen.has(id)) ordered.push(sr);
+        }
+
+        // final de-dupe by id
+        const seenId = new Set();
+        parent.subraces = ordered.filter(sr => {
+          const id = String(sr?.id ?? "");
+          if (!id) return false;
+          if (seenId.has(id)) return false;
+          seenId.add(id);
+          return true;
+        });
+      }
+    }
+  } catch {}
   // Keep any local-only entries that weren't present in liveRows (defensive)
   for (const r of (local.races || [])) {
     const id = String(r.id);
@@ -334,7 +393,7 @@ export const loadSubracesJson = () => loadData("./data/subraces.json", "Subraces
 export async function loadClassesJson() {
   let local = { classes: [] };
   try {
-    const res = await fetch("./data/classes.json", { cache: "no-store" });
+    const res = await fetch("/data/classes.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       local = (j && typeof j === "object") ? j : { classes: [] };
@@ -403,7 +462,7 @@ export async function loadClassesFullJson() {
   // Local classesFull.json is the canonical source for subclass nesting + level features.
   let local = { classes: [] };
   try {
-    const res = await fetch("./data/classesFull.json", { cache: "no-store" });
+    const res = await fetch("/data/classesFull.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       if (j && typeof j === "object") {
@@ -416,6 +475,24 @@ export async function loadClassesFullJson() {
   // Overlay live class names (optional) + merge live subclasses rows (from Sheets/CMS)
   try {
     const b = await getBundle();
+
+    // If local classesFull.json is unavailable in this route (e.g. builder embedded under /editor/*),
+    // build a minimal classesFull structure from the live bundle so Subclass radial can still render.
+    if (!Array.isArray(local.classes) || local.classes.length === 0) {
+      const clsSrc0 = Array.isArray(b?.Classes) ? b.Classes : (Array.isArray(b?.Classes?.rows) ? b.Classes.rows : null);
+      if (clsSrc0) {
+        local = {
+          classes: clsSrc0
+            .map(r => ({
+              id: r?.ClassId ?? r?.id ?? r?.Id ?? r?.ID,
+              name: r?.ClassName ?? r?.name ?? r?.Name,
+              subclasses: []
+            }))
+            .filter(c => c.id)
+        };
+      }
+    }
+
 
     // 1) Optional: overlay class display names from bundle.Classes (keeps local structure)
     const clsSrc = Array.isArray(b?.Classes) ? b.Classes : (Array.isArray(b?.Classes?.rows) ? b.Classes.rows : null);
@@ -518,7 +595,7 @@ export async function loadSpellsJson() {
   // local canonical
   let local = { spells: [] };
   try {
-    const res = await fetch("./data/spells.json", { cache: "no-store" });
+    const res = await fetch("/data/spells.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       local = Array.isArray(j) ? { spells: j } : (j && typeof j === "object" ? j : { spells: [] });
@@ -552,7 +629,7 @@ export async function loadSpellsJson() {
 export async function loadCantripsJson() {
   let local = { cantrips: [] };
   try {
-    const res = await fetch("./data/cantrips.json", { cache: "no-store" });
+    const res = await fetch("/data/cantrips.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       local = Array.isArray(j) ? { cantrips: j } : (j && typeof j === "object" ? j : { cantrips: [] });
