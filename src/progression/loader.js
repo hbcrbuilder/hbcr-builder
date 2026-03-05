@@ -1,3 +1,5 @@
+import { loadClassesFullJson } from "../data/liveData.js";
+
 /**
  * Data loader for class progression json in /data/class_progression.
  * Keeps IO separate from resolver logic.
@@ -10,7 +12,7 @@ export async function loadClassProgressions(classIds) {
   for (const id of classIds) {
     if (!classProgressionCache[id]) {
       classProgressionCache[id] = (async () => {
-        const res = await fetch(`./data/class_progression/${id}.json`);
+        const res = await fetch(`/data/class_progression/${id}.json`);
         if (!res.ok) throw new Error(`Failed to load class progression: ${id} (${res.status})`);
         return await res.json();
       })();
@@ -23,14 +25,16 @@ export async function loadClassProgressions(classIds) {
 export async function loadClassesFull() {
   if (!classesFullCache) {
     classesFullCache = (async () => {
-      const res = await fetch(`./data/classes.full.json`);
-      if (!res.ok) throw new Error(`Failed to load classes.full.json (${res.status})`);
-      return await res.json();
+      // Use the shared liveData loader so:
+      //  - paths work when embedded under /editor/*
+      //  - bundle/CMS overlay can merge subclasses into the nested structure
+      return await loadClassesFullJson();
     })();
   }
   return await classesFullCache;
 }
 
 // --- Module caches ---
+
 const classProgressionCache = {};
 let classesFullCache = null;

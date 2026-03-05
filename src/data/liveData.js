@@ -500,7 +500,7 @@ export async function loadClassesFullJson() {
   // Local classesFull.json is the canonical source for subclass nesting + level features.
   let local = { classes: [] };
   try {
-    const res = await fetch("/data/classesFull.json", { cache: "no-store" });
+    const res = await fetch("/data/classes.full.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
       if (j && typeof j === "object") {
