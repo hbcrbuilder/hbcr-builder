@@ -252,177 +252,128 @@ export async function loadData(path, sheetName, transform) {
 // So we merge: keep local icon/subrace/rules data, but let the live bundle override id/name
 // when present (and append any new live-only entries).
 export async function loadRacesJson() {
-  // 1) Load local rich data (source of truth for icons + subrace nesting)
-  let local = { races: [] };
+  // Bundle is the source of truth for what exists.
+  // Local /data/races.json is cosmetic enrichment only (icons/extra fields),
+  // and is NEVER treated as an additional source of rows (prevents duplicates).
+  const normKey = (v) =>
+    String(v ?? "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "");
+
+  // 1) Build races + nested subraces from bundle
+  let bundle = {};
+  try { bundle = await getBundle(); } catch { bundle = {}; }
+
+  const raceRows = Array.isArray(bundle?.Races)
+    ? bundle.Races
+    : (Array.isArray(bundle?.Races?.rows) ? bundle.Races.rows : []);
+
+  const subraceRows = Array.isArray(bundle?.Subraces)
+    ? bundle.Subraces
+    : (Array.isArray(bundle?.Subraces?.rows) ? bundle.Subraces.rows : []);
+
+  const races = raceRows
+    .map(r => ({
+      id: String(r?.RaceId ?? r?.id ?? r?.Id ?? r?.ID ?? "").trim(),
+      name: (r?.RaceName ?? r?.name ?? r?.Name ?? "").trim(),
+      icon: r?.icon ?? r?.Icon ?? r?.RaceIcon ?? r?.IconPath ?? null,
+      subraces: [],
+    }))
+    .filter(r => r.id);
+
+  const racesById = new Map(races.map(r => [String(r.id), r]));
+  const racesByName = new Map(races.filter(r => r.name).map(r => [normKey(r.name), r]));
+
+  // Attach subraces by RaceId
+  for (const sr of subraceRows) {
+    const sid = String(sr?.SubraceId ?? sr?.id ?? sr?.Id ?? sr?.ID ?? "").trim();
+    if (!sid) continue;
+
+    const raceId = String(sr?.RaceId ?? sr?.raceId ?? sr?.ParentRaceId ?? sr?.parentRaceId ?? "").trim();
+    const raceName = (sr?.RaceName ?? sr?.raceName ?? "").trim();
+    const parent = raceId ? racesById.get(raceId) : (raceName ? racesByName.get(normKey(raceName)) : null);
+    if (!parent) continue;
+
+    const name = (sr?.SubraceName ?? sr?.name ?? sr?.Name ?? sid).trim();
+    const icon = sr?.icon ?? sr?.Icon ?? sr?.SubraceIcon ?? sr?.IconPath ?? null;
+
+    if (!Array.isArray(parent.subraces)) parent.subraces = [];
+    parent.subraces.push({ id: sid, name, icon });
+  }
+
+  // Deduplicate subraces within each race (by id primary, name secondary)
+  for (const r of races) {
+    const seenId = new Set();
+    const seenName = new Set();
+    const out = [];
+    for (const sr of (r.subraces || [])) {
+      const id = String(sr?.id ?? "").trim();
+      const nk = sr?.name ? normKey(sr.name) : "";
+      if (id && seenId.has(id)) continue;
+      if (!id && nk && seenName.has(nk)) continue;
+      if (id) seenId.add(id);
+      if (nk) seenName.add(nk);
+      out.push(sr);
+    }
+    r.subraces = out;
+  }
+
+  // 2) Cosmetic overlay from local /data/races.json (icons/extra fields)
+  // Never add extra races; only enrich existing. Allow fallback for subraces ONLY
+  // when a bundle race has zero subraces (so UI still works if Subraces sheet is empty).
   try {
     const res = await fetch("/data/races.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
-      local = (j && typeof j === "object") ? j : { races: [] };
-      if (!Array.isArray(local.races)) local = { ...local, races: [] };
+      const local = (j && typeof j === "object") ? j : { races: [] };
+      const localRaces = Array.isArray(local.races) ? local.races : [];
 
-      // Normalize nested subraces so dedupe/merge logic can reliably match entries.
-      // (Some legacy JSON uses SubraceId/subraceId instead of `id`.)
-      for (const r of local.races) {
-        if (!r || !Array.isArray(r.subraces)) continue;
-        r.subraces = r.subraces
-          .map((sr) => {
-            if (!sr || typeof sr !== "object") return sr;
-            const id = sr.id ?? sr.SubraceId ?? sr.subraceId ?? sr.subraceID;
-            const name = sr.name ?? sr.SubraceName ?? sr.Name;
-            return { ...sr, id: id ? String(id) : sr.id, name: name ?? sr.name };
-          })
-          .filter(Boolean);
+      const localById = new Map(localRaces.filter(x => x?.id).map(x => [String(x.id), x]));
+      const localByName = new Map(localRaces.filter(x => x?.name).map(x => [normKey(x.name), x]));
+
+      for (const r of races) {
+        const lr = localById.get(String(r.id)) || (r.name ? localByName.get(normKey(r.name)) : null);
+        if (!lr) continue;
+
+        // Overlay top-level cosmetics
+        for (const [k, v] of Object.entries(lr)) {
+          if (k === "subraces") continue;
+          if (r[k] == null && v != null) r[k] = v;
+        }
+        if (!r.icon && lr.icon) r.icon = lr.icon;
+
+        // Overlay subrace cosmetics by id/name; no row creation unless bundle has none
+        const localSubs = Array.isArray(lr.subraces) ? lr.subraces : [];
+        if (!r.subraces || r.subraces.length === 0) {
+          // fallback: if bundle has no subraces for this race, use local subraces
+          r.subraces = localSubs.map(s => ({
+            id: String(s?.id ?? s?.SubraceId ?? s?.subraceId ?? "").trim(),
+            name: (s?.name ?? s?.SubraceName ?? s?.Name ?? "").trim(),
+            icon: s?.icon ?? s?.Icon ?? null
+          })).filter(s => s.id);
+          continue;
+        }
+
+        const byId = new Map(r.subraces.map(s => [String(s.id), s]));
+        const byName = new Map(r.subraces.filter(s => s?.name).map(s => [normKey(s.name), s]));
+
+        for (const ls of localSubs) {
+          const lid = String(ls?.id ?? ls?.SubraceId ?? ls?.subraceId ?? "").trim();
+          const lname = (ls?.name ?? ls?.SubraceName ?? ls?.Name ?? "").trim();
+          const target = (lid && byId.get(lid)) || (lname ? byName.get(normKey(lname)) : null);
+          if (!target) continue;
+          if (!target.icon && (ls.icon || ls.Icon)) target.icon = ls.icon || ls.Icon;
+          for (const [k, v] of Object.entries(ls || {})) {
+            if (k === "id" || k === "name") continue;
+            if (target[k] == null && v != null) target[k] = v;
+          }
+        }
       }
     }
   } catch {}
 
-  // 2) Load live rows (if available) and normalize to {id,name}
-  let liveRows = [];
-  try {
-    const b = await getBundle();
-    const fromBundle = b?.Races;
-    const src = Array.isArray(fromBundle) ? fromBundle : (Array.isArray(fromBundle?.rows) ? fromBundle.rows : null);
-    if (src) {
-      liveRows = src
-        .map((r) => ({
-          id: r?.RaceId ?? r?.id ?? r?.Id ?? r?.ID,
-          name: r?.RaceName ?? r?.name ?? r?.Name,
-        }))
-        .filter((r) => r.id);
-    }
-  } catch {}
-
-  if (!liveRows.length) return local;
-
-  const normKey = (v) =>
-    String(v ?? "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "");
-
-  const byIdLocal = new Map((local.races || []).map((r) => [String(r.id), r]));
-  const byNameLocal = new Map(
-    (local.races || [])
-      .filter((r) => r?.name)
-      .map((r) => [normKey(r.name), r])
-  );
-
-  // Track which local entries have been represented in the merged list so we
-  // don't append duplicates (e.g. local id uses '_' while live id uses '-').
-  const seenLocalIds = new Set();
-  const seenLiveIds = new Set();
-
-  const merged = [];
-  for (const lr of liveRows) {
-    const id = String(lr.id);
-    let base = byIdLocal.get(id);
-    // If ids don't line up between local and live, fall back to a name match.
-    if (!base && lr.name) base = byNameLocal.get(normKey(lr.name));
-    if (base) {
-      merged.push({
-        ...base,
-        // Let live override display name (but keep everything else local)
-        id,
-        name: lr.name || base.name,
-      });
-      seenLocalIds.add(String(base.id));
-    } else {
-      // Live-only entry: keep id/name; no icons/subraces available.
-      merged.push({ id, name: lr.name || id, icon: null, subraces: [] });
-    }
-    seenLiveIds.add(id);
-  }
-
-
-  // 2b) Merge live Subraces rows into nested race.subraces so the Subrace radial works
-  // even when local races.json is unavailable (e.g. builder embedded under /editor/* routes).
-  try {
-    const b2 = await getBundle();
-    const subSrc = Array.isArray(b2?.Subraces) ? b2.Subraces : (Array.isArray(b2?.Subraces?.rows) ? b2.Subraces.rows : null);
-    if (subSrc && merged.length) {
-      const norm = (v) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-      const raceById = new Map(merged.map(r => [String(r.id), r]));
-      const raceByName = new Map(merged.filter(r=>r?.name).map(r => [norm(r.name), r]));
-
-      for (const r of subSrc) {
-        const sid = r?.SubraceId ?? r?.id ?? r?.Id ?? r?.ID;
-        if (!sid) continue;
-
-        const raceId = r?.raceId ?? r?.RaceId ?? r?.ParentRaceId ?? r?.parentRaceId;
-        const raceName = r?.RaceName ?? r?.raceName;
-
-        let parent = raceId ? raceById.get(String(raceId)) : null;
-        if (!parent && raceName) parent = raceByName.get(norm(raceName));
-        if (!parent) continue;
-
-        if (!Array.isArray(parent.subraces)) parent.subraces = [];
-
-        const key = String(sid);
-        const name = r?.SubraceName ?? r?.name ?? r?.Name ?? key;
-        const nk = norm(name);
-
-        // Match existing entries by id first, then by normalized name.
-        const existingById = new Map(parent.subraces.map(sr => [String(sr?.id ?? ""), sr]));
-        const existingByName = new Map(
-          parent.subraces
-            .filter(sr => sr?.name)
-            .map(sr => [norm(sr.name), sr])
-        );
-        const base = existingById.get(key) || (nk ? existingByName.get(nk) : null);
-
-        if (base) {
-          // Update in place; preserve icon if present.
-          const idx = parent.subraces.findIndex(x => x === base);
-          if (idx >= 0) {
-            const next = { ...base, name };
-            // Ensure an id exists (legacy entries sometimes miss it)
-            next.id = next.id ? String(next.id) : key;
-            next._liveId = key;
-            parent.subraces[idx] = next;
-          }
-        } else {
-          parent.subraces.push({ id: key, name, icon: null, _liveId: key });
-        }
-
-        // Final de-dupe by normalized name (primary) and id (secondary).
-        // Prefer the entry that has an icon (local canonical) if duplicates exist.
-        const bestByKey = new Map();
-        for (const sr of parent.subraces) {
-          const n0 = sr?.name ? norm(sr.name) : "";
-          const id0 = String(sr?.id ?? "");
-          const k0 = n0 || id0;
-          if (!k0) continue;
-          const prev = bestByKey.get(k0);
-          if (!prev) {
-            bestByKey.set(k0, sr);
-            continue;
-          }
-          const prevHasIcon = !!prev?.icon;
-          const curHasIcon = !!sr?.icon;
-          if (!prevHasIcon && curHasIcon) bestByKey.set(k0, sr);
-        }
-
-        const seenFinal = new Set();
-        parent.subraces = parent.subraces.filter(sr => {
-          const n0 = sr?.name ? norm(sr.name) : "";
-          const id0 = String(sr?.id ?? "");
-          const k0 = n0 || id0;
-          if (!k0) return false;
-          if (seenFinal.has(k0)) return false;
-          if (bestByKey.get(k0) !== sr) return false;
-          seenFinal.add(k0);
-          return true;
-        });
-      }
-    }
-  } catch {}
-  // Keep any local-only entries that weren't present in liveRows (defensive)
-  for (const r of (local.races || [])) {
-    const id = String(r.id);
-    if (!seenLocalIds.has(id) && !seenLiveIds.has(id)) merged.push(r);
-  }
-
-  return { ...local, races: merged };
+  return { races };
 }
 export const loadSubracesJson = () => loadData("./data/subraces.json", "Subraces");
 
@@ -497,137 +448,136 @@ export async function loadClassesJson() {
   return { ...local, classes: merged };
 }
 export async function loadClassesFullJson() {
-  // Local classesFull.json is the canonical source for subclass nesting + level features.
-  let local = { classes: [] };
+  // Bundle is the source of truth for what exists.
+  // Local /data/classes.full.json is cosmetic/enrichment only (icons, levels, feature text).
+  const normKey = (v) =>
+    String(v ?? "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "");
+
+  let bundle = {};
+  try { bundle = await getBundle(); } catch { bundle = {}; }
+
+  const classRows = Array.isArray(bundle?.Classes)
+    ? bundle.Classes
+    : (Array.isArray(bundle?.Classes?.rows) ? bundle.Classes.rows : []);
+
+  const subclassRows = Array.isArray(bundle?.Subclasses)
+    ? bundle.Subclasses
+    : (Array.isArray(bundle?.Subclasses?.rows) ? bundle.Subclasses.rows : []);
+
+  const classes = classRows
+    .map(r => ({
+      id: String(r?.ClassId ?? r?.id ?? r?.Id ?? r?.ID ?? "").trim(),
+      name: (r?.ClassName ?? r?.name ?? r?.Name ?? "").trim(),
+      icon: r?.icon ?? r?.Icon ?? r?.ClassIcon ?? r?.IconPath ?? null,
+      subclasses: [],
+    }))
+    .filter(c => c.id);
+
+  const classesById = new Map(classes.map(c => [String(c.id), c]));
+  const classesByName = new Map(classes.filter(c => c.name).map(c => [normKey(c.name), c]));
+
+  // Attach subclasses by ClassId
+  for (const sc of subclassRows) {
+    const sid = String(sc?.SubclassId ?? sc?.id ?? sc?.Id ?? sc?.ID ?? "").trim();
+    if (!sid) continue;
+
+    const classId = String(sc?.ClassId ?? sc?.classId ?? sc?.ParentClassId ?? sc?.parentClassId ?? "").trim();
+    const className = (sc?.ClassName ?? sc?.className ?? "").trim();
+    const parent = classId ? classesById.get(classId) : (className ? classesByName.get(normKey(className)) : null);
+    if (!parent) continue;
+
+    const name = (sc?.SubclassName ?? sc?.name ?? sc?.Name ?? sid).trim();
+    const description = (sc?.Description ?? sc?.desc ?? sc?.Desc ?? sc?.description ?? "").trim();
+    const icon = sc?.icon ?? sc?.Icon ?? sc?.SubclassIcon ?? sc?.IconPath ?? null;
+
+    if (!Array.isArray(parent.subclasses)) parent.subclasses = [];
+    parent.subclasses.push({ id: sid, name, description, icon, levels: {} });
+  }
+
+  // Deduplicate subclasses within each class
+  for (const c of classes) {
+    const seenId = new Set();
+    const seenName = new Set();
+    const out = [];
+    for (const sc of (c.subclasses || [])) {
+      const id = String(sc?.id ?? "").trim();
+      const nk = sc?.name ? normKey(sc.name) : "";
+      if (id && seenId.has(id)) continue;
+      if (!id && nk && seenName.has(nk)) continue;
+      if (id) seenId.add(id);
+      if (nk) seenName.add(nk);
+      out.push(sc);
+    }
+    c.subclasses = out;
+  }
+
+  // Cosmetic/enrichment overlay from local classes.full.json
   try {
     const res = await fetch("/data/classes.full.json", { cache: "no-store" });
     if (res.ok) {
       const j = await res.json();
-      if (j && typeof j === "object") {
-        local = Array.isArray(j) ? { classes: j } : j;
-      }
-      if (!Array.isArray(local.classes)) local = { ...local, classes: [] };
-    }
-  } catch {}
+      const local = (j && typeof j === "object")
+        ? (Array.isArray(j) ? { classes: j } : j)
+        : { classes: [] };
 
-  // Overlay live class names (optional) + merge live subclasses rows (from Sheets/CMS)
-  try {
-    const b = await getBundle();
+      const localClasses = Array.isArray(local.classes) ? local.classes : [];
 
-    // If local classesFull.json is unavailable in this route (e.g. builder embedded under /editor/*),
-    // build a minimal classesFull structure from the live bundle so Subclass radial can still render.
-    if (!Array.isArray(local.classes) || local.classes.length === 0) {
-      const clsSrc0 = Array.isArray(b?.Classes) ? b.Classes : (Array.isArray(b?.Classes?.rows) ? b.Classes.rows : null);
-      if (clsSrc0) {
-        local = {
-          classes: clsSrc0
-            .map(r => ({
-              id: r?.ClassId ?? r?.id ?? r?.Id ?? r?.ID,
-              name: r?.ClassName ?? r?.name ?? r?.Name,
-              subclasses: []
+      const localById = new Map(localClasses.filter(x => x?.id).map(x => [String(x.id), x]));
+      const localByName = new Map(localClasses.filter(x => x?.name).map(x => [normKey(x.name), x]));
+
+      for (const c of classes) {
+        const lc = localById.get(String(c.id)) || (c.name ? localByName.get(normKey(c.name)) : null);
+        if (!lc) continue;
+
+        for (const [k, v] of Object.entries(lc)) {
+          if (k === "subclasses") continue;
+          if (c[k] == null && v != null) c[k] = v;
+        }
+        if (!c.icon && lc.icon) c.icon = lc.icon;
+
+        const localSubs = Array.isArray(lc.subclasses) ? lc.subclasses : [];
+        if (!c.subclasses || c.subclasses.length === 0) {
+          c.subclasses = localSubs
+            .map(s => ({
+              id: String(s?.id ?? s?.SubclassId ?? "").trim(),
+              name: (s?.name ?? s?.SubclassName ?? s?.Name ?? "").trim(),
+              description: (s?.description ?? s?.Description ?? s?.desc ?? s?.Desc ?? "").trim(),
+              icon: s?.icon ?? s?.Icon ?? null,
+              levels: s?.levels ?? {}
             }))
-            .filter(c => c.id)
-        };
-      }
-    }
-
-
-    // 1) Optional: overlay class display names from bundle.Classes (keeps local structure)
-    const clsSrc = Array.isArray(b?.Classes) ? b.Classes : (Array.isArray(b?.Classes?.rows) ? b.Classes.rows : null);
-    if (clsSrc && local.classes.length) {
-      const byId = new Map(
-        clsSrc
-          .map(r => ({
-            id: r?.ClassId ?? r?.id ?? r?.Id ?? r?.ID,
-            name: r?.ClassName ?? r?.name ?? r?.Name
-          }))
-          .filter(x => x.id)
-          .map(x => [String(x.id), x])
-      );
-      local.classes = local.classes.map(c => {
-        const o = byId.get(String(c.id));
-        return o ? { ...c, name: o.name || c.name, ClassName: o.name || c.ClassName } : c;
-      });
-
-      // Also ensure live-only classes are present in classesFull so subclasses for modded/new
-      // classes can render (local classesFull.json may only include vanilla).
-      const existingIds = new Set(local.classes.map(c => String(c.id)));
-      for (const [id, o] of byId.entries()) {
-        if (existingIds.has(id)) continue;
-        local.classes.push({ id, name: o.name || id, subclasses: [] });
-      }
-    }
-
-    // 2) Merge bundle.Subclasses rows into the nested `classes[].subclasses` list
-    const subSrc = Array.isArray(b?.Subclasses) ? b.Subclasses : (Array.isArray(b?.Subclasses?.rows) ? b.Subclasses.rows : null);
-    if (subSrc && local.classes.length) {
-      const norm = (v) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-      const classById = new Map(local.classes.map(c => [String(c.id), c]));
-      const classByName = new Map(local.classes.filter(c=>c?.name).map(c => [norm(c.name), c]));
-
-      for (const r of subSrc) {
-        const sid = r?.SubclassId ?? r?.id ?? r?.Id ?? r?.ID;
-        if (!sid) continue;
-
-        const classId = r?.classId ?? r?.ClassId ?? r?.ParentClassId ?? r?.parentClassId;
-        const className = r?.ClassName ?? r?.className;
-
-        let cls = classId ? classById.get(String(classId)) : null;
-        if (!cls && className) cls = classByName.get(norm(className));
-
-        // If we can't find a parent class, skip (better than polluting wrong place)
-        if (!cls) continue;
-
-        if (!Array.isArray(cls.subclasses)) cls.subclasses = [];
-
-        const existingById = new Map(cls.subclasses.map(sc => [String(sc.id), sc]));
-        const sKey = String(sid);
-        const base = existingById.get(sKey);
-
-        const name = r?.SubclassName ?? r?.name ?? r?.Name ?? sKey;
-        const description = r?.Description ?? r?.desc ?? r?.Desc ?? r?.description ?? "";
-
-        if (base) {
-          existingById.set(sKey, { ...base, id: sKey, name, description: description || base.description });
-        } else {
-          // Minimal stub so it appears in the picker. Levels can be filled later.
-          existingById.set(sKey, { id: sKey, name, description, levels: {} });
+            .filter(s => s.id);
+          continue;
         }
 
-        // Rebuild list in stable order (keep existing order, append new at end)
-        const ordered = [];
-        const seen = new Set();
-        for (const sc of cls.subclasses) {
-          const id = String(sc.id);
-          if (seen.has(id)) continue;
-          if (existingById.has(id)) {
-            ordered.push(existingById.get(id));
-            seen.add(id);
+        const byId = new Map(c.subclasses.map(s => [String(s.id), s]));
+        const byName = new Map(c.subclasses.filter(s => s?.name).map(s => [normKey(s.name), s]));
+
+        for (const ls of localSubs) {
+          const lid = String(ls?.id ?? ls?.SubclassId ?? "").trim();
+          const lname = (ls?.name ?? ls?.SubclassName ?? ls?.Name ?? "").trim();
+          const target = (lid && byId.get(lid)) || (lname ? byName.get(normKey(lname)) : null);
+          if (!target) continue;
+
+          if (!target.icon && (ls.icon || ls.Icon)) target.icon = ls.icon || ls.Icon;
+          if (!target.description && (ls.description || ls.Description || ls.desc || ls.Desc)) {
+            target.description = (ls.description || ls.Description || ls.desc || ls.Desc || "").trim();
+          }
+          if ((!target.levels || Object.keys(target.levels).length === 0) && ls.levels) {
+            target.levels = ls.levels;
+          }
+          for (const [k, v] of Object.entries(ls || {})) {
+            if (k === "id" || k === "name") continue;
+            if (target[k] == null && v != null) target[k] = v;
           }
         }
-        for (const [id, sc] of existingById.entries()) {
-          if (!seen.has(id)) ordered.push(sc);
-        }
-
-        // Final de-dupe by id and normalized name
-        const seenId = new Set();
-        const seenName = new Set();
-        const deduped = [];
-        for (const sc of ordered) {
-          const id = String(sc?.id ?? "");
-          const nk = norm(sc?.name);
-          if (id && seenId.has(id)) continue;
-          if (nk && seenName.has(nk)) continue;
-          if (id) seenId.add(id);
-          if (nk) seenName.add(nk);
-          deduped.push(sc);
-        }
-        cls.subclasses = deduped;
       }
     }
   } catch {}
 
-  return local;
+  return { classes };
 }
 
 export const loadSubclassesJson = () => loadData("./data/subclasses.json", "Subclasses");
