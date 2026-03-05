@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HBCR Editor Studio</title>
+  <link rel="stylesheet" href="./studio.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="title">HBCR Editor Studio</div>
+        <div class="subtitle">Design forms → Edit content → Export TSV → Paste into Sheets</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn" id="btnReload">Reload Bundle</button>
+        <button class="btn danger" id="btnReset">Reset Local</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="tabs">
+          <button class="tab active" data-tab="designer">Designer</button>
+          <button class="tab" data-tab="content">Content</button>
+          <button class="tab" data-tab="export">Export</button>
+        </div>
+
+        <div class="panel" id="tablePanel">
+          <div class="panel-title">Tables</div>
+          <div class="panel-hint">Detected from <code>/api/bundle</code></div>
+          <div class="table-list" id="tableList"></div>
+        </div>
+      </aside>
+
+      <section class="stage">
+        <div class="status" id="status"></div>
+
+        <div class="view" id="viewDesigner"></div>
+        <div class="view hidden" id="viewContent"></div>
+        <div class="view hidden" id="viewExport"></div>
+      </section>
+    </div>
+
+    <div class="modal hidden" id="modal">
+      <div class="modal-backdrop" data-action="close"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="modal-title" id="modalTitle">Edit</div>
+          <button class="btn" data-action="close">Close</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot">
+          <button class="btn" id="modalSave">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./studio.js"></script>
+</body>
+</html>
