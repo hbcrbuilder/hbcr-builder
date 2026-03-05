@@ -260,6 +260,20 @@ export async function loadRacesJson() {
       const j = await res.json();
       local = (j && typeof j === "object") ? j : { races: [] };
       if (!Array.isArray(local.races)) local = { ...local, races: [] };
+
+      // Normalize nested subraces so dedupe/merge logic can reliably match entries.
+      // (Some legacy JSON uses SubraceId/subraceId instead of `id`.)
+      for (const r of local.races) {
+        if (!r || !Array.isArray(r.subraces)) continue;
+        r.subraces = r.subraces
+          .map((sr) => {
+            if (!sr || typeof sr !== "object") return sr;
+            const id = sr.id ?? sr.SubraceId ?? sr.subraceId ?? sr.subraceID;
+            const name = sr.name ?? sr.SubraceName ?? sr.Name;
+            return { ...sr, id: id ? String(id) : sr.id, name: name ?? sr.name };
+          })
+          .filter(Boolean);
+      }
     }
   } catch {}
 
@@ -343,36 +357,60 @@ export async function loadRacesJson() {
 
         if (!Array.isArray(parent.subraces)) parent.subraces = [];
 
-        const existing = new Map(parent.subraces.map(sr => [String(sr.id), sr]));
         const key = String(sid);
         const name = r?.SubraceName ?? r?.name ?? r?.Name ?? key;
+        const nk = norm(name);
 
-        const base = existing.get(key);
-        if (base) existing.set(key, { ...base, id: key, name });
-        else existing.set(key, { id: key, name, icon: null });
+        // Match existing entries by id first, then by normalized name.
+        const existingById = new Map(parent.subraces.map(sr => [String(sr?.id ?? ""), sr]));
+        const existingByName = new Map(
+          parent.subraces
+            .filter(sr => sr?.name)
+            .map(sr => [norm(sr.name), sr])
+        );
+        const base = existingById.get(key) || (nk ? existingByName.get(nk) : null);
 
-        // preserve order, append new at end
-        const ordered = [];
-        const seen = new Set();
-        for (const sr of parent.subraces) {
-          const id = String(sr?.id ?? "");
-          if (!id || seen.has(id)) continue;
-          if (existing.has(id)) {
-            ordered.push(existing.get(id));
-            seen.add(id);
+        if (base) {
+          // Update in place; preserve icon if present.
+          const idx = parent.subraces.findIndex(x => x === base);
+          if (idx >= 0) {
+            const next = { ...base, name };
+            // Ensure an id exists (legacy entries sometimes miss it)
+            next.id = next.id ? String(next.id) : key;
+            next._liveId = key;
+            parent.subraces[idx] = next;
           }
-        }
-        for (const [id, sr] of existing.entries()) {
-          if (!seen.has(id)) ordered.push(sr);
+        } else {
+          parent.subraces.push({ id: key, name, icon: null, _liveId: key });
         }
 
-        // final de-dupe by id
-        const seenId = new Set();
-        parent.subraces = ordered.filter(sr => {
-          const id = String(sr?.id ?? "");
-          if (!id) return false;
-          if (seenId.has(id)) return false;
-          seenId.add(id);
+        // Final de-dupe by normalized name (primary) and id (secondary).
+        // Prefer the entry that has an icon (local canonical) if duplicates exist.
+        const bestByKey = new Map();
+        for (const sr of parent.subraces) {
+          const n0 = sr?.name ? norm(sr.name) : "";
+          const id0 = String(sr?.id ?? "");
+          const k0 = n0 || id0;
+          if (!k0) continue;
+          const prev = bestByKey.get(k0);
+          if (!prev) {
+            bestByKey.set(k0, sr);
+            continue;
+          }
+          const prevHasIcon = !!prev?.icon;
+          const curHasIcon = !!sr?.icon;
+          if (!prevHasIcon && curHasIcon) bestByKey.set(k0, sr);
+        }
+
+        const seenFinal = new Set();
+        parent.subraces = parent.subraces.filter(sr => {
+          const n0 = sr?.name ? norm(sr.name) : "";
+          const id0 = String(sr?.id ?? "");
+          const k0 = n0 || id0;
+          if (!k0) return false;
+          if (seenFinal.has(k0)) return false;
+          if (bestByKey.get(k0) !== sr) return false;
+          seenFinal.add(k0);
           return true;
         });
       }
@@ -510,6 +548,14 @@ export async function loadClassesFullJson() {
         const o = byId.get(String(c.id));
         return o ? { ...c, name: o.name || c.name, ClassName: o.name || c.ClassName } : c;
       });
+
+      // Also ensure live-only classes are present in classesFull so subclasses for modded/new
+      // classes can render (local classesFull.json may only include vanilla).
+      const existingIds = new Set(local.classes.map(c => String(c.id)));
+      for (const [id, o] of byId.entries()) {
+        if (existingIds.has(id)) continue;
+        local.classes.push({ id, name: o.name || id, subclasses: [] });
+      }
     }
 
     // 2) Merge bundle.Subclasses rows into the nested `classes[].subclasses` list
