@@ -70,6 +70,7 @@ function applyCmsDraftToBundle(bundle) {
     Traits: { idKey: "TraitId" },
     Feats: { idKey: "FeatId" },
     ClassFeatures: { idKey: "FeatureId" },
+    Archetypes: { idKey: "ArchetypeId" },
   };
 
   const normId = (v) => String(v ?? "").trim();
@@ -667,3 +668,29 @@ export const loadRaceFeaturesJson = () =>
 export const loadChoicesJson = () => loadData("./data/choices.json", "Choices");
 export const loadPickListItemsJson = () =>
   loadData("./data/pickListItems.json", "PickListItems");
+
+// Archetypes (new mechanic): bundle-first table. No local canonical file.
+// Expected sheet columns: ArchetypeId, ArchetypeName, Description, SortOrder, Icon, Source
+export async function loadArchetypesTable() {
+  const b = await getBundle();
+  const src = Array.isArray(b?.Archetypes)
+    ? b.Archetypes
+    : (Array.isArray(b?.Archetypes?.rows) ? b.Archetypes.rows : null);
+  const rows = src || [];
+  return rows
+    .map(r => ({
+      id: String(r?.ArchetypeId ?? r?.id ?? "").trim(),
+      name: String(r?.ArchetypeName ?? r?.name ?? "").trim(),
+      description: String(r?.Description ?? r?.desc ?? r?.text ?? "").trim(),
+      icon: r?.Icon ?? r?.icon ?? null,
+      sortOrder: (r?.SortOrder != null ? Number(r.SortOrder) : null),
+      source: r?.Source ?? r?.source ?? null,
+    }))
+    .filter(x => x.id && x.name)
+    .sort((a, b) => {
+      const ao = (a.sortOrder == null || Number.isNaN(a.sortOrder)) ? 1e9 : a.sortOrder;
+      const bo = (b.sortOrder == null || Number.isNaN(b.sortOrder)) ? 1e9 : b.sortOrder;
+      if (ao !== bo) return ao - bo;
+      return a.name.localeCompare(b.name);
+    });
+}

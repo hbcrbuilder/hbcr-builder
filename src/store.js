@@ -1,10 +1,20 @@
 export function createStore() {
   const initialCharacter = () => ({
+    // Generic choice registry.
+    // New mechanics (e.g., Archetypes) should bind to keys here instead of adding
+    // more one-off top-level fields.
+    // Examples: { RaceId, SubraceId, ClassId, SubclassId, ArchetypeId }
+    choices: {},
+
     origin: null,          // "custom" | "dark-urge"
     race: null,
     subrace: null,
     class: null,
     subclass: null,
+
+    // New mechanics can either bind into choices (preferred) or temporarily
+    // live as top-level fields during migration.
+    archetype: null,
 
     // Character level (1–12). Used for summary display.
     level: 1,
@@ -82,7 +92,31 @@ export function createStore() {
     getState: () => state,
     subscribe: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
     setMod: (mod) => { state.mod = mod; notify(); },
-    patchCharacter: (patch) => { Object.assign(state.character, patch); notify(); },
+    patchCharacter: (patch) => {
+      // Keep legacy top-level fields in sync with the generic choices registry.
+      // This makes it safe to add new mechanics without refactoring every screen at once.
+      const ch = state.character;
+      const p = patch || {};
+
+      const choices = { ...(ch.choices || {}) };
+      const setChoice = (k, v) => {
+        if (v == null || v === "") delete choices[k];
+        else choices[k] = v;
+      };
+
+      if (Object.prototype.hasOwnProperty.call(p, "race")) setChoice("RaceId", p.race);
+      if (Object.prototype.hasOwnProperty.call(p, "subrace")) setChoice("SubraceId", p.subrace);
+      if (Object.prototype.hasOwnProperty.call(p, "class")) setChoice("ClassId", p.class);
+      if (Object.prototype.hasOwnProperty.call(p, "subclass")) setChoice("SubclassId", p.subclass);
+      if (Object.prototype.hasOwnProperty.call(p, "archetype")) setChoice("ArchetypeId", p.archetype);
+      if (Object.prototype.hasOwnProperty.call(p, "choices") && p.choices && typeof p.choices === "object") {
+        // Allow callers to patch generic choices directly.
+        for (const [k, v] of Object.entries(p.choices)) setChoice(k, v);
+      }
+
+      Object.assign(ch, p, { choices });
+      notify();
+    },
     patchUI: (patch) => { Object.assign(state.ui, patch); notify(); },
     
     // Ensure timeline slot exists and optionally auto-fill it from the most recent prior level.

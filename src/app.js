@@ -1263,6 +1263,36 @@ document.addEventListener("change", (e) => {
     return;
   }
 
+  // Generic dropdown-backed mechanic: Archetypes (Level 1)
+  if (el.matches("[data-action='set-archetype']")) {
+    const archetypeId = el.value || null;
+    const st = store.getState();
+    const ch = st.character;
+
+    // Record in generic choices registry.
+    // Keep an optional legacy top-level field for convenience.
+    const patch = { archetype: archetypeId };
+
+    // Also reflect on build timeline level 1 so the summary boxes show it.
+    try {
+      const tl = (ch.build?.timeline
+        || Array.from({ length: 12 }, (_, i) => ({ lvl: i + 1, classId: null, subclassId: null, picks: {} }))
+      ).map(x => ({ ...x, picks: { ...(x.picks || {}) } }));
+      if (tl[0]) {
+        if (archetypeId) tl[0].picks = { ...(tl[0].picks || {}), archetype: archetypeId };
+        else {
+          const p0 = { ...(tl[0].picks || {}) };
+          delete p0.archetype;
+          tl[0].picks = p0;
+        }
+        patch.build = { ...(ch.build || {}), timeline: tl };
+      }
+    } catch {}
+
+    store.patchCharacter(patch);
+    return;
+  }
+
   if (el.matches("[data-action='set-build-class']")) {
     // Back-compat: some templates used data-id instead of data-level.
     const level = Number(el.getAttribute("data-level") || el.getAttribute("data-id") || 1);

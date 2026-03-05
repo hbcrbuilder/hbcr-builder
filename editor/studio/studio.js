@@ -53,18 +53,6 @@
       .slice(0,64);
   }
 
-  function prettyLabel(key){
-    const s = String(key||'').trim();
-    if(!s) return '';
-    // SubclassId -> Subclass Id, caster_progression -> Caster Progression
-    const spaced = s
-      .replace(/_/g,' ')
-      .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
-      .replace(/\s+/g,' ')
-      .trim();
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  }
-
   function readJson(key, fallback){
     try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
     catch{ return fallback; }
@@ -150,7 +138,7 @@
 
       const fields = cols.map(c=>({
         key: c,
-        label: prettyLabel(c),
+        label: c,
         type: c===primaryKey ? 'hidden' : 'text',
         required: c===labelKey,
       }));

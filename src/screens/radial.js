@@ -22,7 +22,8 @@ import { SabotageMatrixScreen } from "./sabotageMatrix.js";
 import {
   loadRacesJson,
   loadClassesJson,
-  loadData
+  loadData,
+  loadArchetypesTable
 } from "../data/liveData.js";
 
 // --- Hot-path caches ---
@@ -36,6 +37,7 @@ let featsCachePromise = null;
 let classFeaturesCachePromise = null;
 let raceFeaturesCachePromise = null;
 let choicesCachePromise = null;
+let archetypesCachePromise = null;
 
 async function loadRaces() {
   if (!racesCachePromise) {
@@ -126,6 +128,13 @@ async function loadTraits() {
       .catch(() => ({ traits: [] }));
   }
   return await traitsCachePromise;
+}
+
+async function loadArchetypes() {
+  if (!archetypesCachePromise) {
+    archetypesCachePromise = loadArchetypesTable().catch(() => []);
+  }
+  return await archetypesCachePromise;
 }
 
 async function loadFeats() {
@@ -570,7 +579,7 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
-  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw] = await Promise.all([
+  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw, archetypes] = await Promise.all([
     loadRaces(),
     loadClasses(),
     loadClassesFull(),
@@ -580,7 +589,8 @@ export async function RadialScreen({ state }) {
     loadFeats(),
     loadClassFeatures(),
     loadRaceFeatures(),
-    loadChoices()
+    loadChoices(),
+    loadArchetypes()
   ]);
 
   const races = racesData?.races ?? [];
@@ -1306,6 +1316,19 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
     return Math.max(180, Math.min(360, px));
   })();
 
+  // Archetypes (Level 1 dropdown mechanic)
+  const archetypeValue = (ch.choices && ch.choices.ArchetypeId) ? ch.choices.ArchetypeId : (ch.archetype ?? "");
+  const archetypesArr = Array.isArray(archetypes) ? archetypes : [];
+  const selectedArchetype = archetypesArr.find(a => String(a.id) === String(archetypeValue)) || null;
+  const archetypeDesc = selectedArchetype ? String(selectedArchetype.description || "") : "";
+  const archetypeLabelForWidth = selectedArchetype ? String(selectedArchetype.name || selectedArchetype.id || "") : "— None —";
+  const archetypeSelectWidthPx = (() => {
+    const s = String(archetypeLabelForWidth || "");
+    const len = Array.from(s).length;
+    const px = Math.round(len * 8.2 + 64);
+    return Math.max(200, Math.min(420, px));
+  })();
+
 
 
   // ------------------------------
@@ -1485,9 +1508,29 @@ const sheet = `
                 .join("")}
             </select>
           </div>
+
+          ${archetypesArr.length ? `
+            <div class="sheet-pill trait-pill" title="Archetype" style="margin-left:12px">
+              <span class="trait-label">ARCHETYPE</span>
+              <select class="trait-select" data-action="set-archetype" style="width:${archetypeSelectWidthPx}px">
+                <option value="">— None —</option>
+                ${archetypesArr
+                  .map(a => {
+                    const id = String(a.id);
+                    const name = String(a.name || a.id);
+                    const sel = String(archetypeValue) === id ? "selected" : "";
+                    return `<option value="${escapeHtml(id)}" ${sel}>${escapeHtml(name)}</option>`;
+                  })
+                  .join("")}
+              </select>
+            </div>
+          ` : ``}
         </div>
 
-        <div class="sheet-muted trait-desc">${traitDesc ? escapeHtml(traitDesc) : "No trait selected."}</div>
+        <div class="sheet-muted trait-desc">
+          ${traitDesc ? escapeHtml(traitDesc) : "No trait selected."}
+          ${archetypesArr.length ? `<div style="margin-top:6px">${archetypeDesc ? escapeHtml(archetypeDesc) : "No archetype selected."}</div>` : ``}
+        </div>
 
         <div class="summary-ability-points" title="Point Buy">
           Ability Points: ${(ch.abilityPointsRemaining ?? calcAbilityPointsRemaining(ch.abilities))} / 27
