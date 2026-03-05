@@ -694,3 +694,22 @@ export async function loadArchetypesTable() {
       return a.name.localeCompare(b.name);
     });
 }
+
+// ArchetypeEffects: bundle-first table.
+// Expected sheet columns: ArchetypeId, EffectType, EffectValue, Source
+// Multiple rows per ArchetypeId.
+export async function loadArchetypeEffectsTable() {
+  const b = await getBundle();
+  const src = Array.isArray(b?.ArchetypeEffects)
+    ? b.ArchetypeEffects
+    : (Array.isArray(b?.ArchetypeEffects?.rows) ? b.ArchetypeEffects.rows : null);
+  const rows = src || [];
+  return rows
+    .map(r => ({
+      archetypeId: String(r?.ArchetypeId ?? r?.archetypeId ?? "").trim(),
+      effectType: String(r?.EffectType ?? r?.effectType ?? "").trim(),
+      effectValue: (r?.EffectValue != null ? String(r.EffectValue).trim() : ""),
+      source: r?.Source ?? r?.source ?? null,
+    }))
+    .filter(x => x.archetypeId && x.effectType);
+}

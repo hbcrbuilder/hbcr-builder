@@ -372,6 +372,25 @@ function wireEvents() {
         store.patchUI({ traitMenuOpen: false });
         return;
       }
+
+      if (action === "copy-build-json") {
+        // RadialScreen exposes a pre-built export payload so this stays stable
+        // even if the internal state shape changes.
+        const payload = (typeof window !== "undefined" && window.__HBCR_LAST_BUILD_EXPORT__)
+          ? window.__HBCR_LAST_BUILD_EXPORT__
+          : { character: store.getState().character, exportedAt: new Date().toISOString() };
+        const txt = JSON.stringify(payload, null, 2);
+        try {
+          await navigator.clipboard.writeText(txt);
+          // Tiny visual feedback
+          el.textContent = "COPIED!";
+          setTimeout(() => { try { el.textContent = "COPY BUILD JSON"; } catch {} }, 900);
+        } catch {
+          // Fallback for older browsers / denied permissions
+          window.prompt("Copy build JSON:", txt);
+        }
+        return;
+      }
       const state = store.getState();
 
       const isRadial = router.getRoute() === "radial";

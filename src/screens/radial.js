@@ -23,7 +23,8 @@ import {
   loadRacesJson,
   loadClassesJson,
   loadData,
-  loadArchetypesTable
+  loadArchetypesTable,
+  loadArchetypeEffectsTable
 } from "../data/liveData.js";
 
 // --- Hot-path caches ---
@@ -38,6 +39,7 @@ let classFeaturesCachePromise = null;
 let raceFeaturesCachePromise = null;
 let choicesCachePromise = null;
 let archetypesCachePromise = null;
+let archetypeEffectsCachePromise = null;
 
 async function loadRaces() {
   if (!racesCachePromise) {
@@ -135,6 +137,13 @@ async function loadArchetypes() {
     archetypesCachePromise = loadArchetypesTable().catch(() => []);
   }
   return await archetypesCachePromise;
+}
+
+async function loadArchetypeEffects() {
+  if (!archetypeEffectsCachePromise) {
+    archetypeEffectsCachePromise = loadArchetypeEffectsTable().catch(() => []);
+  }
+  return await archetypeEffectsCachePromise;
 }
 
 async function loadFeats() {
@@ -417,6 +426,57 @@ function fmtSigned(n) {
   return (n >= 0 ? `+${n}` : `${n}`);
 }
 
+function proficiencyBonus(level) {
+  const lvl = Math.max(1, Math.min(12, Number(level) || 1));
+  // 5e-style PB: 1-4 =>2, 5-8 =>3, 9-12 =>4
+  return 2 + Math.floor((lvl - 1) / 4);
+}
+
+function parseEffectValue(v) {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : s;
+}
+
+function computeArchetypeDerived(effectsRows, ch) {
+  const pb = proficiencyBonus(ch?.level || 1);
+  const out = {
+    attackRollBonus: 0,
+    spellDCBonus: 0,
+    spellCritThresholdDelta: 0,
+    weaponCritThresholdDelta: 0,
+    healingBonusFlat: 0,
+    savingThrowBonus: 0,
+    ignorePhysicalResistance: false,
+    ignoreElementalResistance: false,
+    resistancePhysicalAll: false,
+    resistanceElementalAll: false,
+    raw: []
+  };
+
+  for (const r of (effectsRows || [])) {
+    const t = String(r?.effectType || "").trim();
+    const val = parseEffectValue(r?.effectValue);
+    if (!t) continue;
+    out.raw.push({ type: t, value: val, source: r?.source ?? null });
+
+    if (t === "AttackRollBonus") out.attackRollBonus += Number(val || 0);
+    else if (t === "SpellDCBonus") out.spellDCBonus += Number(val || 0);
+    else if (t === "SpellCritThresholdDelta") out.spellCritThresholdDelta += Number(val || 0);
+    else if (t === "WeaponCritThresholdDelta") out.weaponCritThresholdDelta += Number(val || 0);
+    else if (t === "HealingBonusFlat") out.healingBonusFlat += Number(val || 0);
+    else if (t === "SavingThrowBonus_ProficiencyBonus") out.savingThrowBonus += pb * (Number(val || 1));
+    else if (t === "IgnorePhysicalResistance") out.ignorePhysicalResistance = Boolean(Number(val || 1));
+    else if (t === "IgnoreElementalResistance") out.ignoreElementalResistance = Boolean(Number(val || 1));
+    else if (t === "Resistance_Physical_All") out.resistancePhysicalAll = Boolean(Number(val || 1));
+    else if (t === "Resistance_Elemental_All") out.resistanceElementalAll = Boolean(Number(val || 1));
+  }
+
+  return out;
+}
+
 function calcAbilityPointsRemaining(abilities) {
   // Standard 5e point buy: 27 points, scores 8-15
   const cost = {8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
@@ -579,7 +639,7 @@ function groupSpellsByLevel(spellIds, spellsIndex) {
 }
 
 export async function RadialScreen({ state }) {
-  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw, archetypes] = await Promise.all([
+  const [racesData, classesData, classesFull, spellsData, levelFlows, traitsData, featsData, classFeaturesRaw, raceFeaturesRaw, choicesRaw, archetypes, archetypeEffectsRows] = await Promise.all([
     loadRaces(),
     loadClasses(),
     loadClassesFull(),
@@ -590,7 +650,8 @@ export async function RadialScreen({ state }) {
     loadClassFeatures(),
     loadRaceFeatures(),
     loadChoices(),
-    loadArchetypes()
+    loadArchetypes(),
+    loadArchetypeEffects()
   ]);
 
   const races = racesData?.races ?? [];
@@ -1321,6 +1382,14 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
   const archetypesArr = Array.isArray(archetypes) ? archetypes : [];
   const selectedArchetype = archetypesArr.find(a => String(a.id) === String(archetypeValue)) || null;
   const archetypeDesc = selectedArchetype ? String(selectedArchetype.description || "") : "";
+
+  // ArchetypeEffects (applied at level 1) - affects derived combat math, validation, and export.
+  const archetypeEffectsAll = Array.isArray(archetypeEffectsRows) ? archetypeEffectsRows : [];
+  const archetypeEffectsForSelected = archetypeValue
+    ? archetypeEffectsAll.filter(r => String(r?.archetypeId || "") === String(archetypeValue))
+    : [];
+  const archetypeDerived = computeArchetypeDerived(archetypeEffectsForSelected, ch);
+
   const archetypeLabelForWidth = selectedArchetype ? String(selectedArchetype.name || selectedArchetype.id || "") : "— None —";
   const archetypeSelectWidthPx = (() => {
     const s = String(archetypeLabelForWidth || "");
@@ -1486,6 +1555,26 @@ function renderBuildStepsDock(classLevel, classId, subclassObj, entryPicks) {
   const effAbilities = applyAbilityBonuses(ch.abilities || {}, bonusAssign);
   const chEff = { ...ch, abilities: effAbilities };
 
+  // Export payload used by "Copy Build JSON".
+  // Includes derived combat math so downstream tools don't need to re-implement
+  // archetype effect interpretation.
+  try {
+    if (typeof window !== "undefined") {
+      window.__HBCR_LAST_BUILD_EXPORT__ = {
+        exportedAt: new Date().toISOString(),
+        character: chEff,
+        derived: {
+          proficiencyBonus: proficiencyBonus(ch?.level || 1),
+          archetype: {
+            id: archetypeValue || null,
+            name: selectedArchetype ? (selectedArchetype.name || selectedArchetype.id) : null,
+            effects: archetypeDerived,
+          }
+        }
+      };
+    }
+  } catch {}
+
 const sheet = `
     <div class="sheet-title">CHARACTER SUMMARY</div>
 
@@ -1525,6 +1614,10 @@ const sheet = `
               </select>
             </div>
           ` : ``}
+
+          <button class="btn" type="button" data-action="copy-build-json" style="margin-left:auto;padding:6px 10px;font-size:11px;border-radius:8px">
+            COPY BUILD JSON
+          </button>
         </div>
 
         <div class="sheet-muted trait-desc">
@@ -1596,6 +1689,21 @@ const sheet = `
             <div class="sheet-attr"><span>Armour Class</span><b>${calcArmourClass(chEff)}</b></div>
             <div class="sheet-attr"><span>Initiative</span><b>${fmtSigned(mod(chEff.abilities.dex))}</b></div>
             <div class="sheet-attr"><span>Movement</span><b>${calcMovement(chEff)}</b></div>
+
+            ${archetypeDerived.attackRollBonus ? `<div class="sheet-attr"><span>Attack Rolls (Archetype)</span><b>${fmtSigned(archetypeDerived.attackRollBonus)}</b></div>` : ``}
+            ${archetypeDerived.spellDCBonus ? `<div class="sheet-attr"><span>Spell DC (Archetype)</span><b>${fmtSigned(archetypeDerived.spellDCBonus)}</b></div>` : ``}
+            ${archetypeDerived.savingThrowBonus ? `<div class="sheet-attr"><span>Saving Throws (Archetype)</span><b>${fmtSigned(archetypeDerived.savingThrowBonus)}</b></div>` : ``}
+            ${archetypeDerived.spellCritThresholdDelta ? `<div class="sheet-attr"><span>Spell Crit Range</span><b>${20 + archetypeDerived.spellCritThresholdDelta}–20</b></div>` : ``}
+            ${archetypeDerived.weaponCritThresholdDelta ? `<div class="sheet-attr"><span>Weapon Crit Range</span><b>${20 + archetypeDerived.weaponCritThresholdDelta}–20</b></div>` : ``}
+            ${archetypeDerived.healingBonusFlat ? `<div class="sheet-attr"><span>Healing Bonus</span><b>+${archetypeDerived.healingBonusFlat} HP</b></div>` : ``}
+            ${(archetypeDerived.resistancePhysicalAll || archetypeDerived.resistanceElementalAll) ? `<div class="sheet-attr"><span>Resistances</span><b>${[
+              archetypeDerived.resistancePhysicalAll ? "Physical" : null,
+              archetypeDerived.resistanceElementalAll ? "Elemental" : null,
+            ].filter(Boolean).join(", ")}</b></div>` : ``}
+            ${(archetypeDerived.ignorePhysicalResistance || archetypeDerived.ignoreElementalResistance) ? `<div class="sheet-attr"><span>Ignore Resistance</span><b>${[
+              archetypeDerived.ignorePhysicalResistance ? "Physical" : null,
+              archetypeDerived.ignoreElementalResistance ? "Elemental" : null,
+            ].filter(Boolean).join(", ")}</b></div>` : ``}
           </div>
 
           <div class="sheet-section-title" style="margin-top:10px">PROFICIENCIES</div>
